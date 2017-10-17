@@ -138,6 +138,7 @@ class Entity extends Model {
                 'navlist'=>$navlist
         );        
     }
+    
     public static function get_set_by_item($itemid)
     {
         $sql="SELECT parentid, childid, rank FROM \"SetDepList\" where childid = :itemid";

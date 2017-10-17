@@ -1,0 +1,18 @@
+{
+    "name": "tzportal/autoload-composer",
+    "description": "Description class files for tzportal",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Arman Sadybekov",
+            "email": "sadybekov@npptez.ru"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "tzVendor\\": ["vendor/core/","app/components/reps/coversheets"]
+        }
+    }
+}

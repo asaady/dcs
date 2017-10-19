@@ -13,7 +13,8 @@ class Entity extends Model {
     protected $data;
     protected $plist;
     
-    public function __construct($id,$version=0) {
+    public function __construct($id,$version=0)
+    {
         if ($id=='') {
             throw new Exception("Class Entity constructor: id is empty");
         }
@@ -43,25 +44,32 @@ class Entity extends Model {
             $this->activity = TRUE;
         }
     }
-    function entity_data() {
+    function entity_data() 
+    {
         $arProp = array();
-	if ($this->id!='') {
-	  $arData = self::getEntityData($this->id);
-          if (count($arData['SDATA'])) {
-              $arProp = $arData['SDATA'][$this->id];
-          }
+	if ($this->id!='') 
+        {
+            $arData = self::getEntityData($this->id);
+            if (count($arData['SDATA'])) 
+            {
+                $arProp = $arData['SDATA'][$this->id];
+            }
 	}
         $this->version = time();
         $data = array();
 
         
-	foreach($this->plist as $aritem){
+	foreach($this->plist as $aritem)
+        {
 	    $v = $aritem['id'];
             $data[$v]=array();
-	    if(array_key_exists($v,$arProp)){
+	    if(array_key_exists($v,$arProp))
+            {
 	      $data[$v]['id']=$arProp[$v]['id'];
 	      $data[$v]['name']=$arProp[$v]['name'];
-	    }else {
+	    }
+            else 
+            {
      	      $data[$v]['id']=TZ_EMPTY_ENTITY;
 	      $data[$v]['name']='';
 	    }  

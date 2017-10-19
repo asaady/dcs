@@ -975,7 +975,8 @@ $('body').on('click', '#history', function (e)
 
 
 
-function before_save() {
+function before_save() 
+{
     var $data;
     $("input[name='command']").val('before_save'); 
     $data = $('.row input').serializeArray();
@@ -987,7 +988,8 @@ function before_save() {
         success: before_save_success
     });    
 };
-function save() {
+function save() 
+{
     var $data;
     $("input[name='command']").val('save'); 
     $data = $('.row input').serializeArray();
@@ -1075,7 +1077,7 @@ $(document).ready(function()
       success: onLoadValID
       }
     );
-    if (action=='EDIT')
+    if ((action=='EDIT')||(action=='CREATE'))
     {    
         var $input = $('.datepicker').pickadate({
                 selectMonths: true,

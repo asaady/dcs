@@ -21,12 +21,17 @@ class Route {
             if(file_exists($controller_path))
             {
                 require_once("$controller_path");
-            } else {
+            } 
+            else 
+            {
                 die("file not found: $controller_path");
             }
-            if ($classname==''){
+            if ($classname=='')
+            {
                 $controller = new $controller_name();
-            } else {
+            } 
+            else 
+            {
                 $controller = new $controller_name($arResult['ITEMID']);
             }
             $action = $action_name;

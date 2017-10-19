@@ -63,12 +63,15 @@ $('a').on('show.bs.tab', function (e) {
         {
             $("input[name='action']").val('VIEW'); 
         }    
-        $.getJSON(
-            '/common/get_ajax.php',
-            {action:$("input[name='action']").val(), id:$("input[name='itemid']").val(),mode:$("input[name='mode']").val(),command:'actionlist',prefix:'get'},
-            function(data){
-                actionlist(data['items']);
-            }          
+        $("input[name='command']").val('load'); 
+        $data = $('.row input').serializeArray();
+        $.ajax({
+          url: '/common/post_ajax.php',
+          type: 'post',
+          dataType: 'json',
+          data: $data,
+          success: onLoadValID
+          }
         );
     }    
 });
@@ -702,29 +705,44 @@ $('body').on('click', '#edit', function () {
     else
     {
         var itemid = $("input[name='itemid']").val();    
-        location.href=getprefix()+itemid+"/edit";
+        var curid = $("input[name='curid']").val();    
+        url = getprefix()+itemid;
+        if (curid!='')
+        {
+            url += "/"+curid;
+        }    
+        location.href=url+"/edit";
     }    
 });
 $('body').on('click', '#view', function () {
     var id = $('tr.info').attr('id');
-    if (id!='') 
+    if (id === undefined || id === null) 
     {
-      location.href=getprefix()+id+'/view';
-    }  
+        return;
+    } 
+    location.href=getprefix()+id+'/view';
 });
 function erase_success (result)
 {
     var $itemid = $("input[name='itemid']").val(); 
     var $action = $("input[name='action']").val(); 
+    var curid = $("input[name='curid']").val();    
     $('#tzModal').modal('hide');
-    location.href=getprefix()+$itemid+'/'+$action;
+    dop='';
+    if (curid!='')
+    {
+        dop +='/'+curid; 
+    }   
+    location.href=getprefix()+$itemid+dop+'/'+$action;
     console.log(result);
 };
 function erase() {
     var $data;
     $("input[name='command']").val('delete'); 
+    var curid = $("input[name='curid']").val();    
     $("input[name='curid']").val($('tr.info').attr('id')); 
     $data = $('.row input').serializeArray();
+    $("input[name='curid']").val(curid); 
     $.ajax({
       url: '/common/post_ajax.php',
       type: 'post',
@@ -782,9 +800,11 @@ function before_delete_success(result)
 $('body').on('click', '#delete', function () 
 {
     var action = $("input[name='action']").val();  
+    var curid = $("input[name='curid']").val();
     $("input[name='curid']").val($('tr.info').attr('id')); 
     $("input[name='command']").val('before_delete'); 
     $data = $('.row input').serializeArray();
+    $("input[name='curid']").val(curid); 
     $.ajax({
       url: '/common/post_ajax.php',
       type: 'post',
@@ -1043,6 +1063,8 @@ $('body').on('click','#save',function(e) {
 
 $(document).ready(function() 
 { 
+    var curid = $("input[name='curid']").val(); 
+    var action = $("input[name='action']").val();
     $("input[name='command']").val('load'); 
     $data = $('.row input').serializeArray();
     $.ajax({
@@ -1053,14 +1075,16 @@ $(document).ready(function()
       success: onLoadValID
       }
     );
-    if ($("input[name='action']").val()!='VIEW')
+    if (action=='EDIT')
     {    
         var $input = $('.datepicker').pickadate({
                 selectMonths: true,
+                selectYears: true,
                 format: 'yyyy-mm-dd',
                 formatSubmit: 'yyyy-mm-dd'
             });
-    }    
+            
+    }
     $("body").one('OnResize',function(){
         var x = $('div.ivalue-block');
         if (x!=undefined) 

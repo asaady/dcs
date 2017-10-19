@@ -70,6 +70,13 @@ class Route {
                         if ( !empty($routes[3+$step]) )
                         {    
                             $param=trim($routes[3+$step]);
+                            $act = strtolower($param);
+                            $res = CollectionSet::isExistCollItemByName('Action',$act);
+                            if ($res)
+                            {
+                                $arResult['ACTION']= strtoupper($act);
+                                $action_name = 'action_'.$act;
+                            }
                         }    
                     }    
                 }    
@@ -146,7 +153,25 @@ class Route {
                                 error_log ("file not exist: ".$model_path, 0);
                             }
                         } 
-                    }    
+                    }
+                    else 
+                    {
+                        if ($curid!='')
+                        {    
+                            if ($item['classname']=='Entity')
+                            {
+                                $curitem = DataManager::getContentByID($curid);
+                                if ($curitem['classname']=='Mdproperty')
+                                {    
+                                    $arprop = Mdproperty::getProperty($curid);
+                                    if ($arprop['valmdtypename']=='Sets')
+                                    {
+                                        $arResult['ACTION'] = 'SET_'.$arResult['ACTION'];
+                                    }    
+                                }    
+                            }    
+                        }    
+                    }
                 }
             }
             return $arResult;    

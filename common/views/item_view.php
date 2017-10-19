@@ -62,22 +62,37 @@ function outfield($t,$hclass,$action)
     echo "</div>";
 }    
     echo "<ul id=\"tzTab\" class=\"nav nav-tabs\">";
-        echo "<li class=\"active\"><a href=\"#entityhead\">Заголовок</a></li>";
+        $dop=" class=\"active\"";
+        if (($arResult['ACTION']=='SET_EDIT')||($arResult['ACTION']=='SET_VIEW'))
+        {
+            $dop='';
+        }    
+        echo "<li$dop><a href=\"#entityhead\">Заголовок</a></li>";
         if ($arResult['ACTION']!=='CREATE')
         {    
             for($i=0, $props=$data['PLIST'], $size=count($props); $i<$size; $i++)
             {
-                  $t=$props[$i];
-                  if ($t['valmdtypename']!=='Sets')
-                  {
-                      continue;
-                  }    
-                  echo "<li><a href=\"#$t[id]\">$t[synonym]</a></li>";
+                $t=$props[$i];
+                if ($t['valmdtypename']!=='Sets')
+                {
+                    continue;
+                }  
+                $dop='';
+                if ($arResult['CURID']==$t['id'])
+                {
+                    $dop=" class=\"active\"";
+                }    
+                echo "<li$dop><a href=\"#$t[id]\">$t[synonym]</a></li>";
             }
         }    
     echo "</ul>";
     echo "<div class=\"tab-content\">";
-        echo "<div id=\"entityhead\" class=\"tab-pane fade active in\">";
+        $dop=" in active";
+        if (($arResult['ACTION']=='SET_EDIT')||($arResult['ACTION']=='SET_VIEW'))
+        {
+            $dop='';
+        }    
+        echo "<div id=\"entityhead\" class=\"tab-pane fade$dop\">";
               echo "<form class=\"form-inline\" role=\"form\">\n";
               for($i=0, $props=$data['PLIST'], $size=count($props); $i<$size; $i++)
               {
@@ -131,7 +146,12 @@ function outfield($t,$hclass,$action)
                 {
                     continue;
                 }    
-                echo "<div id=\"$t[id]\" class=\"tab-pane fade\">";
+                $dop='';
+                if ($arResult['CURID']==$t['id'])
+                {
+                    $dop=" in active";
+                }    
+                echo "<div id=\"$t[id]\" class=\"tab-pane fade$dop\">";
                     echo "<table class=\"table table-border table-hover\">";
                         echo "<thead id=\"tablehead\">";
                             echo "<tr>";

@@ -988,7 +988,7 @@ class DataManager {
         self::droptemptable($ar_tt0);
         return $res;
     }   
-    public static function getTT_from_ttent($ttname,$tt_ent,$propid,$type,$tt_val='')
+    public static function getTT_from_ttent($ttname,$tt_ent,$propid,$type,$tt_val='',$existonly=TRUE)
     {        
         $ar_tt0 = array();
         $params=array();
@@ -1000,34 +1000,36 @@ class DataManager {
                     . "on it.propid=pt.id "
                     . "and pt.propid=:propid"; 
         $ar_tt0[] = DataManager::createtemptable($sql, 'tt_per0',$params);
-
+            
         $sql = "SELECT max(it.dateupdate) AS dateupdate, it.entityid, it.propid FROM \"IDTable\" as it INNER JOIN tt_per0 AS et ON it.entityid=et.entityid AND it.propid=et.propid
                       GROUP BY it.entityid, it.propid";
         $ar_tt0[] = DataManager::createtemptable($sql, 'tt_it0');
-
-        if ($tt_val=='')
+        $sqlfilt = '';
+        if ($tt_val!='')
         {
-            $sql = "SELECT tper.entityid, tper.propid, pv.value FROM tt_it0 AS tper 
-                            INNER JOIN \"IDTable\" as it
-                                INNER JOIN \"PropValue_$type\" AS pv
-                                ON it.id = pv.id
-                            ON tper.entityid = it.entityid
-                            AND tper.propid=it.propid
-                            AND tper.dateupdate=it.dateupdate";
-        }   
-        else 
-        {
-            $sql = "SELECT tper.entityid, tper.propid, pv.value FROM tt_it0 AS tper 
-                            INNER JOIN \"IDTable\" as it
-                                INNER JOIN \"PropValue_$type\" AS pv
-                                    inner join $tt_val AS ch
-                                    on pv.value=ch.id
-                                ON it.id = pv.id
-                            ON tper.entityid = it.entityid
-                            AND tper.propid=it.propid
-                            AND tper.dateupdate=it.dateupdate";
+            $sqlfilt = " inner join $tt_val AS ch on pv.value=ch.id ";
         }
-
+        if ($existonly)
+        {
+            $sql = "SELECT tper.entityid, tper.propid, pv.value FROM tt_it0 AS tper 
+                            INNER JOIN \"IDTable\" as it
+                                INNER JOIN \"PropValue_$type\" AS pv$sqlfilt
+                                ON it.id = pv.id
+                            ON tper.entityid = it.entityid
+                            AND tper.propid=it.propid
+                            AND tper.dateupdate=it.dateupdate";
+        }    
+        else
+        {
+            $sql = "SELECT tper.entityid, tper.propid, pv.value FROM tt_it0 AS tper 
+                            LEFT JOIN \"IDTable\" as it
+                                INNER JOIN \"PropValue_$type\" AS pv$sqlfilt
+                                ON it.id = pv.id
+                            ON tper.entityid = it.entityid
+                            AND tper.propid=it.propid
+                            AND tper.dateupdate=it.dateupdate";
+        }    
+        
         $res = DataManager::createtemptable($sql, $ttname);
         DataManager::droptemptable($ar_tt0);
         return $res;

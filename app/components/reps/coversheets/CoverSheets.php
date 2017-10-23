@@ -200,6 +200,7 @@ class CoverSheets extends Model
         //здесь нашли маршруты с последними значениями тех.операций   
         $ar_tt[] = DataManager::getTT_from_ttent('tt_mr_to','tt_mri',$this->prop_to,'id');
         
+        
         $sql = "select mr.tprocid, mr.id as mrid, top.value as toperid, rn.value as rank from tt_mri as mr
                     left join tt_mr_to as top
                     on mr.id=top.entityid
@@ -456,15 +457,21 @@ class CoverSheets extends Model
         $arr_e= array();
         while($row = $res->fetch(PDO::FETCH_ASSOC)) 
         {
-          $objs['LDATA'][$row['csid']]=array();
-          $objs['LDATA'][$row['csid']]['csid']= array('name'=>$row['tprocid'], 'id'=>$row['tprocid']);
-          $objs['LDATA'][$row['csid']]['godn']= array('name'=>$row['godn'], 'id'=>'');
-          $objs['LDATA'][$row['csid']]['brak']= array('name'=>$row['brak'], 'id'=>'');
-          $objs['LDATA'][$row['csid']]['startkol']= array('name'=>$row['startkol'], 'id'=>'');
-          $objs['LDATA'][$row['csid']]['startdate']= array('name'=>$row['startdate'], 'id'=>'');
-          $objs['LDATA'][$row['csid']]['toperid']= array('name'=>$row['toperid'], 'id'=>$row['toperid']);
-          if (!in_array($row['csid'], $arr_e)) $arr_e[]=$row['csid'];
-          if (!in_array($row['toperid'], $arr_e)) $arr_e[]=$row['toperid'];
+            $objs['LDATA'][$row['csid']]=array();
+            $objs['LDATA'][$row['csid']]['csid']= array('name'=>$row['tprocid'], 'id'=>$row['tprocid']);
+            $objs['LDATA'][$row['csid']]['godn']= array('name'=>$row['godn'], 'id'=>'');
+            $objs['LDATA'][$row['csid']]['brak']= array('name'=>$row['brak'], 'id'=>'');
+            $objs['LDATA'][$row['csid']]['startkol']= array('name'=>$row['startkol'], 'id'=>'');
+            $objs['LDATA'][$row['csid']]['startdate']= array('name'=>$row['startdate'], 'id'=>'');
+            $objs['LDATA'][$row['csid']]['toperid']= array('name'=>$row['toperid'], 'id'=>$row['toperid']);
+            if ($row['csid'])
+            {
+                if (!in_array($row['csid'], $arr_e)) $arr_e[]=$row['csid'];
+            }
+            if ($row['toperid'])
+            {
+                if (!in_array($row['toperid'], $arr_e)) $arr_e[]=$row['toperid'];
+            }    
         }
        DataManager::droptemptable($ar_tt);
         if (count($arr_e))
@@ -535,6 +542,7 @@ class CoverSheets extends Model
         
         //теперь ищем строки таб.частей документов в которых искомые сопр.листы
         $ar_tt[] = DataManager::getTT_from_ttprop('tt_sel',$this->ar_prop_cs,'id','tt_el');
+        
         //теперь ищем последние значения реквизита годные в найденных строках
         $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_kol_godn','tt_sel',$this->mpprop_dv_godn,'int');
         
@@ -550,15 +558,18 @@ class CoverSheets extends Model
                     ON ot.entityid=sdl.childid
                     AND sdl.rank>0";
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_doc');
+        
         $sql = "select distinct docid as id FROM tt_doc";
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_dc');
         
         //теперь ищем последние значения реквизита тех.операция в найденных доках
         $ar_tt[] = DataManager::getTT_from_ttent('tt_oper','tt_dc',$this->prop_to,'id');
+        
         //теперь ищем последние значения реквизита дата в найденных доках
         $ar_tt[] = DataManager::getTT_from_ttent('tt_date','tt_dc',$this->propdate,'date');
+        
         //теперь ищем последние значения реквизита активность в найденных доках
-        $ar_tt[] = DataManager::getTT_from_ttent('tt_act','tt_dc',$this->prop_act,'bool');
+        $ar_tt[] = DataManager::getTT_from_ttent('tt_act','tt_dc',$this->prop_act,'bool','',FALSE);
         
         //теперь ищем порядок техопераций в техпроцессах
         //здесь нашли таб.часть маршрут для техпроцессов
@@ -601,6 +612,7 @@ class CoverSheets extends Model
                 on dc.docid = op.entityid
                 left join tt_act as da
                 on dc.docid = da.entityid
+                and COALESCE(da.value,true)=true
                 left join tt_date as dt
                 on dc.docid = dt.entityid
                 left join tt_kol_godn as gd
@@ -610,7 +622,7 @@ class CoverSheets extends Model
                 left join tt_el as tp
                     left join tt_mr as mr
                     on tp.value = mr.tprocid
-                on dc.csid = tp.entityid where op.value = mr.toperid and COALESCE(da.value,true)=true";
+                on dc.csid = tp.entityid where op.value=mr.toperid";
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_dtmm');
         
         $sql = "select dc.csid, dc.mrid, dc.docid, dc.toperid, dc.date, dc.tprocid, dc.rank, sum(dc.godn) as godn, sum(dc.brak) as brak from tt_dtmm as dc group by dc.csid, dc.mrid, dc.docid, dc.toperid, dc.date, dc.tprocid, dc.rank";
@@ -656,13 +668,16 @@ class CoverSheets extends Model
         $arr_e= array();
         while($row = $res->fetch(PDO::FETCH_ASSOC)) 
         {
-          $objs['LDATA'][$row['tprocid']]=array();
-          $objs['LDATA'][$row['tprocid']]['tprocid']= array('name'=>$row['tprocid'], 'id'=>$row['tprocid']);
-          $objs['LDATA'][$row['tprocid']]['godn']= array('name'=>$row['godn'], 'id'=>'');
-          $objs['LDATA'][$row['tprocid']]['brak']= array('name'=>$row['brak'], 'id'=>'');
-          $objs['LDATA'][$row['tprocid']]['startkol']= array('name'=>$row['startkol'], 'id'=>'');
-          $objs['LDATA'][$row['tprocid']]['startdate']= array('name'=>$row['startdate'], 'id'=>'');
-          if (!in_array($row['tprocid'], $arr_e)) $arr_e[]=$row['tprocid'];
+            $objs['LDATA'][$row['tprocid']]=array();
+            $objs['LDATA'][$row['tprocid']]['tprocid']= array('name'=>$row['tprocid'], 'id'=>$row['tprocid']);
+            $objs['LDATA'][$row['tprocid']]['godn']= array('name'=>$row['godn'], 'id'=>'');
+            $objs['LDATA'][$row['tprocid']]['brak']= array('name'=>$row['brak'], 'id'=>'');
+            $objs['LDATA'][$row['tprocid']]['startkol']= array('name'=>$row['startkol'], 'id'=>'');
+            $objs['LDATA'][$row['tprocid']]['startdate']= array('name'=>$row['startdate'], 'id'=>'');
+            if ($row['tprocid'])
+            {  
+              if (!in_array($row['tprocid'], $arr_e)) $arr_e[]=$row['tprocid'];
+            }      
         }
        DataManager::droptemptable($ar_tt);
         if (count($arr_e))

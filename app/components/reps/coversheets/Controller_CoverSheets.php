@@ -21,5 +21,9 @@ class Controller_CoverSheets extends Controller
                 $arResult['jscript']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/components/reps/coversheets/coversheets.js";
 		$this->view->generate($arResult, 'template_view.php', $data);
 	}
+	function action_view($arResult)
+	{
+            $this->action_index($arResult);
+        }
 }
 

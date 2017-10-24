@@ -733,8 +733,8 @@ function erase_success (result)
     {
         dop +='/'+curid; 
     }   
-    alert("curid = "+curid);
-    //location.href=getprefix()+$itemid+dop+'/'+$action;
+    //alert("curid = "+curid);
+    location.href=getprefix()+$itemid+dop+'/'+$action;
     console.log(result);
 };
 function erase() {

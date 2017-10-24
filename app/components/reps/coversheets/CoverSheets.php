@@ -388,18 +388,24 @@ class CoverSheets extends Model
         //теперь ищем последние значения реквизита порядок в найденных строках маршрута
         $ar_tt[] = DataManager::getTT_from_ttent('tt_mr_rank','tt_mri',$this->prop_rank,'int');
         
+        //теперь ищем последние значения реквизита активность в найденных строках маршрута
+        $ar_tt[] = DataManager::getTT_from_ttent('tt_mr_act','tt_mri',$this->prop_act,'bool','',FALSE);
+        
         //здесь нашли маршруты с последними значениями тех.операций   
         $ar_tt[] = DataManager::getTT_from_ttent('tt_mr_to','tt_mri',$this->prop_to,'id');
         
-        $sql = "select mr.tprocid, mr.id, top.value as toperid, rn.value as rank from tt_mri as mr
+        $sql = "select mr.tprocid, mr.id as mrid, top.value as toperid, rn.value as rank from tt_mri as mr
+                    left join tt_mr_act as ma
+                    on mr.id=ma.entityid
                     left join tt_mr_to as top
                     on mr.id=top.entityid
                     left join tt_mr_rank as rn
-                    on mr.id=rn.entityid";
+                    on mr.id=rn.entityid 
+                    where COALESCE(ma.value,true)=true";
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_mr'); 
         
         
-        $sql = "select dc.docid, dc.itemid, dc.csid, mr.id as mrid, op.value as toperid, COALESCE(da.value,true) as activity, dt.value as date, gd.value as godn, br.value as brak, tp.value as tprocid, mr.rank from tt_doc as dc 
+        $sql = "select dc.docid, dc.itemid, dc.csid, mr.mrid, op.value as toperid, COALESCE(da.value,true) as activity, dt.value as date, gd.value as godn, br.value as brak, tp.value as tprocid, mr.rank from tt_doc as dc 
                 left join tt_oper as op
                 on dc.docid = op.entityid
                 left join tt_act as da
@@ -571,6 +577,7 @@ class CoverSheets extends Model
         //теперь ищем последние значения реквизита активность в найденных доках
         $ar_tt[] = DataManager::getTT_from_ttent('tt_act','tt_dc',$this->prop_act,'bool','',FALSE);
         
+        
         //теперь ищем порядок техопераций в техпроцессах
         //здесь нашли таб.часть маршрут для техпроцессов
         $sql = "select et.id as tprocid, pv_mr.value as mrid from tt_el00 as et 
@@ -596,15 +603,25 @@ class CoverSheets extends Model
         //теперь ищем последние значения реквизита порядок в найденных строках маршрута
         $ar_tt[] = DataManager::getTT_from_ttent('tt_mr_rank','tt_mri',$this->prop_rank,'int');
         
+        //теперь ищем последние значения реквизита активность в найденных строках маршрута
+        $ar_tt[] = DataManager::getTT_from_ttent('tt_mr_act','tt_mri',$this->prop_act,'bool','',FALSE);
+        
         //здесь нашли маршруты с последними значениями тех.операций   
         $ar_tt[] = DataManager::getTT_from_ttent('tt_mr_to','tt_mri',$this->prop_to,'id');
         
-        $sql = "select mr.tprocid, mr.id as mrid, top.value as toperid, rn.value as rank from tt_mri as mr
+        $sql = "select mr.tprocid, mr.id as mrid, top.value as toperid, rn.value as rank, COALESCE(ma.value,true) as activity from tt_mri as mr
+                    left join tt_mr_act as ma
+                    on mr.id=ma.entityid
                     left join tt_mr_to as top
                     on mr.id=top.entityid
                     left join tt_mr_rank as rn
-                    on mr.id=rn.entityid";
+                    on mr.id=rn.entityid
+                    where COALESCE(ma.value,true)=true";
+        
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_mr'); 
+//        $sqlp = "select * from tt_mr";
+//        $res = DataManager::dm_query($sqlp);
+//        die(var_dump($res->fetchAll(PDO::FETCH_ASSOC)));    
         
         
         $sql = "select dc.docid, dc.itemid, mr.mrid, dc.csid, op.value as toperid, dt.value as date, COALESCE(da.value,true) as activity, gd.value as godn, br.value as brak, tp.value as tprocid, mr.rank from tt_doc as dc 
@@ -612,7 +629,6 @@ class CoverSheets extends Model
                 on dc.docid = op.entityid
                 left join tt_act as da
                 on dc.docid = da.entityid
-                and COALESCE(da.value,true)=true
                 left join tt_date as dt
                 on dc.docid = dt.entityid
                 left join tt_kol_godn as gd
@@ -622,7 +638,7 @@ class CoverSheets extends Model
                 left join tt_el as tp
                     left join tt_mr as mr
                     on tp.value = mr.tprocid
-                on dc.csid = tp.entityid where op.value=mr.toperid";
+                on dc.csid = tp.entityid where op.value=mr.toperid and COALESCE(da.value,true)=true";
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_dtmm');
         
         $sql = "select dc.csid, dc.mrid, dc.docid, dc.toperid, dc.date, dc.tprocid, dc.rank, sum(dc.godn) as godn, sum(dc.brak) as brak from tt_dtmm as dc group by dc.csid, dc.mrid, dc.docid, dc.toperid, dc.date, dc.tprocid, dc.rank";

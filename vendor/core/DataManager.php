@@ -38,8 +38,16 @@ class DataManager {
         }    
         else 
         {
-            $sth = self::dm_prepare($sql);
-            $query = $sth->execute($params);
+            try
+            {
+                $sth = self::dm_prepare($sql);
+                $query = $sth->execute($params);
+            } 
+            catch (Exception $ex) 
+            {
+                die($ex->getMessage());  
+            }
+            
         }
         return $sth;
     }    

@@ -5,10 +5,10 @@ if (!empty($_COOKIE['sid'])) {
 }
 session_start();
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/tz_const.php");
-require '../vendor/autoload.php';
+require filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING).'/vendor/autoload.php';
 
-use tzVendor\Entity;
 use tzVendor\Common_data;
+use tzVendor\UploadSet;
 
 // Валидация файлов
 function validateFiles($options) {
@@ -43,15 +43,16 @@ function validateFiles($options) {
 
 // Начало работы скрипта
 
-$photos = $_FILES['photos'];
+$csv = $_FILES['csv'];
 
-$destPath = $_SERVER['DOCUMENT_ROOT'] . TZ_UPLOAD_DIR;
+$destPath = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING). TZ_UPLOAD_IMPORT_DIR;
+UploadSet::tz_log("--------------------------------------\r\n".'start import to: '.$destPath);
 
 // Валидация
 $validationErrors = validateFiles(array(
-    'files' => $photos,
+    'files' => $csv,
     'maxSize' => 2 * 1024 * 1024,
-    'types' => array('image/jpeg', 'image/jpg', 'image/png', 'image/gif')
+    'types' => array('text/csv', 'text/txt')
 ));
 
 if (count($validationErrors) > 0) {
@@ -63,20 +64,12 @@ if (count($validationErrors) > 0) {
 $res=array();
 // Копирование файлов в нужную папку
 
-$curid = filter_input(INPUT_POST, 'id', FILTER_SANITIZE_SPECIAL_CHARS);
-$pos_ = strpos($curid,"_");
-if ($pos_===FALSE)
-{
-    $id = $curid;
-    $propid = '';
-}    
-else
-{
-    $id = substr($curid,0,$pos_);
-    $propid = substr($curid,$pos_+1);
-}    
+$id = filter_input(INPUT_POST, 'id', FILTER_SANITIZE_SPECIAL_CHARS);
+$propid = filter_input(INPUT_POST, 'propid', FILTER_SANITIZE_SPECIAL_CHARS);
+UploadSet::tz_log('import in id: '.$id." propid: ".$propid);
 if (Common_data::check_uuid($id))
 {    
+    UploadSet::tz_log('OK validate id=: '.$id);
     try 
     {
         $ent = new \tzVendor\Entity($id);
@@ -86,39 +79,47 @@ if (Common_data::check_uuid($id))
     }
     if ($ent!==FALSE)
     {   
-        if ($propid!=='')
-        {   
-            if (!Common_data::check_uuid($propid))
-            {    
-                $res[]=array('code'=>'error','destName'=>'invalid_current_propid='.$propid);
-            }
-            else 
+        if (Common_data::check_uuid($propid))
+        {    
+            try 
             {
+                $prop = new \tzVendor\Mdproperty($propid);
+            } catch (Exception $ex) {
+                $res[]=array('code'=>'error','destName'=>$ex->getMessage());
+                $prop = FALSE;
+            }
+            if($prop!==FALSE)
+            {    
                 $curm = date("Ym");
-                if (!file_exists($destPath . $curm))
+                UploadSet::tz_log('import to: '.$destPath ."/". $curm);
+                if (!file_exists($destPath ."/". $curm))
                 {
-                    mkdir($destPath . $curm,0777);
+                    mkdir($destPath ."/". $curm,0777);
+                    UploadSet::tz_log('created folder : '.$destPath ."/". $curm);
                 }        
-                foreach ($photos['name'] as $key => $name) 
+                foreach ($csv['name'] as $key => $name) 
                 {
-                    $tempName = $photos['tmp_name'][$key];
+                    $tempName = $csv['tmp_name'][$key];
                     $ext = strrchr($name,'.');
-                    $destName = $destPath ."/". $curm."/".$curid.$ext;
+                    $destName = $destPath ."/". $curm."/".$id."_".$propid.$ext;
+                    UploadSet::tz_log('import to file :'.$destName.' : tempName = '.$tempName);
                     if (move_uploaded_file($tempName, $destName)!==FALSE)
                     {
                         $res[]=array('code'=>'success','destName'=>$destName);
+                        UploadSet::tz_log('success import : '.$destName);
                     }
                     else 
                     {
                         $res[]=array('code'=>'error','destName'=>$destName);
+                        UploadSet::tz_log('error import : '.$destName);
                     }
                 }
-            }
+            }    
         }
-        else 
+        else
         {
-            $res[]=array('code'=>'error','destName'=>'invalid_current_propid='.$propid);
-        }
+            $res[]=array('code'=>'error','destName'=>'invalid_current_propid'.$propid);
+        }    
     }    
 }
 else

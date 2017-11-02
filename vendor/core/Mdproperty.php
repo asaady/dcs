@@ -338,7 +338,7 @@ class Mdproperty extends Model {
     }
     public static function getPropertyByName($propname,$mdid) 
     {
-        $sql = DataManager::get_select_properties(" WHERE md.id = :mdid AND (name ILIKE :filter OR synonym ILIKE :filter)");
+        $sql = DataManager::get_select_properties(" WHERE mp.mdid = :mdid AND (mp.name ILIKE :filter OR mp.synonym ILIKE :filter)");
         $params = array('filter'=>"%$propname%",'mdid'=>$mdid);
         $sql .= " LIMIT 5";
         $sth = DataManager::dm_query($sql,$params);

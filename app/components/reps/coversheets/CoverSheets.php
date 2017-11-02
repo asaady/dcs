@@ -5,8 +5,6 @@ use PDO;
 use PDOStatement;
 use tzVendor\Entity;
 
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/tz_const.php");
-
 class CoverSheets extends Model 
 {
     protected $entity;

@@ -3,7 +3,6 @@ namespace tzVendor;
 use PDO;
 use DateTime;
 
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/tz_common.php");
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/tz_const.php");
 
 class EntitySet extends Model {
@@ -827,6 +826,11 @@ class EntitySet extends Model {
         $sql .= $str_where;
         
         $artt[] = DataManager::createtemptable($sql,'tt_et',$params);   
+        
+//        $sqlr = "select * from tt_et";
+//	$res = DataManager::dm_query($sqlr);
+//	die(var_dump($res->fetchAll(PDO::FETCH_ASSOC))." sql = ".$sql. var_dump($params));
+        
         
 	$sql = "select id, max(dateupdate) as dateupdate FROM tt_et group by id";
         $artt[] = DataManager::createtemptable($sql,'tt_nml');   

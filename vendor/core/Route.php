@@ -125,38 +125,55 @@ class Route {
                     $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/controllers/".$controller_file;
                     if ($item['classname']=='CollectionItem')
                     {
-                        $coll = new CollectionItem($ritem);
-                        if ($coll->getcollectionset()->getmditem()->getname()=='Comps')
+                        if ($arResult['ACTION']<>'EDIT')
                         {
-                            $model_name = $coll->getname();
-                            $compname = $model_name;
-                            $model_file = $compname.'.php';
-                            $model_path = "app/components/".strtolower($coll->getcollectionset()->getname())."/".strtolower($compname)."/".$model_file;
-                            if(file_exists($model_path))
+                            $coll = new CollectionItem($ritem);
+                            if ($coll->getcollectionset()->getmditem()->getname()=='Comps')
                             {
-                                if (strtolower($item['typename'])=='reps')
-                                {    
-                                    $tcontroller_name = 'Controller_'.$model_name;
-                                    $tcontroller_path = "app/components/".strtolower($coll->getcollectionset()->getname())."/".strtolower($compname)."/".$tcontroller_name.'.php';
-                                    if(file_exists($controller_path))
-                                    {
-                                        $classname = $item['classname'];
-                                        $controller_path = $tcontroller_path;
-                                        $controller_name = $tcontroller_name;
-                                        include $model_path;
-                                        include $controller_path;
+                                $model_name = $coll->getname();
+                                $compname = $model_name;
+                                $model_file = $compname.'.php';
+                                $model_path = "app/components/".strtolower($coll->getcollectionset()->getname())."/".strtolower($compname)."/".$model_file;
+                                if(file_exists($model_path))
+                                {
+                                    if (strtolower($item['typename'])=='reps')
+                                    {    
+                                        $tcontroller_name = 'Controller_'.$model_name;
+                                        $tcontroller_path = "app/components/".strtolower($coll->getcollectionset()->getname())."/".strtolower($compname)."/".$tcontroller_name.'.php';
+                                        if(file_exists($controller_path))
+                                        {
+                                            $classname = $item['classname'];
+                                            $controller_path = $tcontroller_path;
+                                            $controller_name = $tcontroller_name;
+                                            include $model_path;
+                                            include $controller_path;
+                                        }
                                     }
+                                    elseif (strtolower($item['typename'])=='utils')
+                                    {    
+                                        $tcontroller_name = 'Controller_'.$model_name;
+                                        $tcontroller_path = "app/components/".strtolower($coll->getcollectionset()->getname())."/".strtolower($compname)."/".$tcontroller_name.'.php';
+                                        if(file_exists($controller_path))
+                                        {
+                                            $classname = $item['classname'];
+                                            $controller_path = $tcontroller_path;
+                                            $controller_name = $tcontroller_name;
+                                            include $model_path;
+                                            include $controller_path;
+                                        }
+                                    }    
+
                                 }
-                            }
-                            else 
-                            {
-                                $classname = '';
-                                $action_name = 'action_index';
-                                $controller_name = 'Controller_404';    
-                                $controller_file = strtolower($controller_name).'.php';
-                                $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/controllers/".$controller_file;
-                                error_log ("file not exist: ".$model_path, 0);
-                            }
+                                else 
+                                {
+                                    $classname = '';
+                                    $action_name = 'action_index';
+                                    $controller_name = 'Controller_404';    
+                                    $controller_file = strtolower($controller_name).'.php';
+                                    $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/controllers/".$controller_file;
+                                    error_log ("file not exist: ".$model_path, 0);
+                                }
+                            }    
                         } 
                     }
                     else 

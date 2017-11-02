@@ -18,6 +18,7 @@ class ComposerStaticInit70ff5a14963b3be2d353e74573085465
         array (
             0 => __DIR__ . '/..' . '/core',
             1 => __DIR__ . '/../..' . '/app/components/reps/coversheets',
+            2 => __DIR__ . '/../..' . '/app/components/utils/uploadset',
         ),
     );
 

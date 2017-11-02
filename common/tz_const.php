@@ -31,5 +31,6 @@ define("TZ_PROPS_NUMBER_ID",57);
 define("TZ_CS_PROPS_ID",29);
 define("IT_IS_UUID","^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$");
 define("TZ_UPLOAD_DIR","/upload");
+define("TZ_UPLOAD_IMPORT_DIR","/upload/import");
 
 

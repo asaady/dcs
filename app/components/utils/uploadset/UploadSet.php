@@ -90,7 +90,7 @@ class UploadSet extends Model
             //запишем ее в реквизит
             $sql = "insert into \"IDTable\" (entityid,propid,userid) values (:setid,:propid,:userid) returning id";
             $params=array();
-            $params['setid']=$this->setid;
+            $params['setid']=$this->target_id;
             $params['propid']=$setpropid;
             $params['userid']=$_SESSION['user_id'];
             $res = DataManager::dm_query($sql, $params);	

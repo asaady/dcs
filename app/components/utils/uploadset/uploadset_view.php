@@ -10,10 +10,14 @@ function outfield($t,$hclass)
             echo "<div class=\"col-md-8\">";
                 $itype='text';
                 $readonly = '';
-                if($t['type']=='int') 
+                if($t['type']=='int')
                 {    
                     $itype = 'number';
                 } 
+                elseif($t['type']=='float') 
+                {    
+                    $itype = 'number\" step=\"any';
+                }
                 elseif($t['type']=='date') 
                 {    
                     $itype = 'date';

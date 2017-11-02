@@ -518,6 +518,10 @@ $('body').on('dblclick','#entitylist td',function ()
     {
         itype='number';
     }
+    else if (vt=='float')
+    {
+        itype='number\" step=\"any';
+    }
 
     if ((vt=='id')||(vt=='cid')||(vt=='mdid')||(vt=='propid'))
     {

@@ -854,7 +854,7 @@ class DataManager {
             }    
             else 
             {
-                if ($prop['name_propid']=='user')
+                if (($prop['name_propid']=='user')||($prop['name_propid']=='operator'))
                 {
                     $user = CollectionSet::getCDetails($_SESSION['user_id']);
                     $objs[TZ_EMPTY_ENTITY][$prop['id']]= array('name'=>$user['synonym'],'id'=>$_SESSION['user_id']);

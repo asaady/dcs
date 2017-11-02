@@ -17,6 +17,10 @@ function outfield($t,$hclass,$action)
                     {    
                         $itype = 'number';
                     } 
+                    elseif($t['type']=='float') 
+                    {
+                        $itype = 'number\" step=\"any';
+                    }    
                     elseif($t['type']=='date') 
                     {    
                         $itype = 'date';

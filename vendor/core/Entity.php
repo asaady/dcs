@@ -553,7 +553,7 @@ class Entity extends Model {
                 if (($valid!=TZ_EMPTY_ENTITY)&&($valid!=''))  
                 {
                     $curmd=self::getEntityDetails($valid);
-                    if (($curmd['mdtypename']=='Sets') || ($curmd['mdtype']=='Items'))
+                    if (($curmd['mdtypename']=='Sets') || ($curmd['mdtypename']=='Items'))
                     {
                         if ($this->id!='')
                         {

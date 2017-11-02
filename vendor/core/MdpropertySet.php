@@ -144,7 +144,7 @@ class MdpropertySet extends Model
         {
             $rid = $row['id'];
             $class = 'active';
-            if ($row['name']==='Activity')
+            if (strtolower($row['name'])==='activity')
             {
                 if (!User::isAdmin())
                 {    

@@ -990,7 +990,7 @@ class Entity extends Model {
         
         $sql = "SELECT * FROM tt_lv"; 
 	$res = DataManager::dm_query($sql);
-        $activity_id = array_search('Activity', array_column($objs['PSET'],'name','id'));
+        $activity_id = array_search('activity', array_column($objs['PSET'],'name','id'));
         $arr_e=array();
         foreach ($sobjs['rows'] as $row)
         {

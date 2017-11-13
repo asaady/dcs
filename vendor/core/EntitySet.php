@@ -163,6 +163,8 @@ class EntitySet extends Model {
                     continue;
                 }    
                 $str_val='';
+                $propname='';
+                $prop_id= '';
                 foreach ($access_prop as $ap)
                 {
                     if ($prop<>$ap['propid'])
@@ -174,6 +176,8 @@ class EntitySet extends Model {
                     {
                         $str_val .= ",'"."$ap[value]"."'";
                     }    
+                    $propname=$ap['propname'];
+                    $prop_id=$ap['propid'];                    
                 }    
                 if ($str_val=='')
                 {
@@ -183,14 +187,14 @@ class EntitySet extends Model {
                 $props_templ = new PropsTemplate($prop);
                 if ($props_templ->getvalmdentity()->getid()==$mdid)    
                 {
-                    $sql_rls .= " INNER JOIN \"ETable\" as et_$ap[propname] ON et_$ap[propname].id=$strjoin AND et_$ap[propname].id IN $str_val";
+                    $sql_rls .= " INNER JOIN \"ETable\" as et_$propname ON et_$propname.id=$strjoin AND et_$propname.id IN $str_val";
                 }    
                 else
                 {    
                     if (!in_array($ap['propid'], $params))
                     {        
-                        $sql_rls .= " INNER JOIN \"IDTable\" as it_$ap[propname] inner join \"MDProperties\" as mp_$ap[propname] on it_$ap[propname].propid=mp_$ap[propname].id AND mp_$ap[propname].propid=:$ap[propname] inner join \"PropValue_$rls_type\" as pv_$ap[propname] ON pv_$ap[propname].id=it_$ap[propname].id AND pv_$ap[propname].value in $str_val ON it_$ap[propname].entityid=$strjoin";
-                        $params[$ap['propname']]=$ap['propid'];
+                        $sql_rls .= " INNER JOIN \"IDTable\" as it_$propname inner join \"MDProperties\" as mp_$propname on it_$propname.propid=mp_$propname.id AND mp_$propname.propid=:$propname inner join \"PropValue_$rls_type\" as pv_$propname ON pv_$propname.id=it_$propname.id AND pv_$propname.value in $str_val ON it_$propname.entityid=$strjoin";
+                        $params[$propname]=$prop_id;
                     }    
                 }    
             }    
@@ -204,6 +208,7 @@ class EntitySet extends Model {
             $sql .= " WHERE $strwhere";
         }    
         $sql .= " LIMIT $rec_limit";
+        
         return DataManager::createtemptable($sql,$ttname,$params);
     }    
     
@@ -309,8 +314,10 @@ class EntitySet extends Model {
         {
             //вкл rls: добавим поля отбора в список реквизитов динамического списка
             $access_prop = self::get_access_prop();
+            
+            $expr = function($row) use ($arr_prop) { return (($row['ranktoset']==0)&&(!in_array($row['propid'], $arr_prop))); };            
             $arr_prop = array_unique(array_column($access_prop,'propid'));
-            $expr = function($row) use ($arr_prop) { return (($row['ranktoset']==0)&&(!in_array($row['propid'], $arr_prop))); };
+
             foreach ($arr_prop as $prop)
             {
                 $props_templ = new PropsTemplate($prop);

@@ -854,12 +854,12 @@ class DataManager {
             }    
             else 
             {
-                if (($prop['name_propid']=='user')||($prop['name_propid']=='operator'))
+                if ((strtolower($prop['name_propid'])=='user')||(strtolower($prop['name_propid'])=='operator'))
                 {
                     $user = CollectionSet::getCDetails($_SESSION['user_id']);
                     $objs[TZ_EMPTY_ENTITY][$prop['id']]= array('name'=>$user['synonym'],'id'=>$_SESSION['user_id']);
                 }    
-                elseif ($prop['name_propid']=='number')
+                elseif (strtolower ($prop['name_propid'])=='number')
                 {
                     $number = self::getNumber($prop['id'])+1;
                     $objs[TZ_EMPTY_ENTITY][$prop['id']]= array('name'=>$number,'id'=>'');

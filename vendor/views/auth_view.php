@@ -4,7 +4,7 @@
     
       <h1>Your are welcome!</h1>
 
-      <form class="ajax" method="post" action="vendor/core/AuthorizationAjaxRequest.php">
+      <form class="ajax" method="post" action="/common/AuthorizationAjaxRequest.php">
           <input type="hidden" name="act" value="logout">
           <div class="form-actions">
               <button class="btn btn-large btn-primary" type="submit">Выход</button>
@@ -13,7 +13,7 @@
 
       <?php else: ?>
 
-      <form class="form-signin ajax" method="post" action="vendor/core/AuthorizationAjaxRequest.php">
+      <form class="form-signin ajax" method="post" action="/common/AuthorizationAjaxRequest.php">
         <div class="main-error alert alert-error hide"></div>
 
         <h2 class="form-signin-heading">Пожалуйста, авторизуйтесь</h2>

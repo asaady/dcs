@@ -18,7 +18,7 @@ class Controller_MdentitySet extends Controller
 	{
 		$data = $this->model->get_data($arResult['MODE']);
                 
-                $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/views/entityset_view.php";
+                $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/views/entityset_view.php";
 		$this->view->generate($arResult, "template_view.php", $data);
 	}
 	function action_view($arResult)
@@ -33,7 +33,7 @@ class Controller_MdentitySet extends Controller
 	{
             $mdentity = new Mdentity($this->model->getid());
             $data = $mdentity->get_data($arResult['MODE']);
-            $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/views/mdentity_view.php";
+            $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/views/mdentity_view.php";
             $this->view->generate($arResult, 'template_view.php', $data);
 	}
 }

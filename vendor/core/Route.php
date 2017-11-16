@@ -1,13 +1,13 @@
 <?php
 namespace tzVendor;
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/tz_const.php");
+require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/tz_const.php");
 
 class Route {
         private static function controller_run($controller_path,$controller_name,$action_name,$classname, $arResult)
         {    
             if ($arResult['MODE']=='DOWNLOAD')    
             {
-                $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/controllers/controller_download.php";
+                $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/controllers/controller_download.php";
                 $controller_name='Controller_Download';
                 if($controller_name=='Controller_404')
                 {
@@ -93,7 +93,7 @@ class Route {
                 $action_name = 'action_index';
                 $controller_name = 'Controller_404';    
                 $controller_file = strtolower($controller_name).'.php';
-                $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/controllers/".$controller_file;
+                $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/controllers/".$controller_file;
                 $item = array();
             }
             else 
@@ -115,14 +115,14 @@ class Route {
                     $action_name = 'action_index';
                     $controller_name = 'Controller_404';    
                     $controller_file = strtolower($controller_name).'.php';
-                    $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/controllers/".$controller_file;
+                    $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/controllers/".$controller_file;
                 } 
                 else 
                 {
                     $classname = $item['classname'];
                     $controller_name = 'Controller_'.$item['classname'];    
                     $controller_file = strtolower($controller_name).'.php';
-                    $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/controllers/".$controller_file;
+                    $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/controllers/".$controller_file;
                     if ($item['classname']=='CollectionItem')
                     {
                         if ($arResult['ACTION']<>'EDIT')
@@ -170,7 +170,7 @@ class Route {
                                     $action_name = 'action_index';
                                     $controller_name = 'Controller_404';    
                                     $controller_file = strtolower($controller_name).'.php';
-                                    $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/controllers/".$controller_file;
+                                    $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/controllers/".$controller_file;
                                     error_log ("file not exist: ".$model_path, 0);
                                 }
                             }    
@@ -224,6 +224,26 @@ class Route {
                 $arResult['ITEMID']='';
                 $arResult['MODE']='ENTERPRISE';
                 $arResult['PARAM']='';
+                if (strtolower(trim($ritem))=='api')
+                {
+                    //Это вызов API 
+                    $controller_name = 'Controller_API';
+                    $controller_file = strtolower($controller_name).'.php';
+                    $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/controllers/".$controller_file;
+                    $arResult['ACTION']= strtoupper(trim($routes[2]));
+                    $arResult['MODE']='API';
+                    $classname='';
+                    if ( !empty($routes[2]) )
+                    {
+                        $action_name = 'action_'. strtolower(trim($routes[2]));
+                        if ( !empty($routes[3]) )
+                        {
+                            $arResult['PARAM'] = trim($routes[3]);
+                        }	
+                    }	
+                    Route::controller_run($controller_path,$controller_name,$action_name,$classname, $arResult);
+                    return;
+                }    
                 $arSubSystems = DataManager::getSubSystems();
                 if (!User::isAuthorized())
                 {
@@ -234,7 +254,7 @@ class Route {
                     $action_name = 'action_index';    
                     $controller_name = 'Controller_Auth';
                     $controller_file = strtolower($controller_name).'.php';
-                    $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/controllers/".$controller_file;
+                    $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/controllers/".$controller_file;
                 }
                 else 
                 {

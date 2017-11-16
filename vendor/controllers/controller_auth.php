@@ -27,7 +27,7 @@ class Controller_Auth extends Controller
                 $data['navlist']=array();
                 $data['plist']=array();
                 $data['ardata']=array();
-                $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/views/auth_view.php";
+                $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/views/auth_view.php";
 		$this->view->generate($arResult, "template_view.php", $data);
 	}
 	function action_register($arResult)

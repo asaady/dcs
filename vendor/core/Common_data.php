@@ -1,6 +1,6 @@
 <?php
 namespace tzVendor;
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/tz_const.php");
+require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/tz_const.php");
 
 class Common_data {
     protected $arPROP_TYPE;
@@ -42,7 +42,13 @@ class Common_data {
     }
     public static function import_log($string)
     {
-        $log_file_name = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING).TZ_UPLOAD_IMPORT_DIR."/tz_log.txt";
+        $log_file_name = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING).TZ_UPLOAD_IMPORT_LOG."/tz_log.txt";
+        $now = date("Y-m-d H:i:s");
+        $cnt = file_put_contents($log_file_name, $now." ".$string."\r\n", FILE_APPEND);
+    }
+    public static function upload_log($string)
+    {
+        $log_file_name = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING).TZ_UPLOAD_LOG."/tz_log.txt";
         $now = date("Y-m-d H:i:s");
         $cnt = file_put_contents($log_file_name, $now." ".$string."\r\n", FILE_APPEND);
     }
@@ -74,5 +80,49 @@ class Common_data {
         }
 
         return $result;
+    }
+    public static function toXml($data, $rootNodeName = 'data', $xml=null)
+    {
+        // включить режим совместимости, не совсем понял зачем это но лучше делать
+        if (ini_get('zend.ze1_compatibility_mode') == 1)
+        {
+          ini_set ('zend.ze1_compatibility_mode', 0);
+        }
+
+        if ($xml == null)
+        {
+          $xml = simplexml_load_string("<?xml version=\"1.0\" encoding=\"utf-8\"?><$rootNodeName />");
+        }
+
+        //цикл перебора массива
+        foreach($data as $key => $value)
+        {
+          // нельзя применять числовое название полей в XML
+          if (is_numeric($key))
+          {
+            // поэтому делаем их строковыми
+            $key = "unknownNode_". (string) $key;
+          }
+
+          // удаляем не латинские символы
+          $key = preg_replace('/[^a-z0-9]/i', '', $key);
+
+          // если значение массива также является массивом то вызываем себя рекурсивно
+          if (is_array($value))
+          {
+            $node = $xml->addChild($key);
+            // рекурсивный вызов
+            ArrayToXML::toXml($value, $rootNodeName, $node);
+          }
+          else
+          {
+            // добавляем один узел
+                                    $value = htmlentities($value);
+            $xml->addChild($key,$value);
+          }
+
+        }
+        // возвратим обратно в виде строки  или просто XML-объект
+        return $xml->asXML();
     }
 }

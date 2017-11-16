@@ -111,7 +111,7 @@
                             echo "<input class=\"form-control\" name=\"filter_max\" type=\"hidden\" value=\"\">";
                             echo "<input class=\"form-control\" name=\"sort_id\" type=\"hidden\" value=\"\">";
                             echo "<input class=\"form-control\" name=\"sort_dir\" type=\"hidden\" value=\"\">";
-                            include filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/views/modal_win_template.php";    
+                            include filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/modal_win_template.php";    
                             include $arResult['content'];
                             ?>
                             </div>     
@@ -138,7 +138,7 @@
         <script src="/js/picker.date.js"></script>
         <script src="/js/picker.time.js"></script>
         <script src="/js/scripts.js"></script>
-        <script src="/common/js/ajax_form.js"></script>
+        <script src="/js/ajax_form.js"></script>
         <script type="text/javascript">
         //<![CDATA[
         function logout()
@@ -146,7 +146,7 @@
             var $data = {'act':'logout'};
             $.ajax(
             {
-                url: '/vendor/core/AuthorizationAjaxRequest.php',
+                url: '/common/AuthorizationAjaxRequest.php',
                 type: 'post',
                 data: $data,
                 success: function(result) {
@@ -161,7 +161,7 @@
         }        
         else
         {
-            include filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/js/core_app.js";
+            include filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/js/core_app.js";
         }    
 ?>
         </script>

@@ -16,7 +16,7 @@ class Controller_CollectionSet extends Controller
 	function action_index($arResult)
 	{
 		$data = $this->model->get_data($arResult['MODE']);
-                $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/views/collectionset_view.php";
+                $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/views/collectionset_view.php";
 		$this->view->generate($arResult, "template_view.php", $data);
 	}
 	function action_new($arResult)
@@ -25,7 +25,7 @@ class Controller_CollectionSet extends Controller
                 $model = new CollectionItem($arResult['ITEMID']);
 		$data = $model->get_blank();
                 
-                $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/views/collection_view.php";
+                $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/views/collection_view.php";
 		$this->view->generate($arResult, "template_view.php", $data);
 	}
 }

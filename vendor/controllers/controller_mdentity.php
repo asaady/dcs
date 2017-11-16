@@ -19,7 +19,7 @@ class Controller_Mdentity extends Controller
 	function action_index($arResult)
 	{
             $data = $this->model->getPropData($arResult['MODE'],$arResult['ACTION']);
-            $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/views/entityset_view.php";
+            $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/views/entityset_view.php";
             $this->view->generate($arResult, 'template_view.php', $data);
 	}
 	function action_view($arResult)
@@ -37,7 +37,7 @@ class Controller_Mdentity extends Controller
                 $entity = new tzVendor\CollectionItem($this->model->getid());
                 $data = $entity->get_data($arResult['MODE']);
                 $arResult['ITEMID'] = $this->model->getid();
-                $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/views/item_view.php";
+                $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/views/item_view.php";
                 $this->view->generate($arResult, "template_view.php", $data);
             }   
             else 
@@ -45,7 +45,7 @@ class Controller_Mdentity extends Controller
                 $entity = new Entity($this->model->getid());
                 $data = $entity->get_data($arResult['MODE']);
                 $arResult['ITEMID'] = $this->model->getid();
-                $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/views/item_view.php";
+                $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/views/item_view.php";
                 $this->view->generate($arResult, "template_view.php", $data);
             }
 	}
@@ -54,12 +54,12 @@ class Controller_Mdentity extends Controller
             if (($this->model->getmdtypename()=='Cols')||($this->model->getmdtypename()=='Comps'))
             {
                 $model = new Cproperty($arResult['ITEMID']);
-                $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/views/cproperty_view.php";
+                $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/views/cproperty_view.php";
             }   
             else
             {
                 $model = new Mdproperty($arResult['ITEMID']);
-                $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/views/mdproperty_view.php";
+                $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/views/mdproperty_view.php";
             }    
             $data = $model->get_data();
 

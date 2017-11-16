@@ -10,46 +10,15 @@ require filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING).'/ve
 use tzVendor\Common_data;
 use tzVendor\UploadSet;
 
-// Валидация файлов
-function validateFiles($options) {
-    $result = array();
-
-    $files = $options['files'];
-    foreach ($files['tmp_name'] as $key => $tempName) {
-        $name = $files['name'][$key];
-        $size = filesize($tempName);
-        $type = $files['type'][$key];
-
-        // Проверяем размер
-        if ($size > $options['maxSize']) {
-            array_push($result, array(
-                'name' => $name,
-                'errorCode' => 'big_file'
-            ));
-        }
-
-        // Проверяем тип файла
-        if (!in_array($type, $options['types'])) {
-            array_push($result, array(
-                'name' => $name,
-                'errorCode' => 'wrong_type'
-            ));
-        }
-    }
-
-    return $result;
-}
-
-
 // Начало работы скрипта
 
 $csv = $_FILES['csv'];
 
 $destPath = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING). TZ_UPLOAD_IMPORT_DIR;
-UploadSet::tz_log("--------------------------------------\r\n".'start import to: '.$destPath);
+Common_data::import_log("--------------------------------------\r\n".'start import to: '.$destPath);
 
 // Валидация
-$validationErrors = validateFiles(array(
+$validationErrors = Common_data::validateFiles(array(
     'files' => $csv,
     'maxSize' => 2 * 1024 * 1024,
     'types' => array('text/csv', 'text/txt')
@@ -66,10 +35,10 @@ $res=array();
 
 $id = filter_input(INPUT_POST, 'id', FILTER_SANITIZE_SPECIAL_CHARS);
 $propid = filter_input(INPUT_POST, 'propid', FILTER_SANITIZE_SPECIAL_CHARS);
-UploadSet::tz_log('import in id: '.$id." propid: ".$propid);
+Common_data::import_log('import in id: '.$id." propid: ".$propid);
 if (Common_data::check_uuid($id))
 {    
-    UploadSet::tz_log('OK validate id=: '.$id);
+    Common_data::import_log('OK validate id=: '.$id);
     try 
     {
         $ent = new \tzVendor\Entity($id);
@@ -91,27 +60,27 @@ if (Common_data::check_uuid($id))
             if($prop!==FALSE)
             {    
                 $curm = date("Ym");
-                UploadSet::tz_log('import to: '.$destPath ."/". $curm);
+                Common_data::import_log('import to: '.$destPath ."/". $curm);
                 if (!file_exists($destPath ."/". $curm))
                 {
                     mkdir($destPath ."/". $curm,0777);
-                    UploadSet::tz_log('created folder : '.$destPath ."/". $curm);
+                    Common_data::import_log('created folder : '.$destPath ."/". $curm);
                 }        
                 foreach ($csv['name'] as $key => $name) 
                 {
                     $tempName = $csv['tmp_name'][$key];
                     $ext = strrchr($name,'.');
                     $destName = $destPath ."/". $curm."/".$id."_".$propid.$ext;
-                    UploadSet::tz_log('import to file :'.$destName.' : tempName = '.$tempName);
+                    Common_data::import_log('import to file :'.$destName.' : tempName = '.$tempName);
                     if (move_uploaded_file($tempName, $destName)!==FALSE)
                     {
                         $res[]=array('code'=>'success','destName'=>$destName);
-                        UploadSet::tz_log('success import : '.$destName);
+                        Common_data::import_log('success import : '.$destName);
                     }
                     else 
                     {
                         $res[]=array('code'=>'error','destName'=>$destName);
-                        UploadSet::tz_log('error import : '.$destName);
+                        Common_data::import_log('error import : '.$destName);
                     }
                 }
             }    

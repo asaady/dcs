@@ -869,6 +869,23 @@ class EntitySet extends Model {
         DataManager::droptemptable($artt);
         return $objs;
     }
+    public static function search_by_name($mdid,$type,$name)
+    {
+        $objs = array();
+        if ($type=='id')
+        {
+            $objs = self::getEntitiesByName($mdid,$name);
+        }    
+        elseif ($type=='cid') 
+        {
+            $objs = tzVendor\CollectionSet::getCollByName($mdid,$name);
+        }
+        elseif ($type=='mdid') 
+        {
+            $objs = tzVendor\Mdentity::getMDbyName($name);
+        }
+        return $objs;
+    }        
     
 }
 

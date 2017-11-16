@@ -10,36 +10,6 @@ require '../vendor/autoload.php';
 use tzVendor\Entity;
 use tzVendor\Common_data;
 
-// Валидация файлов
-function validateFiles($options) {
-    $result = array();
-
-    $files = $options['files'];
-    foreach ($files['tmp_name'] as $key => $tempName) {
-        $name = $files['name'][$key];
-        $size = filesize($tempName);
-        $type = $files['type'][$key];
-
-        // Проверяем размер
-        if ($size > $options['maxSize']) {
-            array_push($result, array(
-                'name' => $name,
-                'errorCode' => 'big_file'
-            ));
-        }
-
-        // Проверяем тип файла
-        if (!in_array($type, $options['types'])) {
-            array_push($result, array(
-                'name' => $name,
-                'errorCode' => 'wrong_type'
-            ));
-        }
-    }
-
-    return $result;
-}
-
 
 // Начало работы скрипта
 
@@ -48,7 +18,7 @@ $photos = $_FILES['photos'];
 $destPath = $_SERVER['DOCUMENT_ROOT'] . TZ_UPLOAD_DIR;
 
 // Валидация
-$validationErrors = validateFiles(array(
+$validationErrors = Common_data::validateFiles(array(
     'files' => $photos,
     'maxSize' => 2 * 1024 * 1024,
     'types' => array('image/jpeg', 'image/jpg', 'image/png', 'image/gif')

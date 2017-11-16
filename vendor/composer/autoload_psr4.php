@@ -6,5 +6,5 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
-    'tzVendor\\' => array($vendorDir . '/core', $baseDir . '/app/components/reps/coversheets', $baseDir . '/app/components/utils/uploadset'),
+    'tzVendor\\' => array($vendorDir . '/core', $baseDir . '/app/components/reps/coversheets', $baseDir . '/app/components/utils/uploadset', $baseDir . '/app/components/utils/uploadobject', $baseDir . '/app/components/trigs'),
 );

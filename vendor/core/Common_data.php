@@ -40,4 +40,39 @@ class Common_data {
         }
         return $res;
     }
+    public static function import_log($string)
+    {
+        $log_file_name = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING).TZ_UPLOAD_IMPORT_DIR."/tz_log.txt";
+        $now = date("Y-m-d H:i:s");
+        $cnt = file_put_contents($log_file_name, $now." ".$string."\r\n", FILE_APPEND);
+    }
+    // Валидация файлов
+    public static function validateFiles($options) {
+        $result = array();
+
+        $files = $options['files'];
+        foreach ($files['tmp_name'] as $key => $tempName) {
+            $name = $files['name'][$key];
+            $size = filesize($tempName);
+            $type = $files['type'][$key];
+
+            // Проверяем размер
+            if ($size > $options['maxSize']) {
+                array_push($result, array(
+                    'name' => $name,
+                    'errorCode' => 'big_file'
+                ));
+            }
+
+            // Проверяем тип файла
+            if (!in_array($type, $options['types'])) {
+                array_push($result, array(
+                    'name' => $name,
+                    'errorCode' => 'wrong_type'
+                ));
+            }
+        }
+
+        return $result;
+    }
 }

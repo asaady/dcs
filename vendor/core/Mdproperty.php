@@ -3,7 +3,6 @@ namespace tzVendor;
 use PDO;
 
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/tz_const.php");
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/tz_common.php");
 
 class Mdproperty extends Model {
     protected $mdentity;
@@ -77,6 +76,10 @@ class Mdproperty extends Model {
     function getmdentity()
     {
         return $this->mdentity;
+    }
+    function getvalmdid()
+    {
+        return $this->valmdid;
     }
     function getpropstemplate()
     {

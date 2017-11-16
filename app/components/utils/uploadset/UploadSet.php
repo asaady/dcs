@@ -78,7 +78,7 @@ class UploadSet extends Model
         if (count($ar_set))
         {
             $this->setid = $ar_set[0]['value'];
-            self::tz_log('setid = '.$this->setid);
+            Common_data::import_log('setid = '.$this->setid);
         }    
         else 
         {
@@ -101,7 +101,7 @@ class UploadSet extends Model
             $params['setid']=$this->setid;
             $params['trans_id']=$trans_id;
             $res = DataManager::dm_query($sql, $params);	
-            self::tz_log('created setid = '.$this->setid);
+            Common_data::import_log('created setid = '.$this->setid);
         }
         //найдем id реквизита строка ТЧ в ТЧ в которую грузим по setid
         $sql = DataManager::get_select_properties(" WHERE mp.mdid = :mdid AND mp.rank>0 ");
@@ -121,7 +121,7 @@ class UploadSet extends Model
         if ($item_mdid == '')
         {
             $emessage = 'in set '.$prop['name'].' item property not found';
-            self::tz_log($emessage);
+            Common_data::import_log($emessage);
             return array('status'=>'error','message'=>$emessage);
         }    
         //получим структура реквизитов строки ТЧ
@@ -138,13 +138,13 @@ class UploadSet extends Model
             if (strtolower($prop['name'])=='activity')
             {
                 $act_prop=$prop['id'];
-                self::tz_log('activity propid:'.$act_prop);
+                Common_data::import_log('activity propid:'.$act_prop);
                 continue;
             }    
             if (strtolower($prop['name'])=='rank')
             {
                 $rank_prop=$prop['id'];
-                self::tz_log('rank propid:'.$rank_prop);
+                Common_data::import_log('rank propid:'.$rank_prop);
                 continue;
             }    
             $propname = str_replace(' ','',$prop['name']);
@@ -156,11 +156,11 @@ class UploadSet extends Model
         } 
         $fields = substr($fields,1);
         $sql .= $fields.");";
-        self::tz_log('create temp table sql:'.$sql);
+        Common_data::import_log('create temp table sql:'.$sql);
         $res = DataManager::dm_query($sql);
         $sql = "COPY tt_imp FROM '".$this->filename."' DELIMITER ',' CSV;";
         $res = DataManager::dm_query($sql);
-        self::tz_log('import sql:'.$sql);
+        Common_data::import_log('import sql:'.$sql);
         $sql = "select * from tt_imp";
         $res = DataManager::dm_query($sql);
         $tt_imp = $res->fetchAll(PDO::FETCH_ASSOC);
@@ -169,7 +169,7 @@ class UploadSet extends Model
         if (!count($tt_imp))
         {
             $emessage = 'import table is empty';
-            self::tz_log($emessage);
+            Common_data::import_log($emessage);
             return array('status'=>'error','message'=>$emessage);
         }    
         $ar_tt=array();
@@ -200,7 +200,7 @@ class UploadSet extends Model
                 {
                     $res = DataManager::dm_query($sql, $params);	
                 } catch (Exception $ex) {
-                    self::tz_log('sql = '.$sql." ERROR: ".$ex->getMessage());
+                    Common_data::import_log('sql = '.$sql." ERROR: ".$ex->getMessage());
                     DataManager::dm_rollback();
                     continue;
                 }
@@ -215,11 +215,11 @@ class UploadSet extends Model
                 } 
                 catch (Exception $ex) 
                 {
-                    self::tz_log('sql = '.$sql." ERROR: ".$ex->getMessage());
+                    Common_data::import_log('sql = '.$sql." ERROR: ".$ex->getMessage());
                     DataManager::dm_rollback();
                     continue;
                 }
-                //self::tz_log('deleted itemid = '.$arr['entityid']);
+                //Common_data::import_log('deleted itemid = '.$arr['entityid']);
                 DataManager::dm_commit();
             }
         }
@@ -234,7 +234,7 @@ class UploadSet extends Model
             {
                 $res = DataManager::dm_query($sql, array('name'=>$irank,'mdid'=>$item_mdid));	
             } catch (Exception $ex) {
-                self::tz_log('sql = '.$sql." ERROR: ".$ex->getMessage());
+                Common_data::import_log('sql = '.$sql." ERROR: ".$ex->getMessage());
                 DataManager::dm_rollback();
                 continue;
             }
@@ -249,12 +249,12 @@ class UploadSet extends Model
             {
                 $res = DataManager::dm_query($sql, $params);	
             } catch (Exception $ex) {
-                self::tz_log('sql = '.$sql." ERROR: ".$ex->getMessage());
+                Common_data::import_log('sql = '.$sql." ERROR: ".$ex->getMessage());
                 DataManager::dm_rollback();
                 continue;
             }
 
-            //self::tz_log('rank = '.$irank.' insert item :'.$itemid);
+            //Common_data::import_log('rank = '.$irank.' insert item :'.$itemid);
             $err = '';
             foreach ($item_plist as $prop)
             {
@@ -268,7 +268,7 @@ class UploadSet extends Model
                 } 
                 catch (Exception $ex) 
                 {
-                    self::tz_log('sql = '.$sql." ERROR: ".$ex->getMessage());
+                    Common_data::import_log('sql = '.$sql." ERROR: ".$ex->getMessage());
                     DataManager::dm_rollback();
                     $err = 'error';
                     break;
@@ -300,12 +300,12 @@ class UploadSet extends Model
                 } 
                 catch (Exception $ex) 
                 {
-                    self::tz_log('sql = '.$sql." ERROR: ".$ex->getMessage());
+                    Common_data::import_log('sql = '.$sql." ERROR: ".$ex->getMessage());
                     DataManager::dm_rollback();
                     $err = 'error';
                     break;
                 }
-                //self::tz_log('rank = '.$irank.' insert prop :'.$prop['name']." value = ".$val);
+                //Common_data::import_log('rank = '.$irank.' insert prop :'.$prop['name']." value = ".$val);
             }
             if ($err=='')
             {    
@@ -316,13 +316,7 @@ class UploadSet extends Model
 //        var_dump($tt_imp);
 //        $dump = ob_get_contents();
 //        ob_end_clean();        
-//        self::tz_log($dump);
+//        Common_data::import_log($dump);
         DataManager::droptemptable($ar_tt);
     }  
-    static function tz_log($string)
-    {
-        $log_file_name = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING).TZ_UPLOAD_IMPORT_DIR."/tz_log.txt";
-        $now = date("Y-m-d H:i:s");
-        $cnt = file_put_contents($log_file_name, $now." ".$string."\r\n", FILE_APPEND);
-    }
 }    

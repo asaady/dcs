@@ -7,7 +7,6 @@ use tzVendor\CpropertySet;
 use PDO;
 
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/tz_const.php");
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/tz_common.php");
 
 class CollectionSet extends Model {
     protected $mditem;

@@ -311,8 +311,12 @@ class User
     }
     public static function isAdmin()
     {
-        $user_role = self::getUserRole();
-        return (array_search('admin', array_column($user_role, 'name'))!==false);
+        if (array_key_exists('user_id', $_SESSION))
+        {        
+            $user_role = self::getUserRole();
+            return (array_search('admin', array_column($user_role, 'name'))!==false);
+        }
+        return false;
     }
     public static function getUserRole()
     {

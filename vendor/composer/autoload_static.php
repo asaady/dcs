@@ -21,6 +21,7 @@ class ComposerStaticInit70ff5a14963b3be2d353e74573085465
             2 => __DIR__ . '/../..' . '/app/components/utils/uploadset',
             3 => __DIR__ . '/../..' . '/app/components/utils/uploadobject',
             4 => __DIR__ . '/../..' . '/app/components/trigs',
+            5 => __DIR__ . '/../..' . '/app/api',
         ),
     );
 

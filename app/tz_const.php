@@ -33,5 +33,6 @@ define("TZ_UPLOAD_DIR","/upload");
 define("TZ_UPLOAD_LOG","/log/upload");
 define("TZ_UPLOAD_IMPORT_DIR","/upload/import");
 define("TZ_UPLOAD_IMPORT_LOG","/log/import");
+define("TZ_API_LOG","/log/api");
 
 

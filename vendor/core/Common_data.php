@@ -40,17 +40,19 @@ class Common_data {
         }
         return $res;
     }
+    public static function _log($div,$string)
+    {
+        $log_file_name = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING).$div."/tz_log.txt";
+        $now = date("Y-m-d H:i:s");
+        $cnt = file_put_contents($log_file_name, "FROM: ". self::getRealIpAddr()." : ".$now." : ".$string."\r\n", FILE_APPEND);
+    }
     public static function import_log($string)
     {
-        $log_file_name = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING).TZ_UPLOAD_IMPORT_LOG."/tz_log.txt";
-        $now = date("Y-m-d H:i:s");
-        $cnt = file_put_contents($log_file_name, $now." ".$string."\r\n", FILE_APPEND);
+        self::_log(TZ_UPLOAD_IMPORT_LOG, $string);
     }
     public static function upload_log($string)
     {
-        $log_file_name = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING).TZ_UPLOAD_LOG."/tz_log.txt";
-        $now = date("Y-m-d H:i:s");
-        $cnt = file_put_contents($log_file_name, $now." ".$string."\r\n", FILE_APPEND);
+        self::_log(TZ_UPLOAD_LOG, $string);
     }
     // Валидация файлов
     public static function validateFiles($options) {
@@ -101,28 +103,44 @@ class Common_data {
           if (is_numeric($key))
           {
             // поэтому делаем их строковыми
-            $key = "unknownNode_". (string) $key;
+            $key = "item";
           }
 
           // удаляем не латинские символы
-          $key = preg_replace('/[^a-z0-9]/i', '', $key);
+          $key = preg_replace('/[^a-z0-9_]/i', '', $key);
 
           // если значение массива также является массивом то вызываем себя рекурсивно
           if (is_array($value))
           {
             $node = $xml->addChild($key);
             // рекурсивный вызов
-            ArrayToXML::toXml($value, $rootNodeName, $node);
+            self::toXml($value, $rootNodeName, $node);
           }
           else
           {
             // добавляем один узел
-                                    $value = htmlentities($value);
+            $value = htmlentities($value);
             $xml->addChild($key,$value);
           }
 
         }
         // возвратим обратно в виде строки  или просто XML-объект
         return $xml->asXML();
+    }
+    function getRealIpAddr() 
+    {
+        if (!empty($_SERVER['HTTP_CLIENT_IP']))        // Определяем IP
+        { 
+            $ip=$_SERVER['HTTP_CLIENT_IP']; 
+        }
+        elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR']))    // Если IP идёт через прокси
+        {
+            $ip=$_SERVER['HTTP_X_FORWARDED_FOR']; 
+        }
+        else 
+        { 
+            $ip=$_SERVER['REMOTE_ADDR']; 
+        }
+        return $ip;
     }
 }

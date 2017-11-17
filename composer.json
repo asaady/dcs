@@ -12,7 +12,14 @@
     "require": {},
     "autoload": {
         "psr-4": {
-            "tzVendor\\": ["vendor/core/","app/components/reps/coversheets","app/components/utils/uploadset","app/components/utils/uploadobject","app/components/trigs"]
+            "tzVendor\\": [
+                "vendor/core",
+                "app/components/reps/coversheets",
+                "app/components/utils/uploadset",
+                "app/components/utils/uploadobject",
+                "app/components/trigs",
+                "app/api"
+            ]
         }
     }
 }

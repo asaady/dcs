@@ -1,7 +1,7 @@
 <?php
 use tzVendor\Controller;
 use tzVendor\View;
-use tzVendor\UploadObject;
+use tzVendor\ApiAcceptOtk;
 
 class Controller_API extends Controller
 {
@@ -18,7 +18,8 @@ class Controller_API extends Controller
 	function action_acceptotk($arResult)
 	{
             header('Content-type: application/xml');
-            echo tzVendor\Common_data::toXml($arResult); 
+            $data= \tzVendor\ApiAcceptOtk::getdata($arResult['PARAM']);
+            echo tzVendor\Common_data::toXml($data); 
         }
 }
 

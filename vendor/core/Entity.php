@@ -12,8 +12,9 @@ class Entity extends Model {
     protected $num;
     protected $data;
     protected $plist;
+    protected $mode;
     
-    public function __construct($id,$version=0)
+    public function __construct($id,$version=0,$mode='')
     {
         if ($id=='') {
             throw new Exception("Class Entity constructor: id is empty");
@@ -34,6 +35,7 @@ class Entity extends Model {
         $this->enumber = $this->getpropnumber();
         $this->synonym = $this->name;
         $this->name = $this->gettoString();
+        $this->mode = $mode;
         $prop_activity = array_search("Activity", array_column($this->plist,'name','id'));
         if ($prop_activity!==FALSE)
         {    
@@ -44,12 +46,16 @@ class Entity extends Model {
             $this->activity = TRUE;
         }
     }
+    function getdata() 
+    {
+        return $this->data;
+    }
     function entity_data() 
     {
         $arProp = array();
 	if ($this->id!='') 
         {
-            $arData = self::getEntityData($this->id);
+            $arData = self::getEntityData($this->id,$this->mode);
             if (count($arData['SDATA'])) 
             {
                 $arProp = $arData['SDATA'][$this->id];
@@ -86,6 +92,10 @@ class Entity extends Model {
             $res = substr($res, 0, -$end) . '...';         
         }    
         return $res;
+    }
+    function getactivity()
+    {
+        return $this->activity;
     }
     function getmdentity()
     {
@@ -716,7 +726,7 @@ class Entity extends Model {
             if ($curid!='')
             {
                 $arr_e[] =$curid;
-                $ent = new Entity($curid);
+                $ent = new Entity($curid,$mode);
                 foreach($objs['PLIST'] as $row) 
                 {
                     if ($row['valmdid']==$ent->getmdentity()->getid())

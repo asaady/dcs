@@ -2,6 +2,8 @@
 namespace tzVendor;
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/tz_const.php");
 
+use tzVendor\Common_data;
+
 class Route {
         private static function controller_run($controller_path,$controller_name,$action_name,$classname, $arResult)
         {    
@@ -41,7 +43,20 @@ class Route {
             }
             else
             {
-                die("action not found : $action for controller $controller_name");
+                if ($arResult['MODE']=='API') 
+                {
+                    $data = array();
+                    $data['STATUS']="ERROR";
+                    $data['MESSAGE']="action not found : $action for controller $controller_name";
+                    Common_data::_log(TZ_API_LOG,$data['MESSAGE']);
+                    header('Content-type: application/xml');
+                    echo Common_data::toXml($data);
+                    return;
+                }   
+                else
+                {
+                    die("action not found : $action for controller $controller_name");
+                }    
             }
         
         }        
@@ -203,121 +218,120 @@ class Route {
         static function start()
 	{
                 
-		$controller_name = 'controller';
-		$action_name = 'action_index';
-                
-		// контроллер и действие по умолчанию
-                
-                
-		$routes = explode('/', filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_SANITIZE_STRING));
-                $ritem = '';
-		if ( !empty($routes[1]) )
-		{
-                    $ritem = trim($routes[1]);
-                }	
-                $arResult = array();
-                $step=0;
-                $arResult['PREFIX']='';
-                $arResult['ACTION']='VIEW';
-                $arResult['CURID']='';
-                $arResult['TITLE']=TZ_COMPANY_SHORTNAME;
-                $arResult['ITEMID']='';
-                $arResult['MODE']='ENTERPRISE';
-                $arResult['PARAM']='';
-                if (strtolower(trim($ritem))=='api')
+            $controller_name = 'controller';
+            $action_name = 'action_index';
+
+            // контроллер и действие по умолчанию
+
+
+            $routes = explode('/', filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_SANITIZE_STRING));
+            $ritem = '';
+            if ( !empty($routes[1]) )
+            {
+                $ritem = trim($routes[1]);
+            }	
+            $arResult = array();
+            $step=0;
+            $arResult['PREFIX']='';
+            $arResult['ACTION']='VIEW';
+            $arResult['CURID']='';
+            $arResult['TITLE']=TZ_COMPANY_SHORTNAME;
+            $arResult['ITEMID']='';
+            $arResult['MODE']='ENTERPRISE';
+            $arResult['PARAM']='';
+            if (strtolower(trim($ritem))=='api')
+            {
+                //Это вызов API 
+                $controller_name = 'Controller_API';
+                $controller_file = strtolower($controller_name).'.php';
+                $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/controllers/".$controller_file;
+                $arResult['ACTION']= strtoupper(trim($routes[2]));
+                $arResult['MODE']='API';
+                $classname='';
+                if ( !empty($routes[2]) )
                 {
-                    //Это вызов API 
-                    $controller_name = 'Controller_API';
-                    $controller_file = strtolower($controller_name).'.php';
-                    $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/controllers/".$controller_file;
-                    $arResult['ACTION']= strtoupper(trim($routes[2]));
-                    $arResult['MODE']='API';
-                    $classname='';
-                    if ( !empty($routes[2]) )
+                    $action_name = 'action_'. strtolower(trim($routes[2]));
+                    if ( !empty($routes[3]) )
                     {
-                        $action_name = 'action_'. strtolower(trim($routes[2]));
-                        if ( !empty($routes[3]) )
-                        {
-                            $arResult['PARAM'] = trim($routes[3]);
-                        }	
+                        $arResult['PARAM'] = trim($routes[3]);
                     }	
-                    Route::controller_run($controller_path,$controller_name,$action_name,$classname, $arResult);
-                    return;
-                }    
-                $arSubSystems = DataManager::getSubSystems();
-                if (!User::isAuthorized())
+                }	
+                Route::controller_run($controller_path,$controller_name,$action_name,$classname, $arResult);
+                return;
+            }    
+            $arSubSystems = DataManager::getSubSystems();
+            if (!User::isAuthorized())
+            {
+                $arResult['MODE']='AUTH';
+                $username = 'Anonymous';
+                $item = '';
+                $classname = '';
+                $action_name = 'action_index';    
+                $controller_name = 'Controller_Auth';
+                $controller_file = strtolower($controller_name).'.php';
+                $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/controllers/".$controller_file;
+            }
+            else 
+            {
+                $username = User::getUserName($_SESSION['user_id']);
+                if (strtolower(trim($ritem))=='download')
                 {
-                    $arResult['MODE']='AUTH';
-                    $username = 'Anonymous';
-                    $item = '';
-                    $classname = '';
-                    $action_name = 'action_index';    
-                    $controller_name = 'Controller_Auth';
-                    $controller_file = strtolower($controller_name).'.php';
-                    $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/controllers/".$controller_file;
-                }
+                    $arResult['MODE']='DOWNLOAD';
+                    $ritem = trim($routes[2]);
+                    $step=1;
+                }    
                 else 
                 {
-                    $username = User::getUserName($_SESSION['user_id']);
-                    if (strtolower(trim($ritem))=='download')
-                    {
-                        $arResult['MODE']='DOWNLOAD';
-                        $ritem = trim($routes[2]);
-                        $step=1;
-                    }    
+                    if (User::isAdmin())
+                    {    
+                        if (strtolower(trim($ritem))=='config')
+                        {
+                            $arResult['MODE']='CONFIG';
+                            $arResult['PREFIX']='/config';
+                            $arResult['ACTION']='EDIT';
+                            $step=1;
+                            $ritem='';
+                            if ( !empty($routes[1+$step]) )
+                            {
+                                $ritem = trim($routes[1+$step]);
+                            }	
+                            $arSubSystems = Mditem::getAllMDitems();
+                        }    
+                    }
                     else 
-                    {
-                        if (User::isAdmin())
-                        {    
-                            if (strtolower(trim($ritem))=='config')
-                            {
-                                $arResult['MODE']='CONFIG';
-                                $arResult['PREFIX']='/config';
-                                $arResult['ACTION']='EDIT';
-                                $step=1;
-                                $ritem='';
-                                if ( !empty($routes[1+$step]) )
-                                {
-                                    $ritem = trim($routes[1+$step]);
-                                }	
-                                $arSubSystems = Mditem::getAllMDitems();
-                            }    
-                        }
-                        else 
-                        { 
-                            $cur_interface = User::getUserInterface();
+                    { 
+                        $cur_interface = User::getUserInterface();
 
-                            if ($cur_interface)    
-                            {
-                                $arSubSystems = DataManager::getInterfaceContents($cur_interface);
-                            }    
-                        }
+                        if ($cur_interface)    
+                        {
+                            $arSubSystems = DataManager::getInterfaceContents($cur_interface);
+                        }    
                     }
-                    if (!count($arSubSystems)) 
-                    {
-                        die("main menu is empty");
-                    }
-                    if ($ritem=='')
-                    {
-                       foreach ($arSubSystems as $row)
-                       {
-                           $ritem = $row['id'];
-                           break;
-                       }    
-                    }  
-                    $arResult = Route::getController($routes,$arResult, $step, $controller_path, $controller_name,$action_name,$classname,$ritem);
                 }
-                $arResult['MENU']=array();
-                foreach($arSubSystems as $is) 
+                if (!count($arSubSystems)) 
                 {
-                    $arResult['MENU'][] = array('ID' => $is['id'],
-                                                'NAME' => $is['name'],
-                                                'SYNONYM' => trim($is['synonym'])
-                                                    );
+                    die("main menu is empty");
                 }
-                $arResult['TITLE']=TZ_COMPANY_SHORTNAME.' '.$username;
-                Route::controller_run($controller_path,$controller_name,$action_name,$classname, $arResult);
-
+                if ($ritem=='')
+                {
+                   foreach ($arSubSystems as $row)
+                   {
+                       $ritem = $row['id'];
+                       break;
+                   }    
+                }  
+                $arResult = Route::getController($routes,$arResult, $step, $controller_path, $controller_name,$action_name,$classname,$ritem);
+            }
+            $arResult['MENU']=array();
+            foreach($arSubSystems as $is) 
+            {
+                $arResult['MENU'][] = array('ID' => $is['id'],
+                                            'NAME' => $is['name'],
+                                            'SYNONYM' => trim($is['synonym'])
+                                                );
+            }
+            $arResult['TITLE']=TZ_COMPANY_SHORTNAME.' '.$username;
+            Route::controller_run($controller_path,$controller_name,$action_name,$classname, $arResult);
         }
 
 	function ErrorPage404()

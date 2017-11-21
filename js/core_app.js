@@ -76,14 +76,28 @@ $('a').on('show.bs.tab', function (e) {
     }    
 });
 
-function onGetData(data)
+function onGetMdData(data)
 {
     $.each(data.items, function(key, val) 
     {
         if (val.id)
         {    
             $("input#"+val.id).val(val.name);
-            exd++;
+        }
+    });    
+}
+
+function onGetData(data)
+{
+    $.each(data.items, function(key, val) 
+    {
+        if (val.id)
+        {    
+            if ($("input#name_"+key).val()=='')
+            {
+                $("input#"+key).val(val.id);
+                $("input#name_"+key).val(val.name);
+            }    
         }
     });    
 }
@@ -628,11 +642,23 @@ $('body').on('click', 'ul.types_list li', function(){
     if ((curname=='name_propid')||(curname=='name_valmdid'))
     {
         $.getJSON(
-             '/common/get_ajax.php',
-             {action:$("input[name='action']").val(), id:lid, type:curname, name:tx, command:'get', prefix:'mdname'},
-             onGetData
-         );
+            '/common/get_ajax.php',
+            {action:$("input[name='action']").val(), id:lid, type:curname, name:tx, command:'get', prefix:'mdname'},
+            onGetMdData
+        );
     }    
+    else
+    {
+        if ((curtype=='id')||(curtype=='cid'))
+        {
+            $.getJSON(
+                '/common/get_ajax.php',
+                {action:$("input[name='action']").val(), id:$("input[name='itemid']").val(), type:curtype, name:lid, command:'Choice', prefix:'After'},
+                onGetData
+            );    
+        }    
+    }    
+    
 });
 $('body').on('click','#entitylist tr',function () 
 {

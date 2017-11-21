@@ -8,6 +8,7 @@ require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)
 require '../vendor/autoload.php';
 
 use tzVendor\InputDataManager;
+use tzVendor\Common_data;
 use tzVendor\Entity;
 use tzVendor\EntitySet;
 use tzVendor\DataManager;
@@ -104,6 +105,56 @@ function getData()
             else 
             {
                 $objs = DataManager::getActionList($idm->getitemid(),$mode,$idm->getaction()); 
+            }
+            return $objs; 
+        },
+    'AFTER_CHOICE'=> function($idm)
+        {
+            $objs=array();
+            $data = $idm->getdata();
+            $itemid = $data['id']['id'];
+            if (!Common_data::check_uuid($itemid))
+            {
+                return $objs;
+            }    
+            $mode = $idm->getmode();
+            $name = $data['name']['name'];
+            $type = $data['type']['name'];
+            if (Common_data::check_uuid($name))
+            { 
+                if ($type=='id')
+                {
+
+                    try 
+                    {
+                        $ent = new Entity($name);
+                    } 
+                    catch (Exception $exc) 
+                    {
+                        return $objs;
+                    }
+                    $ar_md = Entity::getEntityDetails($itemid);
+                    $ar_prop = \tzVendor\MdpropertySet::getMDProperties($ar_md['mdid'], $mode, " WHERE mp.mdid = :mdid ");
+                    foreach ($ar_prop as $prop)
+                    {
+                        if ($prop['type']=='id')
+                        {    
+                            $propid = $prop['propid'];
+                            foreach($ent->properties() as $e_prop)
+                            {
+                                $e_propid = $e_prop['propid'];
+                                if ($e_propid!=$propid)
+                                {
+                                    continue;
+                                }    
+                                $objs[$prop['id']]=array('id'=>$ent->getattrid($e_prop['id']),'name'=>$ent->getattr($e_prop['id']));
+                            }    
+                        }    
+                    }    
+                }    
+                elseif ($type=='cid') 
+                {
+                }
             }
             return $objs; 
         }

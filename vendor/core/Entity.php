@@ -274,6 +274,13 @@ class Entity extends Model {
             {
                 $datetime = new DateTime($this->edate);
                 $res = $this->mdentity->getsynonym()." №".$this->enumber." от ".$datetime->format('d-m-y').$res;
+            }
+            else    
+            {
+                if ($res!='')
+                {
+                    $res = substr($res, 1);
+                }    
             }    
             return $res;
         }

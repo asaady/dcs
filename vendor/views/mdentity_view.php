@@ -1,6 +1,6 @@
 <form class="form-inline" role="form">
     <?php    
-    include filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/views/modal_win_template.php";    
+    include filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/common/modal_win_template.php";    
     ?>
     
     <div class="row">

@@ -171,6 +171,7 @@ function onLoadValID(data)
 {
     var cls;
     var $action = $("input[name='action']").val();
+    var arr_type = ['id','cid','mdid','propid'];
     if ('SDATA' in data)
     {    
         for(var id in data['SDATA'])
@@ -192,7 +193,7 @@ function onLoadValID(data)
                 if ($action==='VIEW')
                 {
                     $("input.form-control[id="+cid+"]").attr('readonly', 'readonly');
-                    if ((data['PLIST'][cid]['type']=='id')||(data['PLIST'][cid]['type']=='cid')||(data['PLIST'][cid]['type']=='mdid')||(data['PLIST'][cid]['type']=='propid'))
+                    if (arr_type.indexOf(data['PLIST'][cid]['type'])>=0)
                     {    
                         $("input.form-control[id=name_"+cid+"]").attr('readonly', 'readonly');
                     }    
@@ -294,6 +295,7 @@ $('input.form-control').keyup(function(eventObject) {
     var itype = $(this).attr("it");
     var curid = this.id;
     var curinp = $(".row input[st='info']");
+    var arr_type = ['id','cid','mdid','propid'];
     if (curinp!=this)
     {
         $(curinp).attr('st','active');
@@ -312,7 +314,7 @@ $('input.form-control').keyup(function(eventObject) {
             $data = {action:$action, id:$("input#valmdid").val(),type: 'mdid',name:$(this).val(),'command':'find', prefix:'field'};
             itype = $curtype.val();
         }
-        if ((itype=='id')||(itype=='cid')||(itype=='mdid')||(itype=='propid'))
+        if (arr_type.indexOf(itype)>=0)
         {
             if (itype=='propid')
             {    
@@ -501,6 +503,7 @@ $('body').on('dblclick','#entitylist td',function ()
     var it = $(this).attr('it');
     var vt = $(this).attr('vt');
     var dname = $(this).html();
+    var arr_type = ['id','cid','mdid','propid'];
     if (($action!=='SET_EDIT')&&($action!=='SET_VIEW'))
     {
         return;
@@ -537,7 +540,7 @@ $('body').on('dblclick','#entitylist td',function ()
         itype='number\" step=\"any';
     }
 
-    if ((vt=='id')||(vt=='cid')||(vt=='mdid')||(vt=='propid'))
+    if (arr_type.indexOf(vt)>=0)
     {
         ov = it;
         $(x).append("<form name=\"ivalue\"><input type=\""+itype+"\" class=\"form-value\" vt=\""+vt+"\" it=\""+it+"\" ov=\""+ov+"\" value=\""+dname+"\"><button id=\"list\" class=\"form-value\"><i class=\"material-icons\">list</i></a></button><button id=\"done\" class=\"form-value\"><i class=\"material-icons\">done</i></button></form>");

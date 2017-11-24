@@ -1,0 +1,360 @@
+<?php
+namespace tzVendor;
+
+use PDO;
+use PDOStatement;
+use tzVendor\Entity;
+use tzVendor\Hungarian;
+
+require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/tz_const.php");
+
+class ProdSelection extends Model 
+{
+    protected $entity;
+    protected $doc_mdid = '1a41838f-ab73-4da8-a2aa-7ed23f5cd06d';  //документ Измерения
+    protected $ref_mdid = '71cbbcc2-a5f5-4862-9834-9aa953bfa00f';  //справочник таблица пар
+    protected $item_doc_mdid = '652f697b-717d-42e8-8a9b-2b5f169449b9';  //строка ТЧ документ Измерения
+    protected $item_ref_mdid = '94af0e54-d1ef-44d5-a445-6e5f2725d7cd';  //строка ТЧ справочника таблиц подбора
+    protected $set_ref_mdid = '87701a86-f11c-498d-9c65-6c859dac2828'; //реквизит - ТЧ [Значения подбора] справочника таблицы подбора
+    protected $set_doc_mdid = '39cac10a-f0c2-436e-8586-5485674143ec'; //реквизит - ТЧ [Измерения] документа Измерения
+    protected $ref_value1_propid = '34d4b29b-72d4-4c92-96f1-eb8e4d6abbb5';
+    protected $ref_value2_propid = '80032873-5abb-475e-8c66-0213e18ab9bd';
+    protected $ref_activ_propid = 'fc3b49de-8307-4c6b-b839-47fd79a0a32a'; //реквизит строки ТЧ [Значения подбора] справочника таблицы подбора - активность
+    
+    protected $doc_par1_propid = 'bfde0a7b-ba46-495e-a652-ec213b18ee4c'; //реквизит строки ТЧ [Измерения] документа Измерения - параметр 1
+    protected $doc_par2_propid = 'c6192618-f4cb-429e-9954-416898024aa2'; //реквизит строки ТЧ [Измерения] документа Измерения - параметр 2
+    protected $doc_par3_propid = '940622ae-4c8b-41e2-8efa-068bd38e6a39'; //реквизит строки ТЧ [Измерения] документа Измерения - параметр 3
+    protected $doc_rank_propid = '69918705-5cfe-4ec3-88f0-10f3ae077be4'; //реквизит строки ТЧ [Измерения] документа Измерения - ранг
+    protected $doc_activ_propid = 'd3496cd7-d4b8-4b43-aa0d-a5fa16e076f3'; //реквизит строки ТЧ [Измерения] документа Измерения - активность
+    
+    
+    
+    
+    public function __construct($id) 
+    {
+        
+        if ($id=='')
+        {
+            die("class.ProdSelection constructor: id is empty");
+        }
+        $this->entity = new CollectionItem($id);
+        
+        if ($this->entity->getname()!='ProdSelection')
+        {
+            die("class.ProdSelection constructor: bad id");
+        }    
+        $this->id = $id;
+        $this->name = $this->entity->getsynonym();
+        $this->version = time();        
+    }
+    public function get_data($data)
+    {
+        $sdata = array();
+        $plist = array(
+                array('id'=>'doc1','name'=>'doc1','synonym'=>'Документ по изд.1','rank'=>3,'type'=>'id','valmdid'=>$this->doc_mdid,'valmdtypename'=>'Docs','class'=>'active'),
+                array('id'=>'doc2','name'=>'doc2','synonym'=>'Документ по изд.2','rank'=>4,'type'=>'id','valmdid'=>$this->doc_mdid,'valmdtypename'=>'Docs','class'=>'active'),
+                array('id'=>'ref1','name'=>'ref1','synonym'=>'Таблица параметра 1','rank'=>5,'type'=>'id','valmdid'=>$this->ref_mdid,'valmdtypename'=>'Refs','class'=>'active'),
+                array('id'=>'ref2','name'=>'ref2','synonym'=>'Таблица параметра 2','rank'=>7,'type'=>'id','valmdid'=>$this->ref_mdid,'valmdtypename'=>'Refs','class'=>'active'),
+                array('id'=>'ref3','name'=>'ref3','synonym'=>'Таблица параметра 3','rank'=>9,'type'=>'id','valmdid'=>$this->ref_mdid,'valmdtypename'=>'Refs','class'=>'active'),
+        );
+        $pset=array(
+            'nom1'=>array('id'=>'nom1','name'=>'nom1','synonym'=>'Изделие 1','type'=>'int', 'class'=>'active'),
+            'nom2'=>array('id'=>'nom2','name'=>'nom2','synonym'=>'Изделие 2','type'=>'int', 'class'=>'active'),
+            'izm11'=>array('id'=>'izm11','name'=>'izm11','synonym'=>'Изд1: Изм.1','type'=>'float', 'class'=>'active'),
+            'izm21'=>array('id'=>'izm21','name'=>'izm21','synonym'=>'Изд2: Изм.1','type'=>'float', 'class'=>'active'),
+            'izm12'=>array('id'=>'izm12','name'=>'izm12','synonym'=>'Изд1: Изм.2','type'=>'float', 'class'=>'active'),
+            'izm22'=>array('id'=>'izm22','name'=>'izm22','synonym'=>'Изд2: Изм.2','type'=>'float', 'class'=>'active'),
+            'izm13'=>array('id'=>'izm13','name'=>'izm13','synonym'=>'Изд1: Изм.3','type'=>'float', 'class'=>'active'),
+            'izm23'=>array('id'=>'izm23','name'=>'izm23','synonym'=>'Изд2: Изм.3','type'=>'float', 'class'=>'active'),
+        );
+
+        return array(
+          'id'=>$this->id,
+          'name'=>$this->name,
+          'version'=>$this->version,
+          'PLIST' => $plist,   
+          'PSET' => $pset,   
+          'SDATA' => $sdata,   
+          'LDATA' => array(),   
+          'navlist' => array(
+              $this->entity->getcollectionset()->getmditem()->getid()=>$this->entity->getcollectionset()->getmditem()->getsynonym(),
+              $this->entity->getcollectionset()->getid()=>$this->entity->getcollectionset()->getsynonym(),
+              $this->id=>$this->name
+            )
+          );
+    }        
+    function get_selectiontable($ttname,$ref1_id,$ref2_id,$ref3_id, &$ar_tt)        
+    {
+        $artt = array();
+        
+        $sql = "select it.entityid as refid, pv.value as setid from \"PropValue_id\" as pv inner join \"IDTable\" as it on pv.id=it.id where it.propid = :propid and it.entityid in (:ref1,:ref2,:ref3)";
+	$artt[] = DataManager::createtemptable($sql, 'tt_el',array('propid'=>$this->set_ref_mdid,'ref1'=>$ref1_id,'ref2'=>$ref2_id,'ref3'=>$ref3_id));
+        
+        //найдем все строки ТЧ справочников
+        $sql = "select tm.refid, tm.setid, sdl.childid as entityid, sdl.childid as itemid FROM tt_el as tm
+                    INNER JOIN \"SetDepList\" as sdl
+                    ON tm.setid=sdl.parentid
+                    AND sdl.rank>0";
+        $artt[] = DataManager::createtemptable($sql, 'tt_tri');
+        
+       //нашли значения изд1 в таблицах подбора
+        $artt[] = DataManager::getTT_from_ttent_prop('tt_value1','tt_tri',$this->ref_value1_propid,'float');
+       //нашли значения изд2 в таблицах подбора
+        $artt[] = DataManager::getTT_from_ttent_prop('tt_value2','tt_tri',$this->ref_value2_propid,'float');
+       //нашли значения activity в таблицах подбора
+        $artt[] = DataManager::getTT_from_ttent_prop('tt_activ','tt_tri',$this->ref_activ_propid,'bool');
+
+        $sql = "select tr.refid, tr.itemid, v1.value as value1, v2.value as value2, COALESCE(ac.value,TRUE) as activity from tt_tri as tr 
+                    inner join tt_value1 as v1 
+                        inner join tt_value2 as v2 
+                        on v1.entityid = v2.entityid 
+                    on tr.itemid = v1.entityid
+                    inner join tt_activ as ac
+                    on tr.itemid = ac.entityid";
+	$ar_tt[] = DataManager::createtemptable($sql, $ttname);
+        DataManager::droptemptable($artt);
+        return 0;
+    }
+    function get_doctable($ttname,$doc_id, &$ar_tt)        
+    {
+        $artt = array();
+        //найдем значение реквизитов ТЧ документа подбора
+        $sql = "select it.entityid as docid, pv.value as setid from \"PropValue_id\" as pv inner join \"IDTable\" as it on pv.id=it.id where it.propid = :propid and it.entityid = :entityid";
+	$artt[] = DataManager::createtemptable($sql, 'tt_el',array('propid'=>$this->set_doc_mdid,'entityid'=>$doc_id));
+        
+        //найдем все строки ТЧ документов
+        $sql = "select tm.docid, tm.setid, sdl.childid as entityid, sdl.childid as itemid FROM tt_el as tm
+                    INNER JOIN \"SetDepList\" as sdl
+                    ON tm.setid=sdl.parentid
+                    AND sdl.rank>0";
+        $artt[] = DataManager::createtemptable($sql, 'tt_tdi');
+        
+       //нашли значения парам1 в таблицах измерений
+        $artt[] = DataManager::getTT_from_ttent_prop('tt_par1','tt_tdi',$this->doc_par1_propid,'float');
+       //нашли значения парам2 в таблицах измерений
+        $artt[] = DataManager::getTT_from_ttent_prop('tt_par2','tt_tdi',$this->doc_par2_propid,'float');
+       //нашли значения парам3 в таблицах измерений
+        $artt[] = DataManager::getTT_from_ttent_prop('tt_par3','tt_tdi',$this->doc_par3_propid,'float');
+       //нашли значения activity в таблицах измерений
+        $artt[] = DataManager::getTT_from_ttent_prop('tt_activ','tt_tdi',$this->doc_activ_propid,'bool');
+       //нашли значения rank в таблицах измерений
+        $artt[] = DataManager::getTT_from_ttent_prop('tt_rank','tt_tdi',$this->doc_rank_propid,'int');
+
+        $sql = "select tr.docid, tr.itemid, rn.value as rank, v1.value as value1, v2.value as value2, v3.value as value3, COALESCE(ac.value,TRUE) as activity from tt_tdi as tr 
+                    left join tt_par1 as v1
+                    on tr.itemid = v1.entityid
+                    left join tt_par2 as v2 
+                    on tr.itemid = v2.entityid 
+                    left join tt_par3 as v3 
+                    on tr.itemid = v3.entityid 
+                    left join tt_activ as ac
+                    on tr.itemid = ac.entityid
+                    inner join tt_rank as rn
+                    on tr.itemid = rn.entityid
+                    ";
+	$ar_tt[] = DataManager::createtemptable($sql, $ttname);
+        DataManager::droptemptable($artt);
+        return 0;
+    }
+
+    public function get_selection($doc1_id,$doc2_id,$ref1_id,$ref2_id,$ref3_id)
+    {
+        $objs = array();
+        $ar_tt = array();
+//        $doc1= new Entity($doc1_id);
+//        $doc2= new Entity($doc2_id);
+//        $ref1= new Entity($ref1_id);
+//        $ref2= new Entity($ref2_id);
+//        $ref3= new Entity($ref3_id);
+        
+        if ($this->get_selectiontable('tt_ref',$ref1_id,$ref2_id,$ref3_id,$ar_tt))
+        {
+            die('ref table error');
+        }    
+        if ($this->get_doctable('tt_doc1',$doc1_id,$ar_tt))
+        {
+            die('doc1 table error');
+        }    
+        if ($this->get_doctable('tt_doc2',$doc2_id,$ar_tt))
+        {
+            die('doc2 table error');
+        }    
+        
+//        $sql = "select * from tt_ref limit 100";
+//        
+//        $res = DataManager::dm_query($sql);	
+//        $tt_par = $res->fetchAll(PDO::FETCH_ASSOC);
+//        ob_start();
+//        var_dump($tt_par);
+//        $dump = ob_get_contents();
+//        ob_end_clean();        
+//        Common_data::_log('/log','REF: '.$dump);
+        
+        $sql = "select count(*) from tt_doc1";
+        $res = DataManager::dm_query($sql);	
+        $tt_par = $res->fetchAll(PDO::FETCH_ASSOC);
+        $count_1 = $tt_par[0]['count'];
+        Common_data::_log('/log','DOC1 item count: '.$count_1);
+        
+        $sql = "select * from tt_doc1";
+        $res = DataManager::dm_query($sql);	
+        $tt_doc1 = $res->fetchAll(PDO::FETCH_ASSOC);
+        
+        
+        $sql = "select count(*) from tt_doc2";
+        $res = DataManager::dm_query($sql);	
+        $tt_par = $res->fetchAll(PDO::FETCH_ASSOC);
+        $count_2 = $tt_par[0]['count'];
+        Common_data::_log('/log','DOC2 item count: '.$count_2);
+        
+        $sql = "select * from tt_doc2";
+        $res = DataManager::dm_query($sql);	
+        $tt_doc2 = $res->fetchAll(PDO::FETCH_ASSOC);
+        
+        $sql = "select dc1.rank as rank1, dc2.rank as rank2, dc1.itemid as itemid1, dc2.itemid as itemid2, dc1.value1 as value11, dc2.value1 as value21 from tt_doc1 as dc1 
+                    inner join tt_ref as rf1 
+                        inner join tt_doc2 as dc2
+                        on rf1.value2=dc2.value1
+                    on dc1.value1=rf1.value1";
+        
+        $artt[] = DataManager::createtemptable($sql, 'tt_par1');        
+//        $res = DataManager::dm_query($sql);	
+//        $tt_par = $res->fetchAll(PDO::FETCH_ASSOC);
+//        
+//        ob_start();
+//        var_dump($tt_par);
+//        $dump = ob_get_contents();
+//        ob_end_clean();        
+//        Common_data::_log('/log','PAR1 : '.$dump);
+        
+        $sql = "select dc1.rank as rank1, dc2.rank as rank2, dc1.itemid as itemid1, dc2.itemid as itemid2, dc1.value2 as value12, dc2.value2 as value22 from tt_doc1 as dc1 
+                    inner join tt_ref as rf2 
+                        inner join tt_doc2 as dc2
+                        on rf2.value2=dc2.value2
+                    on dc1.value2=rf2.value1";
+        
+        $artt[] = DataManager::createtemptable($sql, 'tt_par2');        
+//        $res = DataManager::dm_query($sql);	
+//        $tt_par = $res->fetchAll(PDO::FETCH_ASSOC);
+//        
+//        ob_start();
+//        var_dump($tt_par);
+//        $dump = ob_get_contents();
+//        ob_end_clean();        
+//        Common_data::_log('/log','PAR2 : '.$dump);
+        
+        $sql = "select dc1.rank as rank1, dc2.rank as rank2, dc1.itemid as itemid1, dc2.itemid as itemid2, dc1.value3 as value13, dc2.value3 as value23 from tt_doc1 as dc1                     
+                    inner join tt_ref as rf3 
+                        inner join tt_doc2 as dc2
+                        on rf3.value2=dc2.value3
+                    on dc1.value3=rf3.value1
+                    ";
+        $artt[] = DataManager::createtemptable($sql, 'tt_par3');        
+//        $res = DataManager::dm_query($sql);	
+//        $tt_par = $res->fetchAll(PDO::FETCH_ASSOC);
+//        
+//        ob_start();
+//        var_dump($tt_par);
+//        $dump = ob_get_contents();
+//        ob_end_clean();        
+//        Common_data::_log('/log','PAR3 : '.$dump);
+        
+        $sql = "select pr1.rank1, pr1.rank2, pr1.value11, pr1.value21, pr2.value12, pr2.value22, pr3.value13, pr3.value23 from tt_par1 as pr1 
+                    inner join tt_par2 as pr2
+                    on pr1.rank1 = pr2.rank1
+                    and pr1.rank2 = pr2.rank2
+                    inner join tt_par3 as pr3
+                    on pr1.rank1 = pr3.rank1
+                    and pr1.rank2 = pr3.rank2";
+
+        $res = DataManager::dm_query($sql);	
+        $tt_par = $res->fetchAll(PDO::FETCH_ASSOC);
+//        ob_start();
+//        var_dump($tt_par);
+//        $dump = ob_get_contents();
+//        ob_end_clean();        
+//        Common_data::_log('/log','RES : '.$dump);
+        
+        $costs=array();
+        for($i=0; $i<$count_1; $i++)
+        {
+            $costs[$i]=array();
+            for($j=0; $j<$count_2; $j++)
+            {
+                $costs[$i][$j]=1;
+            }
+        }
+        foreach ($tt_par as $par)
+        {
+            $i = $par['rank1']-1;
+            $j = $par['rank2']-1;
+            $costs[$i][$j]=0;
+        }
+//        ob_start();
+//        var_dump($costs);
+//        $dump = ob_get_contents();
+//        ob_end_clean();        
+//        Common_data::_log('/log','COSTS : '.$dump);
+        
+        $hung = new Hungarian($costs);
+        $res = $hung->execute();
+//        ob_start();
+//        var_dump($res);
+//        $dump = ob_get_contents();
+//        ob_end_clean();        
+//        Common_data::_log('/log','RESULT : '.$dump);
+        Common_data::_log('/log','HUNGARY FINISH');
+        DataManager::droptemptable($ar_tt);
+        $objs = array();
+        $objs['SDATA'] = array();
+        $objs['PLIST'] = array();
+        $objs['PSET'] = array(
+            'nom1'=>array('id'=>'nom1','name'=>'nom1','synonym'=>'Изделие 1','type'=>'int', 'class'=>'active'),
+            'nom2'=>array('id'=>'nom2','name'=>'nom2','synonym'=>'Изделие 2','type'=>'int', 'class'=>'active'),
+            'izm11'=>array('id'=>'izm11','name'=>'izm11','synonym'=>'Изд1: Изм.1','type'=>'float', 'class'=>'active'),
+            'izm21'=>array('id'=>'izm21','name'=>'izm21','synonym'=>'Изд2: Изм.1','type'=>'float', 'class'=>'active'),
+            'izm12'=>array('id'=>'izm12','name'=>'izm12','synonym'=>'Изд1: Изм.2','type'=>'float', 'class'=>'active'),
+            'izm22'=>array('id'=>'izm22','name'=>'izm22','synonym'=>'Изд2: Изм.2','type'=>'float', 'class'=>'active'),
+            'izm13'=>array('id'=>'izm13','name'=>'izm13','synonym'=>'Изд1: Изм.3','type'=>'float', 'class'=>'active'),
+            'izm23'=>array('id'=>'izm23','name'=>'izm23','synonym'=>'Изд2: Изм.3','type'=>'float', 'class'=>'active'),
+        );
+        $objd = array();
+        foreach($res as $par)
+        {
+            $i = $par[0];
+            $j = $par[1];
+            $objd[$i] = array();
+            $objd[$i]['nom1']=array('name'=>$i+1,'id'=>'');
+            $objd[$i]['nom2']=array('name'=>$j+1,'id'=>'');
+            
+            $pos = array_search($i+1, array_column($tt_doc1,'rank'));
+            if ($pos===false)
+            {
+                $objd[$i]['izm11']=array('name'=>'','id'=>'');
+                $objd[$i]['izm12']=array('name'=>'','id'=>'');
+                $objd[$i]['izm13']=array('name'=>'','id'=>'');
+            }    
+            else 
+            {
+                $objd[$i]['izm11']=array('name'=>$tt_doc1[$pos]['value1'],'id'=>'');
+                $objd[$i]['izm12']=array('name'=>$tt_doc1[$pos]['value2'],'id'=>'');
+                $objd[$i]['izm13']=array('name'=>$tt_doc1[$pos]['value3'],'id'=>'');
+            }
+            $pos = array_search($j+1, array_column($tt_doc2,'rank'));
+            if ($pos===false)
+            {
+                $objd[$i]['izm21']=array('name'=>'','id'=>'');
+                $objd[$i]['izm22']=array('name'=>'','id'=>'');
+                $objd[$i]['izm23']=array('name'=>'','id'=>'');
+            }    
+            else 
+            {
+                $objd[$i]['izm21']=array('name'=>$tt_doc2[$pos]['value1'],'id'=>'');
+                $objd[$i]['izm22']=array('name'=>$tt_doc2[$pos]['value2'],'id'=>'');
+                $objd[$i]['izm23']=array('name'=>$tt_doc2[$pos]['value3'],'id'=>'');
+            }
+        }    
+        $objs['LDATA'] = $objd;
+        return $objs;
+    }    
+}    

@@ -93,11 +93,8 @@ function onGetData(data)
     {
         if (val.id)
         {    
-            if ($("input#name_"+key).val()=='')
-            {
-                $("input#"+key).val(val.id);
-                $("input#name_"+key).val(val.name);
-            }    
+            $("input#"+key).val(val.id);
+            $("input#name_"+key).val(val.name);
         }
     });    
 }
@@ -319,7 +316,7 @@ $('input.form-control').keyup(function(eventObject) {
             if (itype=='propid')
             {    
                 $("input[name='curid']").val(curid);
-                $("input[name='command']").val('find');
+                $("input[name='command']").val('prop_find');
                 $data = $('.row input').serializeArray();
             }
             $("#"+curid+"~.types_list").slideUp('fast'); 

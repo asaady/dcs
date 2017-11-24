@@ -3,7 +3,9 @@ Options -Indexes
     RewriteEngine on
     RewriteBase /
     RewriteCond %{REQUEST_URI} "/vendor/" [OR]
-    RewriteCond %{REQUEST_URI} "/app/" 
+    RewriteCond %{REQUEST_URI} "/app/controllers/" [OR]
+    RewriteCond %{REQUEST_URI} "/app/models/" [OR]
+    RewriteCond %{REQUEST_URI} "/app/views/" 
     RewriteRule .* index.php [L]
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d

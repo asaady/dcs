@@ -767,20 +767,37 @@ class EntitySet extends Model {
             $access_prop = array();
             $arr_prop = array();
         }
-	$sql = "select et.id, pv.value as name, it.dateupdate FROM \"PropValue_str\" as pv
-                inner join \"IDTable\" as it
-                    inner join \"ETable\" as et
-                    on it.entityid=et.id
-                    inner join \"MDProperties\" as mp
-                        inner join \"CTable\" as pt
-                        on mp.propid=pt.id
-                    on it.propid=mp.id
-                on pv.id=it.id";
-	$str_where = " WHERE et.mdid=:mdid and mp.mdid = et.mdid and pv.value ILIKE :name LIMIT 30";  
-        $params = array('mdid'=>$mdid, 'name'=>"%$name%");
+        $mdentity = new Mdentity($mdid);
+        if ($mdentity->getmdtypename()=='Docs')
+        {
+            $sql = "select et.id, pv.value as name, it.dateupdate FROM \"PropValue_int\" as pv
+                    inner join \"IDTable\" as it
+                        inner join \"ETable\" as et
+                        on it.entityid=et.id
+                        inner join \"MDProperties\" as mp
+                            inner join \"CTable\" as pt
+                            on mp.propid=pt.id
+                        on it.propid=mp.id
+                    on pv.id=it.id";
+            $str_where = " WHERE et.mdid=:mdid and mp.mdid = et.mdid and pv.value = :name LIMIT 30";  
+            $params = array('mdid'=>$mdid, 'name'=>$name);
+        }   
+        else
+        {
+            $sql = "select et.id, pv.value as name, it.dateupdate FROM \"PropValue_str\" as pv
+                    inner join \"IDTable\" as it
+                        inner join \"ETable\" as et
+                        on it.entityid=et.id
+                        inner join \"MDProperties\" as mp
+                            inner join \"CTable\" as pt
+                            on mp.propid=pt.id
+                        on it.propid=mp.id
+                    on pv.id=it.id";
+            $str_where = " WHERE et.mdid=:mdid and mp.mdid = et.mdid and pv.value ILIKE :name LIMIT 30";  
+            $params = array('mdid'=>$mdid, 'name'=>"%$name%");
+        }    
         $params_fin = array();
         $sql_rls = '';
-        $mdentity = new Mdentity($mdid);
         if (count($access_prop))
         {
             $arr_prop = array_unique(array_column($access_prop,'propid'));

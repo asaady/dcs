@@ -85,9 +85,9 @@ class Entity extends Model {
     function getshortname()
     {
         $res = $this->name;
-        if (strlen($res)>40)
+        if (strlen($res)>55)
         {    
-            $res = substr($res, 0, 40);
+            $res = substr($res, 0, 55);
             $end = strlen(strrchr($res, ' ')); // длина обрезка 
             $res = substr($res, 0, -$end) . '...';         
         }    

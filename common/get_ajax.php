@@ -18,7 +18,7 @@ function getData()
 {
     $idm = new InputDataManager;
     $action_handler = array(
-    'FIELD_FIND'=> function($idm)
+        'FIELD_FIND'=> function($idm)
         {
             $data = $idm->getdata();
             $objs=false;
@@ -43,6 +43,17 @@ function getData()
                 {
                     $objs = tzVendor\Mdproperty::getPropertyByName($name,$idm);
                 }
+            }    
+            return $objs; 
+        },  
+        '_PROP_FIND'=> function($idm)
+        {
+            $data = $idm->getdata();
+            $objs=false;
+            $name = $data['name']['name'];
+            if ($name!=="")
+            { 
+                $objs = tzVendor\Mdproperty::getPropertyByName($name,$idm);
             }    
             return $objs; 
         },  

@@ -1175,6 +1175,26 @@ class DataManager {
 	$res = DataManager::dm_query($sql, array('userid'=>$userid));	
         return $res->fetchAll(PDO::FETCH_ASSOC);
     }
+    public static function get_related_fields($propid)
+    {
+        $sql = "select pv_group.value as user_group from \"CTable\" as ct
+                    inner join \"MDTable\" as mt
+                    on ct.mdid = mt.id
+                    and mt.name='RelatedFields'
+                    inner join \"CPropValue_cid\" as pv_lead
+                            inner join \"CProperties\" as cp_lead
+                            on pv_lead.pid=cp_lead.id
+                            and cp_lead.name='prop_lead'
+                    on ct.id=pv_lead.id
+                    inner join \"CPropValue_cid\" as pv_usr
+                            inner join \"CProperties\" as cp_usr
+                            on pv_usr.pid=cp_usr.id
+                            and cp_usr.name='user'
+                    on ct.id=pv_usr.id
+                    where pv_usr.value = :userid";
+	$res = DataManager::dm_query($sql, array('userid'=>$userid));	
+        return $res->fetchAll(PDO::FETCH_ASSOC);
+    }
     public static function get_event_trigger($eventname,$mdid,$propid)
     {
         $sql = "select ct.id, ct.name, ct.synonym from \"CTable\" as ct

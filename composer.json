@@ -15,6 +15,8 @@
             "tzVendor\\": [
                 "vendor/core",
                 "app/components/reps/coversheets",
+                "app/components/reps/plannedjobs",
+                "app/components/reps/prodselection",
                 "app/components/utils/uploadset",
                 "app/components/utils/uploadobject",
                 "app/components/trigs",

@@ -113,8 +113,10 @@ function onLoadValID(data)
     if ('LDATA' in data)
     {    
         $("tbody#entitylist tr").remove();
+        var icount = 0;
         for(var id in data['LDATA'])
         {
+            icount += 1;
             $("tbody#entitylist").append("<tr class=\"active\" id=\""+id+"\">");
             for(var cid in data['PSET'])
             {
@@ -127,7 +129,14 @@ function onLoadValID(data)
                 }
                 else
                 {
-                    $("tr#"+id).append("<td class=\""+cls+"\" id=\""+cid+"\" it=\"\" vt=\""+data['PSET'][cid]['type']+"\"></td>");    
+                    if (cid=='num')
+                    {
+                        $("tr#"+id).append("<td class=\"active\" id=\"num\" it=\"\" vt=\"int\">"+icount.toString()+"</td>");    
+                    }   
+                    else
+                    {
+                        $("tr#"+id).append("<td class=\""+cls+"\" id=\""+cid+"\" it=\"\" vt=\""+data['PSET'][cid]['type']+"\"></td>");    
+                    }    
                 }    
             }
             $("tbody#entitylist").append("</tr>");

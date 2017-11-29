@@ -107,6 +107,11 @@ class MdentitySet extends Mditem {
                 $objs['id'] = $row['id'];
             }
         }
+        if ($objs['status']=='OK')
+        {
+            Mdproperty::CreateMustBeProperty($this->id,$objs['id']);
+        }
+            
         return $objs;
     }       
     

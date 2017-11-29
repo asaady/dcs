@@ -27,9 +27,16 @@ class ProdSelection extends Model
     protected $doc_rank_propid = '69918705-5cfe-4ec3-88f0-10f3ae077be4'; //реквизит строки ТЧ [Измерения] документа Измерения - ранг
     protected $doc_activ_propid = 'd3496cd7-d4b8-4b43-aa0d-a5fa16e076f3'; //реквизит строки ТЧ [Измерения] документа Измерения - активность
     
-    
-    
-    
+    protected $doc_param1_propid = '18544ce5-39bf-453d-acd5-d74f3d4484a4'; //реквизит параметр1 документа Измерение
+    protected $doc_param2_propid = '1599ead6-a2a5-4577-b608-2b522494e1e4'; //реквизит параметр2 документа Измерение
+    protected $doc_param3_propid = '27184f54-7912-42b2-bb5a-408ff81bb745'; //реквизит параметр3 документа Измерение
+    protected $step_propid = '45b4c797-e059-4223-b15a-0265725d78bd'; //реквизит step справочника Параметры измерений
+
+
+
+
+
+
     public function __construct($id) 
     {
         
@@ -53,11 +60,12 @@ class ProdSelection extends Model
         $plist = array(
                 array('id'=>'doc1','name'=>'doc1','synonym'=>'Документ по изд.1','rank'=>3,'type'=>'id','valmdid'=>$this->doc_mdid,'valmdtypename'=>'Docs','class'=>'active'),
                 array('id'=>'doc2','name'=>'doc2','synonym'=>'Документ по изд.2','rank'=>4,'type'=>'id','valmdid'=>$this->doc_mdid,'valmdtypename'=>'Docs','class'=>'active'),
-                array('id'=>'ref1','name'=>'ref1','synonym'=>'Таблица параметра 1','rank'=>5,'type'=>'id','valmdid'=>$this->ref_mdid,'valmdtypename'=>'Refs','class'=>'active'),
-                array('id'=>'ref2','name'=>'ref2','synonym'=>'Таблица параметра 2','rank'=>7,'type'=>'id','valmdid'=>$this->ref_mdid,'valmdtypename'=>'Refs','class'=>'active'),
-                array('id'=>'ref3','name'=>'ref3','synonym'=>'Таблица параметра 3','rank'=>9,'type'=>'id','valmdid'=>$this->ref_mdid,'valmdtypename'=>'Refs','class'=>'active'),
+//                array('id'=>'ref1','name'=>'ref1','synonym'=>'Таблица параметра 1','rank'=>5,'type'=>'id','valmdid'=>$this->ref_mdid,'valmdtypename'=>'Refs','class'=>'active'),
+//                array('id'=>'ref2','name'=>'ref2','synonym'=>'Таблица параметра 2','rank'=>7,'type'=>'id','valmdid'=>$this->ref_mdid,'valmdtypename'=>'Refs','class'=>'active'),
+//                array('id'=>'ref3','name'=>'ref3','synonym'=>'Таблица параметра 3','rank'=>9,'type'=>'id','valmdid'=>$this->ref_mdid,'valmdtypename'=>'Refs','class'=>'active'),
         );
         $pset=array(
+            'num'=>array('id'=>'num','name'=>'num','synonym'=>'Номер п/п','type'=>'int', 'class'=>'active'),
             'nom1'=>array('id'=>'nom1','name'=>'nom1','synonym'=>'Изделие 1','type'=>'int', 'class'=>'active'),
             'nom2'=>array('id'=>'nom2','name'=>'nom2','synonym'=>'Изделие 2','type'=>'int', 'class'=>'active'),
             'izm11'=>array('id'=>'izm11','name'=>'izm11','synonym'=>'Изд1: Изм.1','type'=>'float', 'class'=>'active'),
@@ -156,6 +164,26 @@ class ProdSelection extends Model
         DataManager::droptemptable($artt);
         return 0;
     }
+    
+    function get_docparameter($doc_id, $prop_id)        
+    {
+        $artt = array();
+        //найдем значение реквизитов ТЧ документа подбора
+        $sql = "select it.entityid as docid, pv.value as param_id, it.dateupdate from \"PropValue_id\" as pv inner join \"IDTable\" as it on pv.id=it.id where it.propid = :propid and it.entityid = :entityid";
+	$artt[] = DataManager::createtemptable($sql, 'tt_pp',array('propid'=>$prop_id,'entityid'=>$doc_id));
+        
+        //найдем последние значения свойства документов
+        $sql = "select el.param_id from tt_pp as el where el.dateupdate in (select max(el.dateupdate) as dateupdate from tt_pp as el)";
+        $res = DataManager::dm_query($sql);	
+        $tt_pv = $res->fetchAll(PDO::FETCH_ASSOC);
+        
+        DataManager::droptemptable($artt);
+        
+        foreach($tt_pv as $pv)
+        {
+            return new Entity($pv['param_id']);
+        }    
+    }
 
     public function get_selection($doc1_id,$doc2_id,$ref1_id,$ref2_id,$ref3_id)
     {
@@ -167,10 +195,11 @@ class ProdSelection extends Model
 //        $ref2= new Entity($ref2_id);
 //        $ref3= new Entity($ref3_id);
         
-        if ($this->get_selectiontable('tt_ref',$ref1_id,$ref2_id,$ref3_id,$ar_tt))
-        {
-            die('ref table error');
-        }    
+//        if ($this->get_selectiontable('tt_ref',$ref1_id,$ref2_id,$ref3_id,$ar_tt))
+//        {
+//            die('ref table error');
+//        }    
+        
         if ($this->get_doctable('tt_doc1',$doc1_id,$ar_tt))
         {
             die('doc1 table error');
@@ -179,7 +208,15 @@ class ProdSelection extends Model
         {
             die('doc2 table error');
         }    
-        
+        $par1 = $this->get_docparameter($doc1_id, $this->doc_param1_propid);
+        $step1 = $par1->getattr($this->step_propid);
+        Common_data::_log('/log','Parametr1 step: '.$step1);
+        $par2 = $this->get_docparameter($doc1_id, $this->doc_param2_propid);
+        $step2 = $par2->getattr($this->step_propid);
+        Common_data::_log('/log','Parametr2 step: '.$step2);
+        $par3 = $this->get_docparameter($doc1_id, $this->doc_param3_propid);
+        $step3 = $par3->getattr($this->step_propid);
+        Common_data::_log('/log','Parametr3 step: '.$step3);
 //        $sql = "select * from tt_ref limit 100";
 //        
 //        $res = DataManager::dm_query($sql);	
@@ -211,13 +248,12 @@ class ProdSelection extends Model
         $res = DataManager::dm_query($sql);	
         $tt_doc2 = $res->fetchAll(PDO::FETCH_ASSOC);
         
-        $sql = "select dc1.rank as rank1, dc2.rank as rank2, dc1.itemid as itemid1, dc2.itemid as itemid2, dc1.value1 as value11, dc2.value1 as value21 from tt_doc1 as dc1 
-                    inner join tt_ref as rf1 
-                        inner join tt_doc2 as dc2
-                        on rf1.value2=dc2.value1
-                    on dc1.value1=rf1.value1";
-        
-        $artt[] = DataManager::createtemptable($sql, 'tt_par1');        
+        $sql = "select dc1.rank as rank1, dc2.rank as rank2, dc1.itemid as itemid1, dc2.itemid as itemid2, dc1.value1 as value11, dc2.value1 as value21 from tt_doc1 as dc1, tt_doc2 as dc2 where abs(dc1.value1-dc2.value1)<=:step";
+        $artt[] = DataManager::createtemptable($sql, 'tt_par1',array('step'=>$step1));        
+        $sql = "select dc1.rank as rank1, dc2.rank as rank2, dc1.itemid as itemid1, dc2.itemid as itemid2, dc1.value2 as value12, dc2.value2 as value22 from tt_doc1 as dc1, tt_doc2 as dc2 where abs(dc1.value2-dc2.value2)<=:step";
+        $artt[] = DataManager::createtemptable($sql, 'tt_par2',array('step'=>$step2));        
+        $sql = "select dc1.rank as rank1, dc2.rank as rank2, dc1.itemid as itemid1, dc2.itemid as itemid2, dc1.value3 as value13, dc2.value3 as value23 from tt_doc1 as dc1, tt_doc2 as dc2 where abs(dc1.value3-dc2.value3)<=:step";
+        $artt[] = DataManager::createtemptable($sql, 'tt_par3',array('step'=>$step3));        
 //        $res = DataManager::dm_query($sql);	
 //        $tt_par = $res->fetchAll(PDO::FETCH_ASSOC);
 //        
@@ -227,13 +263,6 @@ class ProdSelection extends Model
 //        ob_end_clean();        
 //        Common_data::_log('/log','PAR1 : '.$dump);
         
-        $sql = "select dc1.rank as rank1, dc2.rank as rank2, dc1.itemid as itemid1, dc2.itemid as itemid2, dc1.value2 as value12, dc2.value2 as value22 from tt_doc1 as dc1 
-                    inner join tt_ref as rf2 
-                        inner join tt_doc2 as dc2
-                        on rf2.value2=dc2.value2
-                    on dc1.value2=rf2.value1";
-        
-        $artt[] = DataManager::createtemptable($sql, 'tt_par2');        
 //        $res = DataManager::dm_query($sql);	
 //        $tt_par = $res->fetchAll(PDO::FETCH_ASSOC);
 //        
@@ -243,13 +272,13 @@ class ProdSelection extends Model
 //        ob_end_clean();        
 //        Common_data::_log('/log','PAR2 : '.$dump);
         
-        $sql = "select dc1.rank as rank1, dc2.rank as rank2, dc1.itemid as itemid1, dc2.itemid as itemid2, dc1.value3 as value13, dc2.value3 as value23 from tt_doc1 as dc1                     
-                    inner join tt_ref as rf3 
-                        inner join tt_doc2 as dc2
-                        on rf3.value2=dc2.value3
-                    on dc1.value3=rf3.value1
-                    ";
-        $artt[] = DataManager::createtemptable($sql, 'tt_par3');        
+//        $sql = "select dc1.rank as rank1, dc2.rank as rank2, dc1.itemid as itemid1, dc2.itemid as itemid2, dc1.value3 as value13, dc2.value3 as value23 from tt_doc1 as dc1                     
+//                    inner join tt_ref as rf3 
+//                        inner join tt_doc2 as dc2
+//                        on rf3.value2=dc2.value3
+//                    on dc1.value3=rf3.value1
+//                    ";
+//        $artt[] = DataManager::createtemptable($sql, 'tt_par3');        
 //        $res = DataManager::dm_query($sql);	
 //        $tt_par = $res->fetchAll(PDO::FETCH_ASSOC);
 //        
@@ -275,21 +304,51 @@ class ProdSelection extends Model
 //        ob_end_clean();        
 //        Common_data::_log('/log','RES : '.$dump);
         
-        $costs=array();
+        $acosts=array();
         for($i=0; $i<$count_1; $i++)
         {
-            $costs[$i]=array();
+            $acosts[$i]=array();
             for($j=0; $j<$count_2; $j++)
             {
-                $costs[$i][$j]=1;
+                $acosts[$i][$j]=1;
             }
         }
         foreach ($tt_par as $par)
         {
             $i = $par['rank1']-1;
             $j = $par['rank2']-1;
-            $costs[$i][$j]=0;
+            $acosts[$i][$j]=0;
         }
+        //удаляем строки по которым нет возможных пар
+        $costs=array();
+        $addr_row=array();
+        for($i=0; $i<$count_1; $i++)
+        {
+            $sum = 0;
+            for($j=0; $j<$count_2; $j++)
+            {
+                $sum += $acosts[$i][$j];
+            }
+            if (($count_2 - $sum)>0)
+            {
+                $costs[] = $acosts[$i];
+                $addr_row[] = $i;
+                $msg = 'COSTS : '.($i+1).' :';
+                for($j=0; $j<$count_2; $j++)
+                {
+                    if ($acosts[$i][$j]==0)
+                    {    
+                        $msg .= ', '.($j+1);
+                    }    
+                }
+                Common_data::_log('/log',$msg);
+            }    
+            else 
+            {
+                Common_data::_log('/log','without row: '.($i+1));
+            }
+        }
+        
 //        ob_start();
 //        var_dump($costs);
 //        $dump = ob_get_contents();
@@ -309,6 +368,7 @@ class ProdSelection extends Model
         $objs['SDATA'] = array();
         $objs['PLIST'] = array();
         $objs['PSET'] = array(
+            'num'=>array('id'=>'num','name'=>'num','synonym'=>'Номер п/п','type'=>'int', 'class'=>'active'),
             'nom1'=>array('id'=>'nom1','name'=>'nom1','synonym'=>'Изделие 1','type'=>'int', 'class'=>'active'),
             'nom2'=>array('id'=>'nom2','name'=>'nom2','synonym'=>'Изделие 2','type'=>'int', 'class'=>'active'),
             'izm11'=>array('id'=>'izm11','name'=>'izm11','synonym'=>'Изд1: Изм.1','type'=>'float', 'class'=>'active'),
@@ -323,36 +383,38 @@ class ProdSelection extends Model
         {
             $i = $par[0];
             $j = $par[1];
-            $objd[$i] = array();
-            $objd[$i]['nom1']=array('name'=>$i+1,'id'=>'');
-            $objd[$i]['nom2']=array('name'=>$j+1,'id'=>'');
             
-            $pos = array_search($i+1, array_column($tt_doc1,'rank'));
+            $pos = array_search($addr_row[$i]+1, array_column($tt_doc1,'rank'));
             if ($pos===false)
             {
-                $objd[$i]['izm11']=array('name'=>'','id'=>'');
-                $objd[$i]['izm12']=array('name'=>'','id'=>'');
-                $objd[$i]['izm13']=array('name'=>'','id'=>'');
+                continue;
             }    
-            else 
-            {
-                $objd[$i]['izm11']=array('name'=>$tt_doc1[$pos]['value1'],'id'=>'');
-                $objd[$i]['izm12']=array('name'=>$tt_doc1[$pos]['value2'],'id'=>'');
-                $objd[$i]['izm13']=array('name'=>$tt_doc1[$pos]['value3'],'id'=>'');
-            }
             $pos = array_search($j+1, array_column($tt_doc2,'rank'));
             if ($pos===false)
             {
-                $objd[$i]['izm21']=array('name'=>'','id'=>'');
-                $objd[$i]['izm22']=array('name'=>'','id'=>'');
-                $objd[$i]['izm23']=array('name'=>'','id'=>'');
+                continue;
             }    
-            else 
+            if (abs($tt_doc1[$pos]['value1']-$tt_doc2[$pos]['value1'])>$step1)
             {
-                $objd[$i]['izm21']=array('name'=>$tt_doc2[$pos]['value1'],'id'=>'');
-                $objd[$i]['izm22']=array('name'=>$tt_doc2[$pos]['value2'],'id'=>'');
-                $objd[$i]['izm23']=array('name'=>$tt_doc2[$pos]['value3'],'id'=>'');
-            }
+                continue;
+            }    
+            if (abs($tt_doc1[$pos]['value2']-$tt_doc2[$pos]['value2'])>$step2)
+            {
+                continue;
+            }    
+            if (abs($tt_doc1[$pos]['value3']-$tt_doc2[$pos]['value3'])>$step3)
+            {
+                continue;
+            }    
+            $objd[$i] = array();
+            $objd[$i]['nom1']=array('name'=>$addr_row[$i]+1,'id'=>'');
+            $objd[$i]['nom2']=array('name'=>$j+1,'id'=>'');
+            $objd[$i]['izm11']=array('name'=>$tt_doc1[$pos]['value1'],'id'=>'');
+            $objd[$i]['izm12']=array('name'=>$tt_doc1[$pos]['value2'],'id'=>'');
+            $objd[$i]['izm13']=array('name'=>$tt_doc1[$pos]['value3'],'id'=>'');
+            $objd[$i]['izm21']=array('name'=>$tt_doc2[$pos]['value1'],'id'=>'');
+            $objd[$i]['izm22']=array('name'=>$tt_doc2[$pos]['value2'],'id'=>'');
+            $objd[$i]['izm23']=array('name'=>$tt_doc2[$pos]['value3'],'id'=>'');
         }    
         $objs['LDATA'] = $objd;
         return $objs;

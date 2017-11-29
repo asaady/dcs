@@ -352,6 +352,7 @@ class EntitySet extends Model {
         $artemptable[] = $tt_et;
 	$sql = "SELECT * FROM tt_pt";
 	$res = DataManager::dm_query($sql);	
+        $plist = array();
         while ($row = $res->fetch(PDO::FETCH_ASSOC))
         {
             if ($expr($row))

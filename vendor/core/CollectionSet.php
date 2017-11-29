@@ -298,10 +298,24 @@ class CollectionSet extends Model {
         }
         $str0_req .=" FROM tt_et as et";
         $sql = $str0_req.$str_req;
+        $dop = DataManager::get_col_access_text('et');
         if ($strwhere!='')
         {
             $sql .= " WHERE $strwhere";
+            if ($dop!='')
+            {
+                $sql .= " AND ".$dop;
+                $params['userid'] = $_SESSION['user_id'];
+            }    
         }
+        else
+        {
+            if ($dop!='')
+            {
+                $sql .= " WHERE ".$dop;
+                $params['userid'] = $_SESSION['user_id'];
+            }    
+        }    
         $objs['SQL']=$sql;
 	$res = DataManager::dm_query($sql,$params);
  

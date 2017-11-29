@@ -33,12 +33,12 @@ class MdentitySet extends Mditem {
         
 	$sql = "SELECT md.id, md.name, md.synonym FROM \"MDTable\" AS md WHERE md.mditem= :mditem";
         $params = array('mditem'=>$this->id);
-        $dop= DataManager::get_md_access_text($edit_mode);
+        $dop = DataManager::get_md_access_text($edit_mode);
         if ($dop!='')
         {    
             $params['userid'] = $_SESSION['user_id'];
+            $sql .= " AND ".$dop;
         }    
-        $sql .=$dop;
         $sth = DataManager::dm_query($sql,$params);        
         $plist = array();
         if ($mode!='CONFIG')

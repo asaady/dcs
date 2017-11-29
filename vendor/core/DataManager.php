@@ -916,10 +916,26 @@ class DataManager {
     }        
     public static function get_md_access_text($edit_mode='')
     {
+        if (($edit_mode=='EDIT')||($edit_mode=='SET_EDIT')||($edit_mode=='CREATE'))
+        {    
+            $dop= self::get_access_text('md','write');
+        }
+        else
+        {
+            $dop= self::get_access_text('md','read');
+        } 
+        return $dop;
+    }        
+    public static function get_col_access_text($ttname)
+    {
+        return self::get_access_text($ttname,'read');
+    }        
+    public static function get_access_text($ttname,$mode='read')
+    {
         $dop='';
         if (!User::isAdmin())
         {        
-            $dop=" AND md.id in (SELECT pv.value FROM \"CPropValue_mdid\" as pv 
+            $dop = "$ttname.id in (SELECT pv.value FROM \"CPropValue_mdid\" as pv 
 		inner join \"CTable\" as ct
 			inner join \"MDTable\" as md_ra
 			on ct.mdid = md_ra.id
@@ -939,31 +955,16 @@ class DataManager {
 					on pv_usrol.id=pv_usr.id
 				on pv_rol.value=pv_usrol.value
 				and pv_rol.id<>pv_usrol.id
-			on ct.id = pv_rol.id";
-            if (($edit_mode=='EDIT')||($edit_mode=='SET_EDIT')||($edit_mode=='CREATE'))
-            {    
-		$dop .=" inner join \"CPropValue_bool\" as ct_wr
-				inner join \"CProperties\" as cp_wr
-				on ct_wr.pid=cp_wr.id
-				and cp_wr.name='write'
-			on ct.id = ct_wr.id
-                        AND ct_wr.value 
-		on pv.id=ct.id
-                where pv_usr.value = :userid)";
-            }
-            else
-            {
-		$dop .=" inner join \"CPropValue_bool\" as ct_rd
+			on ct.id = pv_rol.id
+                        inner join \"CPropValue_bool\" as ct_rd
 				inner join \"CProperties\" as cp_rd
 				on ct_rd.pid=cp_rd.id
-				and cp_rd.name='read'
+				and cp_rd.name= '".$mode."'
 			on ct.id = ct_rd.id
 			AND ct_rd.value 
 		on pv.id=ct.id
                 where pv_usr.value = :userid)";
-                
-            }    
-        }    
+        }  
         return $dop;
     }        
     public static function getTT_entity($ttname,$mdid,$propid,$val,$type,$oper)

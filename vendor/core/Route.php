@@ -234,6 +234,7 @@ class Route {
             $step=0;
             $arResult['PREFIX']='';
             $arResult['ACTION']='VIEW';
+            $arResult['PAGE']=1;
             $arResult['CURID']='';
             $arResult['TITLE']=TZ_COMPANY_SHORTNAME;
             $arResult['ITEMID']='';

@@ -101,6 +101,7 @@
                             <?php
                             echo "<input class=\"form-control\" name=\"curid\" type=\"hidden\" value=\"$arResult[CURID]\">";
                             echo "<input class=\"form-control\" name=\"version\" type=\"hidden\" value=\"$data[version]\">";
+                            echo "<input class=\"form-control\" name=\"page\" type=\"hidden\" value=\"$arResult[PAGE]\">";
                             echo "<input class=\"form-control\" name=\"itemid\" type=\"hidden\" value=\"$arResult[ITEMID]\">";
                             echo "<input class=\"form-control\" name=\"mode\" type=\"hidden\" value=\"$arResult[MODE]\">";
                             echo "<input class=\"form-control\" name=\"action\" type=\"hidden\" value=\"$arResult[ACTION]\">";

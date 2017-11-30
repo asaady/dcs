@@ -212,14 +212,14 @@ class UploadObject extends Model
             Common_data::import_log($emessage);
             return array('status'=>'error','message'=>$emessage);
         }    
-//        else
-//        {
+        else
+        {
 //            ob_start();
 //            var_dump($tt_imp);
 //            $dump = ob_get_contents();
 //            ob_end_clean();        
-//            Common_data::import_log($dump);
-//        }    
+            Common_data::import_log('count rows to import = '.count($tt_imp));
+        }    
         $ar_tt=array();
         $irank=0;
         foreach ($tt_imp as $arr) 

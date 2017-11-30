@@ -5,7 +5,7 @@ define("TZ_DBPASS","3141592");
 define("TZ_COMPANY_SHORTNAME","ТЭЗ");
 define("TZ_COMPANY_NAME","НПП ТЭЗ");
 define("TZ_COMPANY_FULLNAME","Томилинский электронный завод");
-define("TZ_COUNT_REC_BY_PAGE", 100);
+define("TZ_COUNT_REC_BY_PAGE", 500);
 define("TZ_EDIT_DELAY", '00:20');
 define("TZ_EMPTY_ENTITY", '00000000-0000-0000-0000-000000000000');
 define("TZ_EMPTY_DATE",date("Y-m-d H:i:s",mktime(0,0,0,1,1,1)));

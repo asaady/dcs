@@ -68,7 +68,7 @@ class UploadObject extends Model
         } catch (Exception $ex) {
             Common_data::import_log('sql = '.$sql." ERROR: ".$ex->getMessage());
             DataManager::dm_rollback();
-            continue;
+            return;
         }
         $ar_item = $res->fetchAll(PDO::FETCH_ASSOC);
         $itemid = $ar_item[0]['id'];

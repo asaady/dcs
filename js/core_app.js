@@ -828,6 +828,11 @@ function before_delete_success(result)
     $('#tzModal').modal('show');
     console.log(result);
 }   
+$('#tzModal').on('shown.bs.modal', function () {
+    $(this).find('.modal-dialog').css({width:'70%',
+                               height:'auto', 
+                              'max-height':'100%'});
+});
 $('body').on('click', '#delete', function () 
 {
     var action = $("input[name='action']").val();  

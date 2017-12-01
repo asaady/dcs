@@ -92,10 +92,7 @@ background: #D9EDF7;
 input.form-value {	/* тултип */
     width: 70%;
 }
-button.form-value {	/* тултип */
-    width: 36px;
-    float: right;
-}
+
 /* fallback */
 @font-face {
   font-family: 'Material Icons';

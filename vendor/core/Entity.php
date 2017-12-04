@@ -441,7 +441,7 @@ class Entity extends Model {
     {
 	$res = DataManager::dm_query("BEGIN");
         $id = $this->id;
-        $propid = array_search('Activity', array_column($this->plist,'name','id'));
+        $propid = array_search('activity', array_column($this->plist,'name','id'));
         if ($propid!==FALSE)
         {
             $params = array();
@@ -608,7 +608,7 @@ class Entity extends Model {
                 {
                     if ($valname=='') 
                     {
-                        if ($prop['name_propid']=='Activity')
+                        if (strtolower($prop['name_propid'])=='activity')
                         {
                             $valname='true';
                         }    

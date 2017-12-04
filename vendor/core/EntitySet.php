@@ -369,7 +369,7 @@ class EntitySet extends Model {
         $rls = array();
         $arr_id=array();
         $orderstr='';
-        $activity_id = array_search('Activity', array_column($plist,'name','id'));
+        $activity_id = array_search('activity', array_column($plist,'name','id'));
         foreach($plist as $row) 
         {
             $rid = $row['id'];
@@ -868,7 +868,7 @@ class EntitySet extends Model {
                 left join \"IDTable\" as it
                     inner join \"MDProperties\" as mp
                     on it.propid=mp.id
-                    and mp.name='Activity'
+                    and mp.name='activity'
                     inner join \"PropValue_bool\" as pv
                     on it.id=pv.id
                 on et.id=it.entityid";  

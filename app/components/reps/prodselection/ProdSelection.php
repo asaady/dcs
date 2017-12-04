@@ -74,6 +74,7 @@ class ProdSelection extends Model
             'izm22'=>array('id'=>'izm22','name'=>'izm22','synonym'=>'Изд2: Изм.2','type'=>'float', 'class'=>'active'),
             'izm13'=>array('id'=>'izm13','name'=>'izm13','synonym'=>'Изд1: Изм.3','type'=>'float', 'class'=>'active'),
             'izm23'=>array('id'=>'izm23','name'=>'izm23','synonym'=>'Изд2: Изм.3','type'=>'float', 'class'=>'active'),
+            'error'=>array('id'=>'error','name'=>'error','synonym'=>'Ошибка','type'=>'int', 'class'=>'active')
         );
 
         return array(
@@ -288,13 +289,12 @@ class ProdSelection extends Model
 //        ob_end_clean();        
 //        Common_data::_log('/log','PAR3 : '.$dump);
         
-        $sql = "select pr1.rank1, pr1.rank2, pr1.value11, pr1.value21, pr2.value12, pr2.value22, pr3.value13, pr3.value23 from tt_par1 as pr1 
-                    inner join tt_par2 as pr2
-                    on pr1.rank1 = pr2.rank1
-                    and pr1.rank2 = pr2.rank2
-                    inner join tt_par3 as pr3
-                    on pr1.rank1 = pr3.rank1
-                    and pr1.rank2 = pr3.rank2";
+        $sql = "select ins.rank1, ins.rank2, sum(ins.value11), sum(ins.value21), sum(ins.value12), sum(ins.value22), sum(ins.value13), sum(ins.value23), sum(ins.isum) as isum from 
+                (select pr1.rank1, pr1.rank2, pr1.value11, pr1.value21,0 as value12, 0 as value22, 0 as value13, 0 as value23, 1 as isum from tt_par1 as pr1 
+                union 
+                select pr2.rank1, pr2.rank2, 0, 0, pr2.value12, pr2.value22, 0, 0, 1 from tt_par2 as pr2 
+                union 
+                select pr3.rank1, pr3.rank2, 0, 0, 0, 0, pr3.value13, pr3.value23, 1 from tt_par3 as pr3) as ins group by ins.rank1, ins.rank2";
 
         $res = DataManager::dm_query($sql);	
         $tt_par = $res->fetchAll(PDO::FETCH_ASSOC);
@@ -305,20 +305,76 @@ class ProdSelection extends Model
 //        Common_data::_log('/log','RES : '.$dump);
         
         $acosts=array();
+        $signatures=array();
+        $sums=array();
         for($i=0; $i<$count_1; $i++)
         {
             $acosts[$i]=array();
+            $signatures[$i]='';
+            $sums[$i]=0;
             for($j=0; $j<$count_2; $j++)
             {
-                $acosts[$i][$j]=1;
+                $acosts[$i][$j]=3;
+                $signatures[$i] .= '0';
             }
         }
         foreach ($tt_par as $par)
         {
             $i = $par['rank1']-1;
             $j = $par['rank2']-1;
-            $acosts[$i][$j]=0;
+            $acosts[$i][$j]=3-$par['isum'];
+            $signatures[$i][$j] = '1';
+            $sums[$i] += 1;
         }
+        $objd = array();
+        
+//        $arr_0 = array_filter($sums,function($var){ return $var==0;});
+//        ob_start();
+//        var_dump($arr_0);
+//        $dump = ob_get_contents();
+//        ob_end_clean();        
+//        Common_data::_log('/log','строки 0 : '.$dump);
+//
+//        $arr_1 = array_filter($sums,function($var){ return $var==1;});
+//        ob_start();
+//        var_dump($arr_1);
+//        $dump = ob_get_contents();
+//        ob_end_clean();        
+//        Common_data::_log('/log','строки 1 : '.$dump);
+//        foreach($arr_1 as $key=>$row) 
+//        {
+//            $pos = strpos($row, '1');
+//            for($i=0; $i<$count_1; $i++)
+//            {
+//                if ($key==$i)
+//                {
+//                    continue;
+//                }    
+//                if ($signatures[$i][$pos]=='1')
+//                {
+//                    $signatures[$i][$pos] = '0';
+//                    $sums[$i] -= 1;
+//                }    
+//            }    
+//            $i = $par['rank1']-1;
+//            $j = $par['rank2']-1;
+//            $objd[$i] = array();
+//            $objd[$i]['nom1']=array('name'=>$par['rank1'],'id'=>'');
+//            $objd[$i]['nom2']=array('name'=>$par['rank2'],'id'=>'');
+//            $objd[$i]['izm11']=array('name'=>$tt_doc1[$pos]['value1'],'id'=>'');
+//            $objd[$i]['izm12']=array('name'=>$tt_doc1[$pos]['value2'],'id'=>'');
+//            $objd[$i]['izm13']=array('name'=>$tt_doc1[$pos]['value3'],'id'=>'');
+//            $objd[$i]['izm21']=array('name'=>$tt_doc2[$pos]['value1'],'id'=>'');
+//            $objd[$i]['izm22']=array('name'=>$tt_doc2[$pos]['value2'],'id'=>'');
+//            $objd[$i]['izm23']=array('name'=>$tt_doc2[$pos]['value3'],'id'=>'');
+//            $objd[$i]['error']=array('name'=>$error,'id'=>'');
+//        }    
+        
+//        for($i=0; $i<$count_1; $i++)
+//        {
+//            Common_data::_log('/log','signature '.$i.' = '.$signatures[$i].' sum = '.$sums[$i]);
+//        }
+        
         //удаляем строки по которым нет возможных пар
         $costs=array();
         $addr_row=array();
@@ -329,7 +385,7 @@ class ProdSelection extends Model
             {
                 $sum += $acosts[$i][$j];
             }
-            if (($count_2 - $sum)>0)
+            if ((3*$count_2 - $sum)>0)
             {
                 $costs[] = $acosts[$i];
                 $addr_row[] = $i;
@@ -341,7 +397,7 @@ class ProdSelection extends Model
                         $msg .= ', '.($j+1);
                     }    
                 }
-                Common_data::_log('/log',$msg);
+                //Common_data::_log('/log',$msg);
             }    
             else 
             {
@@ -355,7 +411,8 @@ class ProdSelection extends Model
 //        ob_end_clean();        
 //        Common_data::_log('/log','COSTS : '.$dump);
         
-        $hung = new Hungarian($costs);
+        //$hung = new Hungarian($costs);
+        $hung = new tzHung($costs);
         $res = $hung->execute();
 //        ob_start();
 //        var_dump($res);
@@ -377,44 +434,49 @@ class ProdSelection extends Model
             'izm22'=>array('id'=>'izm22','name'=>'izm22','synonym'=>'Изд2: Изм.2','type'=>'float', 'class'=>'active'),
             'izm13'=>array('id'=>'izm13','name'=>'izm13','synonym'=>'Изд1: Изм.3','type'=>'float', 'class'=>'active'),
             'izm23'=>array('id'=>'izm23','name'=>'izm23','synonym'=>'Изд2: Изм.3','type'=>'float', 'class'=>'active'),
+            'error'=>array('id'=>'error','name'=>'error','synonym'=>'Ошибка','type'=>'int', 'class'=>'active')
         );
-        $objd = array();
         foreach($res as $par)
         {
             $i = $par[0];
             $j = $par[1];
             
-            $pos = array_search($addr_row[$i]+1, array_column($tt_doc1,'rank'));
-            if ($pos===false)
+            $pos1 = array_search($addr_row[$i]+1, array_column($tt_doc1,'rank'));
+            if ($pos1===false)
             {
                 continue;
             }    
-            $pos = array_search($j+1, array_column($tt_doc2,'rank'));
-            if ($pos===false)
+            $pos2 = array_search($j+1, array_column($tt_doc2,'rank'));
+            if ($pos2===false)
             {
                 continue;
             }    
-            if (abs($tt_doc1[$pos]['value1']-$tt_doc2[$pos]['value1'])>$step1)
+            $error = '0';
+            if (abs($tt_doc1[$pos1]['value1']-$tt_doc2[$pos2]['value1'])>$step1)
             {
+                $error = '1';
                 continue;
             }    
-            if (abs($tt_doc1[$pos]['value2']-$tt_doc2[$pos]['value2'])>$step2)
+            if (abs($tt_doc1[$pos1]['value2']-$tt_doc2[$pos2]['value2'])>$step2)
             {
+                $error .= '2';
                 continue;
             }    
-            if (abs($tt_doc1[$pos]['value3']-$tt_doc2[$pos]['value3'])>$step3)
+            if (abs($tt_doc1[$pos1]['value3']-$tt_doc2[$pos2]['value3'])>$step3)
             {
+                $error .= '3';
                 continue;
             }    
             $objd[$i] = array();
             $objd[$i]['nom1']=array('name'=>$addr_row[$i]+1,'id'=>'');
             $objd[$i]['nom2']=array('name'=>$j+1,'id'=>'');
-            $objd[$i]['izm11']=array('name'=>$tt_doc1[$pos]['value1'],'id'=>'');
-            $objd[$i]['izm12']=array('name'=>$tt_doc1[$pos]['value2'],'id'=>'');
-            $objd[$i]['izm13']=array('name'=>$tt_doc1[$pos]['value3'],'id'=>'');
-            $objd[$i]['izm21']=array('name'=>$tt_doc2[$pos]['value1'],'id'=>'');
-            $objd[$i]['izm22']=array('name'=>$tt_doc2[$pos]['value2'],'id'=>'');
-            $objd[$i]['izm23']=array('name'=>$tt_doc2[$pos]['value3'],'id'=>'');
+            $objd[$i]['izm11']=array('name'=>$tt_doc1[$pos1]['value1'],'id'=>'');
+            $objd[$i]['izm12']=array('name'=>$tt_doc1[$pos1]['value2'],'id'=>'');
+            $objd[$i]['izm13']=array('name'=>$tt_doc1[$pos1]['value3'],'id'=>'');
+            $objd[$i]['izm21']=array('name'=>$tt_doc2[$pos2]['value1'],'id'=>'');
+            $objd[$i]['izm22']=array('name'=>$tt_doc2[$pos2]['value2'],'id'=>'');
+            $objd[$i]['izm23']=array('name'=>$tt_doc2[$pos2]['value3'],'id'=>'');
+            $objd[$i]['error']=array('name'=>$error,'id'=>'');
         }    
         $objs['LDATA'] = $objd;
         return $objs;

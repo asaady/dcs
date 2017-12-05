@@ -47,6 +47,7 @@ class View
                         if ($mode=='PRINT')
                         {
                             $itype='hidden';
+                            $readonly = ' readonly';
                         }   
                         elseif ($mode=='VIEW')
                         {    

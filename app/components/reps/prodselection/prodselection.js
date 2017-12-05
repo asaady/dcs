@@ -394,6 +394,30 @@ $('body').on('click', '#sort', function (e)
       }
     );
 });
+$('body').on('click', '#print', function (e) 
+{
+    var $itemid = $("input[name='itemid']").val();
+    var str="";
+    var href='';
+    e.preventDefault();
+    $('.form-group input').each(
+        function()
+        {
+            if (this.value!='')
+            {
+                if ((this.name.indexOf('name_') + 1)==0)
+                {    
+                    str+='\\'+this.value;
+                }    
+            }    
+        }
+    );
+    if (str!='')
+    {
+        href="\\print\\"+$itemid+str;
+        window.open(href, "_blank");
+    }    
+});
 
 $('body').on('click', '#build', function (e) 
 {
@@ -422,11 +446,11 @@ $('input.form-control[it=date]').pickadate({
 $(document).ready(function() 
 { 
     var filter_val = $("input[name='filter_val']").val();
-    $("input[name='mindate']").val(filter_val);
+    $("input[name='doc2']").val(filter_val);
     var curid = $("input[name='curid']").val();
     if (curid!='')
     {
-        $("input[name='parameter']").val(curid); 
+        $("input[name='doc1']").val(curid); 
         $("input[name='command']").val('load'); 
         $data = $('.row input').serializeArray();
         $.ajax({

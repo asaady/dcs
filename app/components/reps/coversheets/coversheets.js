@@ -385,6 +385,31 @@ $('body').on('click', '#sort', function (e)
       }
     );
 });
+$('body').on('click', '#print', function (e) 
+{
+    var $itemid = $("input[name='itemid']").val();
+    var str="";
+    var href='';
+    e.preventDefault();
+    $('.form-group input').each(
+        function()
+        {
+            if (this.value!='')
+            {
+                if ((this.name.indexOf('name_') + 1)==0)
+                {    
+                    str+='\\'+this.value;
+                }    
+            }    
+        }
+    );
+    if (str!='')
+    {
+        href="\\print\\"+$itemid+str;
+        window.open(href, "_blank");
+    }    
+});
+
 
 $('body').on('click', '#build', function (e) 
 {

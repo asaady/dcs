@@ -112,10 +112,11 @@ class CoverSheets extends Model
             )
           );
     }        
-    public function getCSdata_byTO($csid)
+    public function getCSdata_byTO($csid,$show_empty=false)
     {
         
         $objs = array();
+        $objs['actionlist'] = array(array('id'=>'print','name'=>'print','synonym'=>'Печать','icon'=>'print'));
         
         $ar_tt = array();
         $ent= new Entity($csid);
@@ -244,6 +245,13 @@ class CoverSheets extends Model
         $arr_e= array();
         while($row = $res->fetch(PDO::FETCH_ASSOC)) 
         {
+            if (!$show_empty)
+            {
+                if (($row['godn']+$row['brak'])==0)
+                {
+                    continue;
+                }    
+            }    
             $objs['LDATA'][$row['toperid']]=array();
             $objs['LDATA'][$row['toperid']]['godn']= array('name'=>$row['godn'], 'id'=>'');
             $objs['LDATA'][$row['toperid']]['brak']= array('name'=>$row['brak'], 'id'=>'');
@@ -294,10 +302,11 @@ class CoverSheets extends Model
        
         return $objs;	
     }
-    public function getNZPbyCS($tprocid, $mindate='')
+    public function getNZPbyCS($tprocid, $mindate='',$show_empty=false)
     {
         $objs = array();
-        
+        $objs['actionlist'] = array(array('id'=>'print','name'=>'print','synonym'=>'Печать','icon'=>'print'));
+   
         $ar_tt = array();
         $ent= new Entity($tprocid);
         $objs['SDATA']=array();
@@ -461,6 +470,13 @@ class CoverSheets extends Model
         $arr_e= array();
         while($row = $res->fetch(PDO::FETCH_ASSOC)) 
         {
+            if (!$show_empty)
+            {
+                if (($row['godn']+$row['brak'])==0)
+                {
+                    continue;
+                }    
+            }    
             $objs['LDATA'][$row['csid']]=array();
             $objs['LDATA'][$row['csid']]['csid']= array('name'=>$row['tprocid'], 'id'=>$row['tprocid']);
             $objs['LDATA'][$row['csid']]['godn']= array('name'=>$row['godn'], 'id'=>'');
@@ -497,9 +513,11 @@ class CoverSheets extends Model
         return $objs;	
     }
 
-    public function getNZPbyTProc($divid='', $mindate='')
+    public function getNZPbyTProc($divid='', $mindate='',$show_empty=false)
     {
         $objs = array();
+        $objs['actionlist'] = array(array('id'=>'print','name'=>'print','synonym'=>'Печать','icon'=>'print'));
+        
         $objs['SDATA']=array();
         
         $ar_tt = array();
@@ -682,6 +700,13 @@ class CoverSheets extends Model
         $arr_e= array();
         while($row = $res->fetch(PDO::FETCH_ASSOC)) 
         {
+            if (!$show_empty)
+            {
+                if (($row['godn']+$row['brak'])==0)
+                {
+                    continue;
+                }    
+            }    
             $objs['LDATA'][$row['tprocid']]=array();
             $objs['LDATA'][$row['tprocid']]['tprocid']= array('name'=>$row['tprocid'], 'id'=>$row['tprocid']);
             $objs['LDATA'][$row['tprocid']]['godn']= array('name'=>$row['godn'], 'id'=>'');

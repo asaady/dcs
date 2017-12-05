@@ -1,70 +1,4 @@
 <?php
-function outfield($t,$hclass,$action)
-{        
-    echo "<div class=\"$hclass\">";
-        echo "<div class=\"form-group\">";
-            if ($t['class']!='hidden')
-            {
-                echo "<label for=\"$t[id]\" class=\"control-label col-md-4\">$t[synonym]</label>";
-            }   
-            echo "<div class=\"col-md-8\">";
-                $itype='text';
-                $readonly = ' readonly';
-                if ($action!='VIEW')
-                {    
-                    $readonly = '';
-                    if($t['type']=='int') 
-                    {    
-                        $itype = 'number';
-                    } 
-                    elseif($t['type']=='float') 
-                    {
-                        $itype = 'number\" step=\"any';
-                    }    
-                    elseif($t['type']=='date') 
-                    {    
-                        $itype = 'date';
-                    }
-                    if ($t['class']=='readonly') 
-                    {
-                        $readonly = ' readonly';
-                    }
-                }   
-                if ($t['class']=='hidden')
-                {
-                    $itype = 'hidden';
-                }
-                if (($t['type']=='id')||($t['type']=='cid')||($t['type']=='mdid')||($t['type']=='propid'))
-                {
-                    echo "<input type=\"hidden\" class=\"form-control\" id=\"$t[id]\" name=\"$t[id]\" it=\"$t[type]\" vt=\"$t[valmdid]\" value=\"\">\n";
-                    echo "<input type=\"$itype\" class=\"form-control\" st=\"\" id=\"name_$t[id]\" name=\"name_$t[id]\" it=\"$t[type]\" vt=\"$t[valmdid]\" value=\"\"$readonly>\n";
-                    echo "<ul class=\"types_list\">";
-                        echo "<li id=\"\"></li>";
-                    echo "</ul>";
-                }
-                else 
-                {
-                    if ($itype=='date')  
-                    {
-                        echo "<input type=\"date\" name=\"$t[id]\" st=\"\" id=\"$t[id]\" it=\"date\" valid=\"\" vt=\"\" value=\"\" class=\"form-control datepicker\"$readonly>\n";
-                    }
-                    else
-                    {
-                        echo "<input type=\"$itype\" class=\"form-control\" st=\"\" id=\"$t[id]\" name=\"$t[id]\" it=\"$t[type]\" valid=\"\" vt=\"\" value=\"\"$readonly>\n";
-                    }    
-                    if ($t['type']=='bool') 
-                    {    
-                        echo "<ul class=\"types_list\">";
-                            echo "<li id=\"true\">true</li>";
-                            echo "<li id=\"false\">false</li>";
-                        echo "</ul>";
-                    }
-                    
-                }
-            echo "</div>";
-        echo "</div>";
-    echo "</div>";
-}    
 echo "<ul id=\"tzTab\" class=\"nav nav-tabs\">";
     $dop=" class=\"active\"";
     if (($arResult['ACTION']=='SET_EDIT')||($arResult['ACTION']=='SET_VIEW'))
@@ -121,20 +55,20 @@ echo "<div class=\"tab-content\">";
                 if($t['rank']%2)
                 {
                     echo "<div class=\"row\">";
-                        outfield($t,'col-md-6',$arResult['ACTION']);
+                    tzVendor\View::outfield($t,'col-md-6',$arResult['ACTION']);
                         if (($i+1) < $size)
                         {
                             if(($props[$i+1]['rank']%2)==0)
                             {
                                 $i++;
                                 $t=$props[$i];
-                                outfield($t,'col-md-6',$arResult['ACTION']);
+                                tzVendor\View::outfield($t,'col-md-6',$arResult['ACTION']);
                             }
                         }
                     echo "</div>";
                 } else {
                     echo "<div class=\"row\">";
-                        outfield($t,'col-md-offset-6 col-md-6',$arResult['ACTION']);
+                        tzVendor\View::outfield($t,'col-md-offset-6 col-md-6',$arResult['ACTION']);
                     echo "</div>";        
                 }
             }

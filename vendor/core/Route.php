@@ -281,6 +281,13 @@ class Route {
                     $ritem = trim($routes[2]);
                     $step=1;
                 }    
+                elseif (strtolower(trim($ritem))=='print')
+                {
+                    //Это вызов печатной формы
+                    $arResult['MODE']='PRINT';
+                    $ritem = trim($routes[2]);
+                    $step=1;
+                }
                 else 
                 {
                     if (User::isAdmin())

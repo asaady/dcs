@@ -74,7 +74,7 @@ class ProdSelection extends Model
             'izm22'=>array('id'=>'izm22','name'=>'izm22','synonym'=>'Изд2: Изм.2','type'=>'float', 'class'=>'active'),
             'izm13'=>array('id'=>'izm13','name'=>'izm13','synonym'=>'Изд1: Изм.3','type'=>'float', 'class'=>'active'),
             'izm23'=>array('id'=>'izm23','name'=>'izm23','synonym'=>'Изд2: Изм.3','type'=>'float', 'class'=>'active'),
-            'error'=>array('id'=>'error','name'=>'error','synonym'=>'Ошибка','type'=>'int', 'class'=>'active')
+            //'error'=>array('id'=>'error','name'=>'error','synonym'=>'Ошибка','type'=>'int', 'class'=>'active')
         );
 
         return array(
@@ -189,6 +189,8 @@ class ProdSelection extends Model
     public function get_selection($doc1_id,$doc2_id,$ref1_id,$ref2_id,$ref3_id)
     {
         $objs = array();
+        $objs['actionlist'] = array(array('id'=>'print','name'=>'print','synonym'=>'Печать','icon'=>'print'));
+        
         $ar_tt = array();
 //        $doc1= new Entity($doc1_id);
 //        $doc2= new Entity($doc2_id);
@@ -421,7 +423,6 @@ class ProdSelection extends Model
 //        Common_data::_log('/log','RESULT : '.$dump);
         Common_data::_log('/log','HUNGARY FINISH');
         DataManager::droptemptable($ar_tt);
-        $objs = array();
         $objs['SDATA'] = array();
         $objs['PLIST'] = array();
         $objs['PSET'] = array(
@@ -434,7 +435,7 @@ class ProdSelection extends Model
             'izm22'=>array('id'=>'izm22','name'=>'izm22','synonym'=>'Изд2: Изм.2','type'=>'float', 'class'=>'active'),
             'izm13'=>array('id'=>'izm13','name'=>'izm13','synonym'=>'Изд1: Изм.3','type'=>'float', 'class'=>'active'),
             'izm23'=>array('id'=>'izm23','name'=>'izm23','synonym'=>'Изд2: Изм.3','type'=>'float', 'class'=>'active'),
-            'error'=>array('id'=>'error','name'=>'error','synonym'=>'Ошибка','type'=>'int', 'class'=>'active')
+            //'error'=>array('id'=>'error','name'=>'error','synonym'=>'Ошибка','type'=>'int', 'class'=>'active')
         );
         foreach($res as $par)
         {
@@ -476,7 +477,7 @@ class ProdSelection extends Model
             $objd[$i]['izm21']=array('name'=>$tt_doc2[$pos2]['value1'],'id'=>'');
             $objd[$i]['izm22']=array('name'=>$tt_doc2[$pos2]['value2'],'id'=>'');
             $objd[$i]['izm23']=array('name'=>$tt_doc2[$pos2]['value3'],'id'=>'');
-            $objd[$i]['error']=array('name'=>$error,'id'=>'');
+            //$objd[$i]['error']=array('name'=>$error,'id'=>'');
         }    
         $objs['LDATA'] = $objd;
         return $objs;

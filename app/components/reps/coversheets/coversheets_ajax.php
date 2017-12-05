@@ -17,17 +17,19 @@ function loadData()
     $cs = new CoverSheets($idm->getitemid());
     $ent = new Entity($idm->getcurid());
     $mdid = $ent->getmdentity()->getid();
+    $mode = $idm->getmode();
+    $show_empty = $mode!='PRINT';
     if ($mdid=='50643d39-aec2-485e-9c30-bf29b04db75c') //подразделения
     {
-        $arData = $cs->getNZPbyTProc($idm->getcurid(), $data['mindate']['name']);
+        $arData = $cs->getNZPbyTProc($idm->getcurid(), $data['mindate']['name'],$show_empty);
     }    
     elseif ($mdid=='def88585-c509-4200-8980-19ae0e164bd7') //техпроцессы
     {
-        $arData = $cs->getNZPbyCS($idm->getcurid(), $data['mindate']['name']);
+        $arData = $cs->getNZPbyCS($idm->getcurid(), $data['mindate']['name'],$show_empty);
     }    
     elseif ($mdid=='be0d47b9-2972-496c-a11b-0f3d38874aab') //сопр.листы
     {
-        $arData = $cs->getCSdata_byTO($idm->getcurid());
+        $arData = $cs->getCSdata_byTO($idm->getcurid(),$show_empty);
     }    
     else
     {

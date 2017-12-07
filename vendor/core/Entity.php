@@ -1087,6 +1087,10 @@ class Entity extends Model {
                 {
                     continue;
                 }    
+                if ($prow['valmdtypename']=='Sets')
+                {
+                    continue;
+                }
                 foreach($objs['LDATA'] as $id=>$row) 
                 {
                     if (array_key_exists($rid, $row))

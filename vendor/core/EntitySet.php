@@ -272,6 +272,24 @@ class EntitySet extends Model {
 	$res = DataManager::dm_query($sql, array('userid'=>$userid));	
         return $res->fetchAll(PDO::FETCH_ASSOC);
     }
+    
+    static function fill_ent_name($arr_e,$arr_id,&$ldata)
+    {
+        $arr_entities = self::getAllEntitiesToStr($arr_e);
+        foreach($arr_id as $rid=>$prow)
+        {
+            foreach($ldata as $id=>$row) 
+            {
+                if (array_key_exists($rid, $row))
+                {
+                    $crow = $row[$rid];
+                    if (array_key_exists($crow['id'], $arr_entities)){
+                        $ldata[$id][$rid]['name']=$arr_entities[$crow['id']]['name'];
+                    }    
+                }        
+            }
+        }    
+    }
     public static function getEntitiesByFilter($filter, $mode='', $edit_mode='',$limit=TZ_COUNT_REC_BY_PAGE, $page=1, $order='name') 
     {
     	$objs = array();
@@ -802,9 +820,10 @@ class EntitySet extends Model {
         if (count($access_prop))
         {
             $arr_prop = array_unique(array_column($access_prop,'propid'));
+            $arr_eprop = array_column($mdentity->getarProps(), 'propid','id');
             foreach ($arr_prop as $prop)
             {
-                $isprop = array_search($prop, array_column($mdentity->getarProps(), 'propid','id'));
+                $isprop = array_search($prop, $arr_eprop);
                 if ($isprop===FALSE)
                 {
                     //в текущем объекте нет реквизита с таким значением $prop
@@ -813,10 +832,11 @@ class EntitySet extends Model {
                 $str_val='';
                 foreach ($access_prop as $ap)
                 {
-                    if ($prop<>$ap['propid'])
+                    if ($prop!=$ap['propid'])
                     {
-                        continue;
+                       continue;
                     }    
+                    $propname = $ap['propname'];
                     $rls_type = $ap['type'];
                     if (($ap['rd']===true)||($ap['wr']===true))
                     {
@@ -831,18 +851,18 @@ class EntitySet extends Model {
                 $props_templ = new PropsTemplate($prop);
                 if ($props_templ->getvalmdentity()->getid()==$mdid)    
                 {
-                    $sql_rls .= " INNER JOIN \"ETable\" as et_$ap[propname] ON et_$ap[propname].id=et.id AND et_$ap[propname].id IN $str_val";
+                    $sql_rls .= " INNER JOIN \"ETable\" as et_$propname ON et_$propname.id=et.id AND et_$propname.id IN $str_val";
                 }    
                 else
                 {    
-                    if (!in_array($ap['propid'], $params))
+                    if (!in_array($prop, $params))
                     {        
-                        $sql_rls .= " INNER JOIN \"IDTable\" as it_$ap[propname] inner join \"MDProperties\" as mp_$ap[propname] on it_$ap[propname].propid=mp_$ap[propname].id AND mp_$ap[propname].propid=:$ap[propname] inner join \"PropValue_$rls_type\" as pv_$ap[propname] ON pv_$ap[propname].id=it_$ap[propname].id AND pv_$ap[propname].value in $str_val ON it_$ap[propname].entityid=et.id";
-                        $params[$ap['propname']]=$ap['propid'];
-                        $params_fin[$ap['propname']]=$ap['propid'];
+                        $sql_rls .= " INNER JOIN \"IDTable\" as it_$propname inner join \"MDProperties\" as mp_$propname on it_$propname.propid=mp_$propname.id AND mp_$propname.propid=:$propname inner join \"PropValue_$rls_type\" as pv_$propname ON pv_$propname.id=it_$propname.id AND pv_$propname.value in $str_val ON it_$propname.entityid=et.id";
+                        $params[$propname]=$prop;
+                        $params_fin[$propname]=$prop;
                     }    
                 }    
-            }    
+          }    
         }   
         if ($sql_rls<>'')
         {

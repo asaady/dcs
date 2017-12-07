@@ -928,9 +928,9 @@ class DataManager {
     }        
     public static function get_col_access_text($ttname)
     {
-        return self::get_access_text($ttname,'read');
+        return self::get_access_text($ttname,'read','AccessRightCom');
     }        
-    public static function get_access_text($ttname,$mode='read')
+    public static function get_access_text($ttname,$mode='read',$ra_tbl='RoleAccess')
     {
         $dop='';
         if (!User::isAdmin())
@@ -939,7 +939,7 @@ class DataManager {
 		inner join \"CTable\" as ct
 			inner join \"MDTable\" as md_ra
 			on ct.mdid = md_ra.id
-			and md_ra.name='RoleAccess'
+			and md_ra.name='".$ra_tbl."'
 			inner join \"CPropValue_cid\" as pv_rol
 				inner join \"CProperties\" as cp_rol
 				on pv_rol.pid=cp_rol.id

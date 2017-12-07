@@ -315,8 +315,8 @@ class EntitySet extends Model {
             //вкл rls: добавим поля отбора в список реквизитов динамического списка
             $access_prop = self::get_access_prop();
             
-            $expr = function($row) use ($arr_prop) { return (($row['ranktoset']==0)&&(!in_array($row['propid'], $arr_prop))); };            
             $arr_prop = array_unique(array_column($access_prop,'propid'));
+            $expr = function($row) use ($arr_prop) { return (($row['ranktoset']==0)&&(!in_array($row['propid'], $arr_prop))); };            
 
             foreach ($arr_prop as $prop)
             {

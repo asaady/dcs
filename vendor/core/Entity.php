@@ -36,7 +36,7 @@ class Entity extends Model {
         $this->synonym = $this->name;
         $this->name = $this->gettoString();
         $this->mode = $mode;
-        $prop_activity = array_search("Activity", array_column($this->plist,'name','id'));
+        $prop_activity = array_search("activity", array_column($this->plist,'name','id'));
         if ($prop_activity!==FALSE)
         {    
             $this->activity = $this->getattr($prop_activity); 

@@ -317,6 +317,7 @@ class CollectionSet extends Model {
             }    
         }    
         $objs['SQL']=$sql;
+        //die('sql = '.$sql.var_dump($params));
 	$res = DataManager::dm_query($sql,$params);
  
         while($row = $res->fetch(PDO::FETCH_ASSOC)) {

@@ -101,7 +101,6 @@ function getData()
             $data=array();
             $data[$getdata['propid']['id']]=array('name'=>$getdata['name']['name'],'id'=>$getdata['id']['id']);
             $ent = new Entity($idm->getitemid());
-            die(var_dump($data));
             $ent->update($data);
         },
     'GET_ACTIONLIST'=> function($idm)

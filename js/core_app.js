@@ -47,8 +47,11 @@ $('a').on('show.bs.tab', function (e) {
             type: 'post',
             dataType: 'json',
             data: $data,
+            error: function(xhr, error){
+                    console.debug(xhr); console.debug(error);
+            },                
             success: function(result) {
-                onLoadSet(result);
+                onLoadValID(result);
             }
         });      
     }
@@ -162,12 +165,12 @@ function onloadlist(data)
         $('#tzModal').modal('hide');
     });
     $('#tzModal').modal('show');
-    console.log(data);
 }
 function onLoadValID(data)
 {
     var cls;
-    var $action = $("input[name='action']").val();
+    var action = $("input[name='action']").val();
+    var curid = $("input[name='curid']").val();
     var arr_type = ['id','cid','mdid','propid'];
     if ('SDATA' in data)
     {    
@@ -187,7 +190,7 @@ function onLoadValID(data)
                     }    
                     $("input.form-control[id="+cid+"]").val(dname);
                 }    
-                if ($action==='VIEW')
+                if (action==='VIEW')
                 {
                     $("input.form-control[id="+cid+"]").attr('readonly', 'readonly');
                     if (arr_type.indexOf(data['PLIST'][cid]['type'])>=0)
@@ -204,10 +207,18 @@ function onLoadValID(data)
     }    
     if ('LDATA' in data)
     {    
-        $("tbody#entitylist tr").remove();
+        if (curid=='')
+        {
+            $elist = $("tbody#entitylist");
+        }    
+        else
+        {
+            $elist = $("tbody#entitylist",$("div#"+curid));
+        }    
+        $elist.find("tr").remove();
         for(var id in data['LDATA'])
         {
-            $("tbody#entitylist").append("<tr class=\"active\" st=\""+data['LDATA'][id].class+"\" id=\""+id+"\">");
+            $elist.append("<tr class=\"active\" st=\""+data['LDATA'][id].class+"\" id=\""+id+"\"></tr>");
             for(var cid in data['PSET'])
             {
                 cls = data['PSET'][cid]['class'];
@@ -219,48 +230,51 @@ function onLoadValID(data)
                         dname = "<del>"+dname+"</del>";
                     }    
                     var did = data['LDATA'][id][cid]['id'];
-                    $("tr#"+id).append("<td class=\""+cls+"\" id=\""+cid+"\" it=\""+did+"\" vt=\""+data['PSET'][cid]['type']+"\">"+dname+"</td>");    
+                    $elist.find("tr#"+id).append("<td class=\""+cls+"\" id=\""+cid+"\" it=\""+did+"\" vt=\""+data['PSET'][cid]['type']+"\">"+dname+"</td>");    
                 }
                 else
                 {
-                    $("tr#"+id).append("<td class=\""+cls+"\" id=\""+cid+"\" it=\"\" vt=\""+data['PSET'][cid]['type']+"\"></td>");    
+                    $elist.find("tr#"+id).append("<td class=\""+cls+"\" id=\""+cid+"\" it=\"\" vt=\""+data['PSET'][cid]['type']+"\"></td>");    
                 }    
             }
-            $("tbody#entitylist").append("</tr>");
+//            $("tbody#entitylist").append("");
         }
     }    
     actionlist(data['actionlist']);
 }
-function onLoadSet(data) 
-{
-    var $action = $("input[name='action']").val(); 
-    var $activeid = data['ITEMID'];
-    var $obj = $("#"+$activeid).find("tbody#entitylist");
-    $obj.find("tr").remove();
-    for(var id in data['LDATA'])
-    {
-        $obj.append("<tr id=\""+id+"\" class=\"active\" st=\""+data['LDATA'][id].class+"\">");
-        for(var cid in data['PSET'])
-        {
-            cls = data['PSET'][cid]['class'];
-            if (cid in data['LDATA'][id]){
-                var dname = data['LDATA'][id][cid]['name'];
-                if (data['LDATA'][id].class=='erased')
-                {
-                    dname = "<del>"+dname+"</del>";
-                }    
-                var did = data['LDATA'][id][cid]['id'];
-                $("tr#"+id).append("<td class=\""+cls+"\" id=\""+cid+"\" it=\""+did+"\" vt=\""+data['PSET'][cid]['type']+"\">"+dname+"</td>");    
-            }
-            else
-            {
-                $obj.find("tr#"+id).append("<td class=\""+cls+"\" id=\""+cid+"\" it=\"\" vt=\""+data['PSET'][cid]['type']+"\"></td>");
-            }    
-        }
-        $obj.append("</tr>");
-    }
-    actionlist(data['actionlist']);
-}
+//function onLoadSet(data) 
+//{
+//    console.log('on load set');
+//    var $action = $("input[name='action']").val(); 
+//    var $activeid = data['ITEMID'];
+//    var $obj = $("#"+$activeid).find("tbody#entitylist");
+//    $obj.find("tr").remove();
+//    for(var id in data['LDATA'])
+//    {
+//        $obj.append("<tr id=\""+id+"\" class=\"active\" st=\""+data['LDATA'][id].class+"\"></tr>");
+//        for(var cid in data['PSET'])
+//        {
+//            cls = data['PSET'][cid]['class'];
+//            if (cid in data['LDATA'][id]){
+//                var dname = data['LDATA'][id][cid]['name'];
+//                if (data['LDATA'][id].class=='erased')
+//                {
+//                    dname = "<del>"+dname+"</del>";
+//                }    
+//                var did = data['LDATA'][id][cid]['id'];
+//                $("tr#"+id).append("<td class=\""+cls+"\" id=\""+cid+"\" it=\""+did+"\" vt=\""+data['PSET'][cid]['type']+"\">"+dname+"</td>");    
+//                console.log('cid = '+cid+' id = '+id);
+//            }
+//            else
+//            {
+//                console.log(' нет cid = '+cid);
+//                $obj.find("tr#"+id).append("<td class=\""+cls+"\" id=\""+cid+"\" it=\"\" vt=\""+data['PSET'][cid]['type']+"\"></td>");
+//            }    
+//        }
+////        $obj.append("");
+//    }
+//    actionlist(data['actionlist']);
+//}
 function onLoadGetData(data) {
     var curinp = $(".row input[st='info']");
     var curname = curinp.attr('name');
@@ -705,8 +719,11 @@ $('body').on('click','a#create', function ()
                 type: 'post',
                 dataType: 'json',
                 data: $data,
+                error: function(xhr, error){
+                        console.debug(xhr); console.debug(error);
+                },                
                 success: function(result) {
-                    onLoadSet(result);
+                    onLoadValID(result);
                 }
             });
         }   

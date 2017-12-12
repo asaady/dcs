@@ -242,39 +242,6 @@ function onLoadValID(data)
     }    
     actionlist(data['actionlist']);
 }
-//function onLoadSet(data) 
-//{
-//    console.log('on load set');
-//    var $action = $("input[name='action']").val(); 
-//    var $activeid = data['ITEMID'];
-//    var $obj = $("#"+$activeid).find("tbody#entitylist");
-//    $obj.find("tr").remove();
-//    for(var id in data['LDATA'])
-//    {
-//        $obj.append("<tr id=\""+id+"\" class=\"active\" st=\""+data['LDATA'][id].class+"\"></tr>");
-//        for(var cid in data['PSET'])
-//        {
-//            cls = data['PSET'][cid]['class'];
-//            if (cid in data['LDATA'][id]){
-//                var dname = data['LDATA'][id][cid]['name'];
-//                if (data['LDATA'][id].class=='erased')
-//                {
-//                    dname = "<del>"+dname+"</del>";
-//                }    
-//                var did = data['LDATA'][id][cid]['id'];
-//                $("tr#"+id).append("<td class=\""+cls+"\" id=\""+cid+"\" it=\""+did+"\" vt=\""+data['PSET'][cid]['type']+"\">"+dname+"</td>");    
-//                console.log('cid = '+cid+' id = '+id);
-//            }
-//            else
-//            {
-//                console.log(' нет cid = '+cid);
-//                $obj.find("tr#"+id).append("<td class=\""+cls+"\" id=\""+cid+"\" it=\"\" vt=\""+data['PSET'][cid]['type']+"\"></td>");
-//            }    
-//        }
-////        $obj.append("");
-//    }
-//    actionlist(data['actionlist']);
-//}
 function onLoadGetData(data) {
     var curinp = $(".row input[st='info']");
     var curname = curinp.attr('name');

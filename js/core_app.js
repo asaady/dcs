@@ -1031,7 +1031,7 @@ function save()
 function save_success (result)
 {
     $('#tzModal').modal('hide');
-    //location.href=getprefix()+result['id']+'/edit';
+    location.href=getprefix()+result['id']+'/edit';
     console.log(result);
 };
 function before_save_success(result) 

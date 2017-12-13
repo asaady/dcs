@@ -40,7 +40,7 @@ $('a').on('show.bs.tab', function (e) {
         $(x).hide();
         $("input[name='curid']").val($activeid); 
         $("input[name='command']").val('load'); 
-        $data = $('.row input').serializeArray();
+        $data = $('.row :input').serializeArray();
         $.ajax(
         {
             url: '/common/post_ajax.php',
@@ -67,7 +67,7 @@ $('a').on('show.bs.tab', function (e) {
             $("input[name='action']").val('VIEW'); 
         }    
         $("input[name='command']").val('load'); 
-        $data = $('.row input').serializeArray();
+        $data = $('.row :input').serializeArray();
         $.ajax({
           url: '/common/post_ajax.php',
           type: 'post',
@@ -243,7 +243,7 @@ function onLoadValID(data)
     actionlist(data['actionlist']);
 }
 function onLoadGetData(data) {
-    var curinp = $(".row input[st='info']");
+    var curinp = $(".row :input[st='info']");
     var curname = curinp.attr('name');
     var curid = $(curinp).attr('id');
     var exd = 0;
@@ -272,7 +272,7 @@ $('input.form-control').keyup(function(eventObject) {
     }
     var itype = $(this).attr("it");
     var curid = this.id;
-    var curinp = $(".row input[st='info']");
+    var curinp = $(".row :input[st='info']");
     var arr_type = ['id','cid','mdid','propid'];
     if (curinp!=this)
     {
@@ -298,7 +298,7 @@ $('input.form-control').keyup(function(eventObject) {
             {    
                 $("input[name='curid']").val(curid);
                 $("input[name='command']").val('prop_find');
-                $data = $('.row input').serializeArray();
+                $data = $('.row :input').serializeArray();
             }
             $("#"+curid+"~.types_list").slideUp('fast'); 
             if ($(this).val().length>1) 
@@ -325,8 +325,8 @@ $('input.form-control').keyup(function(eventObject) {
         }	
     }  
 }); 
-$('.row input').dblclick(function () {
-    var curinp = $(".row input[st='info']");
+$('.row :input').dblclick(function () {
+    var curinp = $(".row :input[st='info']");
     if (curinp!=this)
     {
         $(curinp).attr('st','active');
@@ -365,7 +365,7 @@ $('body').on('dblclick','#modallist tr',function (e)
     e.preventDefault();
     $("input[name='curid']").val(this.id); 
     $("input[name='command']").val('choice'); 
-    $data = $('.row input').serializeArray();
+    $data = $('.row :input').serializeArray();
     $.ajax({
       url: '/common/post_ajax.php',
       type: 'post',
@@ -565,7 +565,7 @@ $('body').on('click','button.form-value#list', function(e)
     $("input[name='curid']").val($('tr.info').attr('id')); 
     $("input[name='filter_id']").val($('th.info').attr('id')); 
     $("input[name='command']").val('list'); 
-    $data = $('.row input').serializeArray();
+    $data = $('.row :input').serializeArray();
     $.ajax({
       url: '/common/post_ajax.php',
       type: 'post',
@@ -597,9 +597,9 @@ $('body').on('click','button.form-value#delete_ivalue', function(e)
      );
 });
 
-$('.row input').click(function () {
+$('.row :input').click(function () {
     $("input~.types_list").slideUp('fast');
-    var curinp = $(".row input[st='info']");
+    var curinp = $(".row :input[st='info']");
     $(curinp).attr('st','active');
     $(this).attr('st','info');
 });
@@ -679,7 +679,7 @@ $('body').on('click','a#create', function ()
         {
             var curid = $("ul#tzTab").find("li.active a").attr('href').substring(1);
             $("input[name='curid']").val(curid);    
-            $data = $('.row input').serializeArray();
+            $data = $('.row :input').serializeArray();
             $.ajax(
             {
                 url: '/common/post_ajax.php',
@@ -756,7 +756,7 @@ function erase() {
     $("input[name='command']").val('delete'); 
     var curid = $("input[name='curid']").val();    
     $("input[name='curid']").val($('tr.info').attr('id')); 
-    $data = $('.row input').serializeArray();
+    $data = $('.row :input').serializeArray();
     $("input[name='curid']").val(curid); 
     $.ajax({
       url: '/common/post_ajax.php',
@@ -823,7 +823,7 @@ $('body').on('click', '#delete', function ()
     var curid = $("input[name='curid']").val();
     $("input[name='curid']").val($('tr.info').attr('id')); 
     $("input[name='command']").val('before_delete'); 
-    $data = $('.row input').serializeArray();
+    $data = $('.row :input').serializeArray();
     $("input[name='curid']").val(curid); 
     $.ajax({
       url: '/common/post_ajax.php',
@@ -876,7 +876,7 @@ $('body').on('click', '#filter', function (e)
     }    
     curval = $el_fval.val();
     $("input[name='command']").val('load'); 
-    $data = $('.row input').serializeArray();
+    $data = $('.row :input').serializeArray();
     $.ajax({
       url: '/common/post_ajax.php',
       type: 'post',
@@ -912,7 +912,7 @@ $('body').on('click', '#sort', function (e)
         }    
     }
     $("input[name='command']").val('load'); 
-    $data = $('.row input').serializeArray();
+    $data = $('.row :input').serializeArray();
     $.ajax({
       url: '/common/post_ajax.php',
       type: 'post',
@@ -969,7 +969,7 @@ function show_history(result)
 $('body').on('click', '#history', function (e)
 {
     var $entityid = $("input[name='itemid']").val();
-    var curinp = $(".row input[st='info']").attr('id');
+    var curinp = $(".row :input[st='info']").attr('id');
     if ($entityid!='') 
     {
         if (curinp!='') 
@@ -981,7 +981,7 @@ $('body').on('click', '#history', function (e)
             }
             $("input[name='curid']").val(tcurid);
             $("input[name='command']").val('history'); 
-            $data = $('.row input').serializeArray();
+            $data = $('.row :input').serializeArray();
             $.ajax({
               url: '/common/post_ajax.php',
               type: 'post',
@@ -999,7 +999,7 @@ function before_save()
 {
     var $data;
     $("input[name='command']").val('before_save'); 
-    $data = $('.row input').serializeArray();
+    $data = $('.row :input').serializeArray();
     $.ajax({
       url: '/common/post_ajax.php',
       type: 'post',
@@ -1012,7 +1012,7 @@ function save()
 {
     var $data;
     $("input[name='command']").val('save'); 
-    $data = $('.row input').serializeArray();
+    $data = $('.row :input').serializeArray();
     $.ajax({
       url: '/common/post_ajax.php',
       type: 'post',
@@ -1088,7 +1088,7 @@ $(document).ready(function()
     var curid = $("input[name='curid']").val(); 
     var action = $("input[name='action']").val();
     $("input[name='command']").val('load'); 
-    $data = $('.row input').serializeArray();
+    $data = $('.row :input').serializeArray();
     $.ajax({
       url: '/common/post_ajax.php',
       type: 'post',

@@ -46,7 +46,7 @@ echo "<div class=\"tab-content\">";
                         echo "<div class=\"form-group\">";
                             echo "<label for=\"$t[id]\" class=\"control-label col-md-2\">$t[synonym]</label>";
                             echo "<div class=\"col-md-10\">";
-                                echo "<textarea class=\"form-control\" rows=\"2\" st=\"\" id=\"$t[id]\" name=$t[id] it=$t[type]></textarea>";
+                                echo "<textarea class=\"form-control\" rows=\"2\" st=\"\" id=\"$t[id]\" name=\"$t[id]\" it=$t[type]></textarea>";
                             echo "</div>";
                         echo "</div>";
                     echo "</div>";

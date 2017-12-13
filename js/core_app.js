@@ -183,12 +183,19 @@ function onLoadValID(data)
                 {    
                     var did = data['SDATA'][id][cid]['id'];
                     var dname = data['SDATA'][id][cid]['name'];
-                    if (did!='')
-                    {    
-                        $("input.form-control[id=name_"+cid+"]").val(dname);
-                        dname = did;
+                    if (data['PLIST'][cid]['type']=='text')
+                    {
+                        $("textarea.form-control[id="+cid+"]").val(dname);
                     }    
-                    $("input.form-control[id="+cid+"]").val(dname);
+                    else
+                    {    
+                        if (did!='')
+                        {    
+                            $("input.form-control[id=name_"+cid+"]").val(dname);
+                            dname = did;
+                        }    
+                        $("input.form-control[id="+cid+"]").val(dname);
+                    }    
                 }    
                 if (action==='VIEW')
                 {
@@ -1024,7 +1031,7 @@ function save()
 function save_success (result)
 {
     $('#tzModal').modal('hide');
-    location.href=getprefix()+result['id']+'/edit';
+    //location.href=getprefix()+result['id']+'/edit';
     console.log(result);
 };
 function before_save_success(result) 

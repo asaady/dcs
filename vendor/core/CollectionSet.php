@@ -126,7 +126,8 @@ class CollectionSet extends Model {
         $sth = DataManager::dm_query($sql,array('itemid'=>$itemid));        
         return $sth->fetch(PDO::FETCH_ASSOC);
     }
-        public static function findCollByProp($filter) {
+    public static function findCollByProp($filter) 
+    {
 //      $filter: array 
 //      id = property id (CProperties)
 //      val = filter value

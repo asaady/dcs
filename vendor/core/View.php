@@ -165,16 +165,6 @@ class View
             echo "</tr>";
             echo "</thead>";
             echo "<tbody id=\"entitylist\" class=\"list\">";
-            foreach($data['LDATA'] as $key=>$val)
-            {    
-                echo "<tr id=\"$key\">";
-                foreach($data['PSET'] as $pkey=>$pval)
-                {    
-                    $cls = $pval['class'];
-                    echo "<td class=\"$cls active\" id=\"$pkey\">$val[$pkey][name]</td>";
-                }
-                echo "</tr>";
-            }    
             echo "</tbody>";
             echo "</table>";
         }        

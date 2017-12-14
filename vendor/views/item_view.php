@@ -103,9 +103,6 @@ echo "<div class=\"tab-content\">";
 
                     echo "</thead> ";
                         echo "<tbody id=\"entitylist\" class=\"list\">";
-                            echo "<tr>";
-                                echo "<td></td>";
-                            echo "</tr>";
                         echo "</tbody>";
                 echo "</table>";           
             echo "</div>";

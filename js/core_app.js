@@ -292,7 +292,12 @@ $('input.form-control').keyup(function(eventObject) {
     }
     else 
     {
-        var $data = {action:$action, id:$(this).attr("vt"), type:itype, name:$(this).val(), command:'find', prefix:'field'};
+        var vt = $(this).attr("vt");
+        if (vt=='')
+        {
+            vt = $("input[it='mdid'][type='hidden']").val();
+        }    
+        var $data = {action:$action, id:vt, type:itype, name:$(this).val(), command:'find', prefix:'field'};
         if (curid=='name_valmdid')
         {    
             var $curtype = $("input#type");

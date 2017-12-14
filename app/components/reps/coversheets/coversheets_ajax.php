@@ -15,8 +15,17 @@ function loadData()
     $idm = new InputDataManager;
     $data = $idm->getdata();
     $cs = new CoverSheets($idm->getitemid());
-    $ent = new Entity($idm->getcurid());
-    $mdid = $ent->getmdentity()->getid();
+    if ($idm->getcurid()!='')
+    {    
+        $ent = new Entity($idm->getcurid());
+        $mdid = $ent->getmdentity()->getid();
+        $mdname = $ent->getmdentity()->getname();
+    }
+    else
+    {
+        $mdid='50643d39-aec2-485e-9c30-bf29b04db75c';
+        $mdname = 'departament';
+    }    
     $mode = $idm->getmode();
     $show_empty = $mode!='PRINT';
     if ($mdid=='50643d39-aec2-485e-9c30-bf29b04db75c') //подразделения
@@ -33,7 +42,7 @@ function loadData()
     }    
     else
     {
-        $arData = array('status'=>'ERROR', 'msg'=>"нет обработчика для ".$ent->getmdentity()->getname());
+        $arData = array('status'=>'ERROR', 'msg'=>"нет обработчика для ".$mdname);
     }    
     echo json_encode($arData);
 }

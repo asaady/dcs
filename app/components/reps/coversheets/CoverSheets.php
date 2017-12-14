@@ -46,6 +46,7 @@ class CoverSheets extends Model
     public function get_data($data)
     {
         $sdata = array();
+        $ldata = array();
         $plist = array(
                 array('id'=>'parameter','name'=>'parameter','synonym'=>'Подразделение','rank'=>1,'type'=>'id','valmdid'=>'50643d39-aec2-485e-9c30-bf29b04db75c','valmdtypename'=>'Refs','class'=>'active'),
                 array('id'=>'mindate','name'=>'mindate','synonym'=>'Cопр.листы с','rank'=>2,'type'=>'date','valmdid'=>TZ_TYPE_EMPTY,'valmdtypename'=>'','class'=>'active')
@@ -54,7 +55,7 @@ class CoverSheets extends Model
             'tprocid'=>array('id'=>'tprocid','name'=>'tprocid','synonym'=>'Техпроцесс','type'=>'id', 'class'=>'active'),
             'startkol'=>array('id'=>'startkol','name'=>'startkol','synonym'=>'Запуск','type'=>'int', 'class'=>'active'),
             'godn'=>array('id'=>'godn','name'=>'godn','synonym'=>'Годные','type'=>'int', 'class'=>'active'),
-            'brak'=>array('id'=>'brak','name'=>'brak','synonym'=>'Брак','type'=>'int', 'class'=>'active')
+            'brak'=>array('id'=>'brak','name'=>'brak','synonym'=>'Тех.потери','type'=>'int', 'class'=>'active')
         );
         $mdname = '';
         if(array_key_exists('CURID', $data))
@@ -75,7 +76,7 @@ class CoverSheets extends Model
                         'startdate'=>array('id'=>'startdate','name'=>'startdate','synonym'=>'Дата запуска','type'=>'date', 'class'=>'active'),
                         'startkol'=>array('id'=>'startkol','name'=>'startkol','synonym'=>'Запуск','type'=>'int', 'class'=>'active'),
                         'godn'=>array('id'=>'godn','name'=>'godn','synonym'=>'Годные','type'=>'int', 'class'=>'active'),
-                        'brak'=>array('id'=>'brak','name'=>'brak','synonym'=>'Брак','type'=>'int', 'class'=>'active'),
+                        'brak'=>array('id'=>'brak','name'=>'brak','synonym'=>'Тех.потери','type'=>'int', 'class'=>'active'),
                         'toperid'=>array('id'=>'toperid','name'=>'toperid','synonym'=>'Тех.операция','type'=>'id', 'class'=>'active')
                     );
                 }    
@@ -88,14 +89,13 @@ class CoverSheets extends Model
                     $pset=array(
                         'toperid'=>array('id'=>'toperid','name'=>'toperid','synonym'=>'Тех.операция','type'=>'id', 'class'=>'active'),
                         'godn'=>array('id'=>'godn','name'=>'godn','synonym'=>'Годные','type'=>'int', 'class'=>'active'),
-                        'brak'=>array('id'=>'brak','name'=>'brak','synonym'=>'Брак','type'=>'int', 'class'=>'active'),
+                        'brak'=>array('id'=>'brak','name'=>'brak','synonym'=>'Тех.потери','type'=>'int', 'class'=>'active'),
                         'docid'=>array('id'=>'docid','name'=>'docid','synonym'=>'Документ','type'=>'id', 'class'=>'active'),
                         'tdate'=>array('id'=>'startdate','name'=>'startdate','synonym'=>'Дата операции','type'=>'date', 'class'=>'hidden')
                     );
                 }    
             }    
-        }        
-
+        }
         return array(
           'id'=>$this->id,
           'name'=>$this->name,
@@ -103,8 +103,6 @@ class CoverSheets extends Model
           'version'=>$this->version,
           'PLIST' => $plist,   
           'PSET' => $pset,   
-          'SDATA' => $sdata,   
-          'LDATA' => array(),   
           'navlist' => array(
               $this->entity->getcollectionset()->getmditem()->getid()=>$this->entity->getcollectionset()->getmditem()->getsynonym(),
               $this->entity->getcollectionset()->getid()=>$this->entity->getcollectionset()->getsynonym(),
@@ -238,7 +236,7 @@ class CoverSheets extends Model
         $objs['PSET']=array(
             'toperid'=>array('id'=>'toperid','name'=>'toperid','synonym'=>'Тех.операция','type'=>'id', 'class'=>'active'),
             'godn'=>array('id'=>'godn','name'=>'godn','synonym'=>'Годные','type'=>'int', 'class'=>'active'),
-            'brak'=>array('id'=>'brak','name'=>'brak','synonym'=>'Брак','type'=>'int', 'class'=>'active'),
+            'brak'=>array('id'=>'brak','name'=>'brak','synonym'=>'Тех.потери','type'=>'int', 'class'=>'active'),
             'docid'=>array('id'=>'docid','name'=>'docid','synonym'=>'Документ','type'=>'id', 'class'=>'active'),
             'tdate'=>array('id'=>'tdate','name'=>'tdate','synonym'=>'Дата операции','type'=>'date', 'class'=>'hidden')
         );
@@ -464,7 +462,7 @@ class CoverSheets extends Model
             'startdate'=>array('id'=>'startdate','name'=>'startdate','synonym'=>'Дата запуска','type'=>'date', 'class'=>'active'),
             'startkol'=>array('id'=>'startkol','name'=>'startkol','synonym'=>'Запуск','type'=>'int', 'class'=>'active'),
             'godn'=>array('id'=>'godn','name'=>'godn','synonym'=>'Годные','type'=>'int', 'class'=>'active'),
-            'brak'=>array('id'=>'brak','name'=>'brak','synonym'=>'Брак','type'=>'int', 'class'=>'active'),
+            'brak'=>array('id'=>'brak','name'=>'brak','synonym'=>'Тех.потери','type'=>'int', 'class'=>'active'),
             'toperid'=>array('id'=>'toperid','name'=>'toperid','synonym'=>'тех.операция','type'=>'id', 'class'=>'active')
         );
         $arr_e= array();
@@ -518,24 +516,37 @@ class CoverSheets extends Model
         $objs = array();
         $objs['actionlist'] = array(array('id'=>'print','name'=>'print','synonym'=>'Печать','icon'=>'print'));
         
+        $objs['PLIST'] = array(
+                'parameter'=>array('id'=>'parameter','name'=>'parameter','synonym'=>'Подразделение','rank'=>1,'type'=>'id','valmdid'=>'50643d39-aec2-485e-9c30-bf29b04db75c','valmdtypename'=>'Refs','class'=>'active'),
+                'mindate'=>array('id'=>'mindate','name'=>'mindate','synonym'=>'Cопр.листы с','rank'=>2,'type'=>'date','valmdid'=>TZ_TYPE_EMPTY,'valmdtypename'=>'','class'=>'active')
+                );
+        $objs['PSET']=array(
+            'tprocid'=>array('id'=>'tprocid','name'=>'tprocid','synonym'=>'tprocid','type'=>'id', 'class'=>'active'),
+            'startkol'=>array('id'=>'startkol','name'=>'startkol','synonym'=>'Запуск','type'=>'int', 'class'=>'active'),
+            'godn'=>array('id'=>'godn','name'=>'godn','synonym'=>'Годные','type'=>'int', 'class'=>'active'),
+            'brak'=>array('id'=>'brak','name'=>'brak','synonym'=>'Тех.потери','type'=>'int', 'class'=>'active')
+        );
+        $objs['LDATA']=array();
         $objs['SDATA']=array();
         
         $ar_tt = array();
-        if ($divid!='')
+        if ($divid=='')
         {
-           //выбрали техпроцессы у которых подразделение равно отбору
-            $ent= new Entity($divid);
-            $ar_tt[] = DataManager::getTT_entity('tt_el00',$this->tproc_mdid,$this->prop_div,$divid,'id','=');
-            $objs['SDATA']['parameter']=array('id'=>$divid,'name'=>$ent->getname());
-        }    
-        else 
-        {
-            $params=array();
-            $params['mdid']=$this->tproc_mdid;
-            $sql = "SELECT id  FROM \"ETable\" as et WHERE mdid=:mdid)"; 
-            $ar_tt[] = DataManager::createtemptable($sql, 'tt_el00',$params);
-            $objs['SDATA']['parameter']=array('id'=>'','name'=>'');
+            $settings = DataManager::getSettings();
+            $key = array_search($this->prop_div, array_column($settings, 'propid'));
+            if ($key!==false)
+            {
+                $divid = $settings[$key]['value'];
+            }
         }
+        if ($divid=='')
+        {
+            return $objs;
+        }    
+        //выбрали техпроцессы у которых подразделение равно отбору
+         $ent= new Entity($divid);
+         $ar_tt[] = DataManager::getTT_entity('tt_el00',$this->tproc_mdid,$this->prop_div,$divid,'id','=');
+         $objs['SDATA']['parameter']=array('id'=>$divid,'name'=>$ent->getname());
         if ($mindate!='')
         {
             //выбрали сопроводительные листы у которых дата запуска больше или равно отбору
@@ -550,10 +561,6 @@ class CoverSheets extends Model
             $ar_tt[] = DataManager::createtemptable($sql, 'tt_el0',$params);
             $objs['SDATA']['mindate']=array('id'=>'','name'=>'');
         }
-        $objs['PLIST'] = array(
-                'parameter'=>array('id'=>'parameter','name'=>'parameter','synonym'=>'Подразделение','rank'=>1,'type'=>'id','valmdid'=>'50643d39-aec2-485e-9c30-bf29b04db75c','valmdtypename'=>'Refs','class'=>'active'),
-                'mindate'=>array('id'=>'mindate','name'=>'mindate','synonym'=>'Cопр.листы с','rank'=>2,'type'=>'date','valmdid'=>TZ_TYPE_EMPTY,'valmdtypename'=>'','class'=>'active')
-                );
         //выбрали сопроводительные листы у которых техпроцесс соответствует выбранным ранее
         $ar_tt[] = DataManager::getTT_from_ttent('tt_el','tt_el0',$this->proptproc,'id','tt_el00');
 
@@ -690,13 +697,6 @@ class CoverSheets extends Model
         
         $sql = "select tp.tprocid, sum(tp.godn) as godn, sum(tp.brak) as brak, sum(tp.startkol) as startkol, min(tp.startdate) as startdate from tt_cs as tp group by tp.tprocid";
         $res = DataManager::dm_query($sql);
-        $objs['LDATA']=array();
-        $objs['PSET']=array(
-            'tprocid'=>array('id'=>'tprocid','name'=>'tprocid','synonym'=>'tprocid','type'=>'id', 'class'=>'active'),
-            'startkol'=>array('id'=>'startkol','name'=>'startkol','synonym'=>'Запуск','type'=>'int', 'class'=>'active'),
-            'godn'=>array('id'=>'godn','name'=>'godn','synonym'=>'Годные','type'=>'int', 'class'=>'active'),
-            'brak'=>array('id'=>'brak','name'=>'brak','synonym'=>'Брак','type'=>'int', 'class'=>'active')
-        );
         $arr_e= array();
         while($row = $res->fetch(PDO::FETCH_ASSOC)) 
         {

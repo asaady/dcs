@@ -440,22 +440,19 @@ $(document).ready(function()
     var filter_val = $("input[name='filter_val']").val();
     $("input[name='mindate']").val(filter_val);
     var curid = $("input[name='curid']").val();
-    if (curid!='')
-    {
-        $("input[name='parameter']").val(curid); 
-        $("input[name='command']").val('load'); 
-        $data = $('.row input').serializeArray();
-        $.ajax({
-          url: '/app/components/reps/coversheets/coversheets_ajax.php',
-          type: 'post',
-          dataType: 'json',
-          data: $data,
-          success: function(result) {
-                onLoadValID(result);
-            }  
-          }
-        );
-    }    
+    $("input[name='parameter']").val(curid); 
+    $("input[name='command']").val('load'); 
+    $data = $('.row input').serializeArray();
+    $.ajax({
+      url: '/app/components/reps/coversheets/coversheets_ajax.php',
+      type: 'post',
+      dataType: 'json',
+      data: $data,
+      success: function(result) {
+            onLoadValID(result);
+        }  
+      }
+    );
     $("body").one('OnResize',function(){
         var x = $('div.ivalue-block');
         if (x!=undefined) 

@@ -928,14 +928,14 @@ class DataManager {
     }        
     public static function get_col_access_text($ttname)
     {
-        return self::get_access_text($ttname,'read','AccessRightCom');
+        return self::get_access_text($ttname,'read','AccessRightCom','cid');
     }        
-    public static function get_access_text($ttname,$mode='read',$ra_tbl='RoleAccess')
+    public static function get_access_text($ttname,$mode='read',$ra_tbl='RoleAccess',$type = 'mdid')
     {
         $dop='';
         if (!User::isAdmin())
         {        
-            $dop = "$ttname.id in (SELECT pv.value FROM \"CPropValue_mdid\" as pv 
+            $dop = "$ttname.id in (SELECT pv.value FROM \"CPropValue_$type\" as pv 
 		inner join \"CTable\" as ct
 			inner join \"MDTable\" as md_ra
 			on ct.mdid = md_ra.id

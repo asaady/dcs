@@ -131,6 +131,7 @@ function getData()
             $mode = $idm->getmode();
             $name = $data['name']['name'];
             $type = $data['type']['name'];
+            $pid = $data['propid']['id'];
             if (Common_data::check_uuid($name))
             { 
                 if ($type=='id')
@@ -146,8 +147,13 @@ function getData()
                     }
                     $ar_md = Entity::getEntityDetails($itemid);
                     $ar_prop = \tzVendor\MdpropertySet::getMDProperties($ar_md['mdid'], $mode, " WHERE mp.mdid = :mdid ");
+                    
                     foreach ($ar_prop as $prop)
                     {
+                        if ($prop['id']==$pid)
+                        {
+                            continue;
+                        }    
                         if ($prop['type']=='id')
                         {    
                             $propid = $prop['propid'];

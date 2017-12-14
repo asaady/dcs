@@ -624,6 +624,7 @@ $('body').on('click', 'ul.types_list li', function(){
     var curinp = curdiv.find("input[type='text']");
     var curname = curinp.attr('name');
     var curtype = curinp.attr('it');
+    var curid = '';
     if((curname.indexOf('name_') + 1)>0)
     {
         curid = curname.substring(5);
@@ -644,9 +645,10 @@ $('body').on('click', 'ul.types_list li', function(){
     {
         if ((curtype=='id')||(curtype=='cid'))
         {
+            
             $.getJSON(
                 '/common/get_ajax.php',
-                {action:$("input[name='action']").val(), id:$("input[name='itemid']").val(), type:curtype, name:lid, command:'Choice', prefix:'After'},
+                {action:$("input[name='action']").val(), id:$("input[name='itemid']").val(), type:curtype, name:lid, command:'Choice', prefix:'After', propid:curid},
                 onGetData
             );    
         }    

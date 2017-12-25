@@ -235,7 +235,8 @@ $('body').on('dblclick','#entitylist tr',function ()
     }    
     if (href!='')
     {
-        window.open(href, "_blank");
+        var otherWindow = window.open(href,"_blank");
+        otherWindow.opener = null;
     }    
 });
 
@@ -415,7 +416,8 @@ $('body').on('click', '#print', function (e)
     if (str!='')
     {
         href="\\print\\"+$itemid+str;
-        window.open(href, "_blank");
+        var otherWindow = window.open(href,"_blank");
+        otherWindow.opener = null;
     }    
 });
 

@@ -99,9 +99,17 @@ function getData()
         {
             $getdata = $idm->getdata();
             $data=array();
-            $data[$getdata['propid']['id']]=array('name'=>$getdata['name']['name'],'id'=>$getdata['id']['id']);
+            $validation = Common_data::check_uuid($getdata['name']['name']);
+            if (!$validation) 
+            {
+                $data[$getdata['propid']['id']]=array('name'=>$getdata['name']['name'],'id'=>$getdata['id']['id']);
+            }
+            else 
+            {
+                $data[$getdata['propid']['id']]=array('name'=>'','id'=>$getdata['name']['name']);
+            }
             $ent = new Entity($idm->getitemid());
-            $ent->update($data);
+            return $ent->update($data);
         },
     'GET_ACTIONLIST'=> function($idm)
         {

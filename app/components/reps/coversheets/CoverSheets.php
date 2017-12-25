@@ -8,24 +8,36 @@ use tzVendor\Entity;
 class CoverSheets extends Model 
 {
     protected $entity;
-    protected $tproc_mdid='def88585-c509-4200-8980-19ae0e164bd7';  //тех.процесс справочник
-    protected $mdid='be0d47b9-2972-496c-a11b-0f3d38874aab';  //сопр лист справочник
+    protected $troute_mdid='def88585-c509-4200-8980-19ae0e164bd7';  //тех.маршруты справочник
+    protected $cs_mdid='be0d47b9-2972-496c-a11b-0f3d38874aab';  //сопр лист справочник
     protected $prop_div='08d45b18-7207-4ad9-a4fa-a76bdb880c01';  //реквизит подразделение справочник
-    protected $proptproc='9c26942a-7aa2-4082-ae9a-ef8daf030ee2'; //реквизит техпроцесс шаблон
+    protected $proptroute='9c26942a-7aa2-4082-ae9a-ef8daf030ee2'; //реквизит техмаршрут шаблон
     protected $prop_to = '79ea3c05-c94b-4161-b24b-f7667ab41e6a'; //реквизит техоперация шаблон
     protected $prop_act = '11cc9d05-d63e-4943-bb95-87149b4e9eff'; //реквизит активность шаблон
-    protected $prop_mr = 'f06b5b81-aa70-42de-8d4e-1718d2033952'; //реквизит тех.маршрут шаблон
+    protected $prop_head = 'c1a7a6b3-63e9-48b9-b159-7acefe34a697'; //реквизит ответственный шаблон user
     protected $propstatus = '876fda77-c5e4-4948-bd81-2dd883fbbe40'; //реквизит Статус шаблон
     protected $propcs = '37a1e155-ed43-46e1-ade8-b75aff1a5031'; //реквизит Сопр.лист Шаблон
     protected $propdate = '43cba044-e85b-40f1-9c3d-a6a2af0deb9a'; //реквизит Дата Шаблон
     protected $prop_rank = '281f8a47-5fb2-4328-8320-e35493ef08e2'; // реквизит Порядок шаблон
+    protected $mpprop_cs_name = 'ecc906a9-67d0-4026-a576-1462567493c6'; //реквизит сопроводительного листа номер
+    protected $mpprop_cs_prod = 'c9b89d1c-86c3-4fe5-98cb-8044ea7187da'; //реквизит сопроводительного листа изделие
     protected $mpprop_cs_start ='015b8d13-907d-46e8-8077-f3e1ae57899c'; //реквизит сопроводительного листа количество запуска
     protected $mpprop_cs_date ='965acb33-cf77-41de-9eac-b7847419b67e'; //реквизит сопроводительного листа дата запуска
-    protected $mpprop_cs_tproc ='d05dd003-88eb-4006-acfe-b9ebd2400dec'; //реквизит сопроводительного листа техпроцесс
-    protected $mpprop_dv_godn ='8ef436b2-155f-4316-957b-7c191e316d86'; //реквизит строки ТЧ "движение" - годные
-    protected $mpprop_dv_brak ='2688adec-c959-4f24-80e4-588efb419238'; //реквизит строки ТЧ "брак" - количество
-    protected $ar_prop_cs = "('65a3c995-09b2-49ee-85fc-b85bda107f52','9a25ad6b-136a-43b3-8b6b-a7687d956dc4','cfbeabf1-6e71-4f5d-b428-77ec804ff32c')";
-
+    protected $mpprop_cs_depart = '6296c846-bdd6-4705-9dad-92d070152947'; //реквизит сопроводительного листа подразделение
+    protected $mpprop_cs_troute ='d05dd003-88eb-4006-acfe-b9ebd2400dec'; //реквизит сопроводительного листа техмаршрут
+    protected $mpprop_tr_rank = 'aa82df0b-1da3-46ea-a5e6-d3d199913724'; //реквизит строки точка техмаршрута - порядок
+    protected $mpprop_tr_name = '76a6657e-2bfb-436c-8b36-9b2061cca698'; //реквизит строки точка техмаршрута - наименование
+    protected $mpprop_tr_act = '89c8e1be-dbce-4b21-b92e-4a3301c63aef'; //реквизит строки точка техмаршрута - активность
+    
+    protected $mpprop_ref_troute_set = 'a07bd922-b8f5-4f26-b934-f80923c2149e'; //реквизит ТЧ "Маршрут" - справочника Техмаршруты
+    protected $mpprop_dv_cs = '65a3c995-09b2-49ee-85fc-b85bda107f52';
+    protected $mpprop_dv_begn = 'c5531714-94e0-4fb9-87b4-68892ebcf54a';
+    protected $mpprop_dv_godn = '8ef436b2-155f-4316-957b-7c191e316d86';
+    protected $mpprop_dv_brak = '170fcbc8-22b8-4a38-903c-f21bb1a3b102';
+    protected $mpprop_dv_repl = 'c6f7d841-190b-478e-9af1-c4b5637e1da8';
+    protected $mpprop_dv_ptroute = '945335f3-6c7a-411a-bad4-337bf5519e62';
+    protected $mpprop_dv_act = 'fff643b8-b754-44ba-b26f-ff1b4189eb13';
+    
     public function __construct($id) 
     {
         
@@ -47,15 +59,17 @@ class CoverSheets extends Model
     {
         $sdata = array();
         $ldata = array();
+        $title = "Отчет ". $this->name;
         $plist = array(
                 array('id'=>'parameter','name'=>'parameter','synonym'=>'Подразделение','rank'=>1,'type'=>'id','valmdid'=>'50643d39-aec2-485e-9c30-bf29b04db75c','valmdtypename'=>'Refs','class'=>'active'),
                 array('id'=>'mindate','name'=>'mindate','synonym'=>'Cопр.листы с','rank'=>2,'type'=>'date','valmdid'=>TZ_TYPE_EMPTY,'valmdtypename'=>'','class'=>'active')
         );
         $pset=array(
-            'tprocid'=>array('id'=>'tprocid','name'=>'tprocid','synonym'=>'Техпроцесс','type'=>'id', 'class'=>'active'),
+            'trouteid'=>array('id'=>'trouteid','name'=>'trouteid','synonym'=>'Техмаршрут','type'=>'id', 'class'=>'active'),
             'startkol'=>array('id'=>'startkol','name'=>'startkol','synonym'=>'Запуск','type'=>'int', 'class'=>'active'),
             'godn'=>array('id'=>'godn','name'=>'godn','synonym'=>'Годные','type'=>'int', 'class'=>'active'),
-            'brak'=>array('id'=>'brak','name'=>'brak','synonym'=>'Тех.потери','type'=>'int', 'class'=>'active')
+            'brak'=>array('id'=>'brak','name'=>'brak','synonym'=>'Тех.потери','type'=>'int', 'class'=>'active'),
+            'repl'=>array('id'=>'repl','name'=>'repl','synonym'=>'Перенос','type'=>'int', 'class'=>'active')
         );
         $mdname = '';
         if(array_key_exists('CURID', $data))
@@ -65,10 +79,12 @@ class CoverSheets extends Model
                 $ent = new Entity($data['CURID']);
                 $mdname = $ent->getmdentity()->getname();
                 $this->name = $ent->getname();
-                if ($mdname=='Techproc_ref')
+                $title = "Незавершенное производство по тех.маршрутам для ".$this->name;
+                if ($mdname=='TechRoute_ref')
                 {
+                    $title = "Сопроводительные листы по тех.маршруту ".$this->name;
                     $plist = array(
-                            array('id'=>'parameter','name'=>'parameter','synonym'=>'Тех.процесс','rank'=>1,'type'=>'id','valmdid'=>'def88585-c509-4200-8980-19ae0e164bd7','valmdtypename'=>'Refs','class'=>'active'),
+                            array('id'=>'parameter','name'=>'parameter','synonym'=>'Тех.маршрут','rank'=>1,'type'=>'id','valmdid'=>'def88585-c509-4200-8980-19ae0e164bd7','valmdtypename'=>'Refs','class'=>'active'),
                             array('id'=>'mindate','name'=>'mindate','synonym'=>'Cопр.листы с','rank'=>2,'type'=>'date','valmdid'=>TZ_TYPE_EMPTY,'valmdtypename'=>'','class'=>'active')
                     );
                     $pset=array(
@@ -77,21 +93,26 @@ class CoverSheets extends Model
                         'startkol'=>array('id'=>'startkol','name'=>'startkol','synonym'=>'Запуск','type'=>'int', 'class'=>'active'),
                         'godn'=>array('id'=>'godn','name'=>'godn','synonym'=>'Годные','type'=>'int', 'class'=>'active'),
                         'brak'=>array('id'=>'brak','name'=>'brak','synonym'=>'Тех.потери','type'=>'int', 'class'=>'active'),
-                        'toperid'=>array('id'=>'toperid','name'=>'toperid','synonym'=>'Тех.операция','type'=>'id', 'class'=>'active')
+                        'repl'=>array('id'=>'repl','name'=>'repl','synonym'=>'Перенос','type'=>'int', 'class'=>'active'),
+                        'routepoint'=>array('id'=>'routepoint','name'=>'routepoint','synonym'=>'Точка маршрута','type'=>'id', 'class'=>'active')
                     );
                 }    
                 elseif ($mdname=='CoverSheets')
                 {
+                    $title = "Сопроводительный лист ".$this->name;
                     $plist = array(
                             array('id'=>'parameter','name'=>'parameter','synonym'=>'Сопров.лист','rank'=>1,'type'=>'id','valmdid'=>'be0d47b9-2972-496c-a11b-0f3d38874aab','valmdtypename'=>'Refs','class'=>'active'),
                             array('id'=>'mindate','name'=>'mindate','synonym'=>'Cопр.листы с','rank'=>2,'type'=>'date','valmdid'=>TZ_TYPE_EMPTY,'valmdtypename'=>'','class'=>'hidden')
                     );
                     $pset=array(
-                        'toperid'=>array('id'=>'toperid','name'=>'toperid','synonym'=>'Тех.операция','type'=>'id', 'class'=>'active'),
+                        'routepoint'=>array('id'=>'routepoint','name'=>'routepoint','synonym'=>'Точка маршрута','type'=>'id', 'class'=>'active'),
+                        'tdate'=>array('id'=>'startdate','name'=>'startdate','synonym'=>'Дата операции','type'=>'date', 'class'=>'active'),
+                        'begn'=>array('id'=>'begn','name'=>'begn','synonym'=>'Поступило','type'=>'int', 'class'=>'active'),
                         'godn'=>array('id'=>'godn','name'=>'godn','synonym'=>'Годные','type'=>'int', 'class'=>'active'),
                         'brak'=>array('id'=>'brak','name'=>'brak','synonym'=>'Тех.потери','type'=>'int', 'class'=>'active'),
-                        'docid'=>array('id'=>'docid','name'=>'docid','synonym'=>'Документ','type'=>'id', 'class'=>'active'),
-                        'tdate'=>array('id'=>'startdate','name'=>'startdate','synonym'=>'Дата операции','type'=>'date', 'class'=>'hidden')
+                        'repl'=>array('id'=>'repl','name'=>'repl','synonym'=>'Перенос','type'=>'int', 'class'=>'active'),
+                        'docid'=>array('id'=>'docid','name'=>'docid','synonym'=>'Документ','type'=>'id', 'class'=>'hidden'),
+                        'head'=>array('id'=>'head','name'=>'head','synonym'=>'Ответственный','type'=>'cid', 'class'=>'active')
                     );
                 }    
             }    
@@ -101,6 +122,7 @@ class CoverSheets extends Model
           'name'=>$this->name,
           'mdname'=>$mdname,
           'version'=>$this->version,
+          'TITLE' => $title,     
           'PLIST' => $plist,   
           'PSET' => $pset,   
           'navlist' => array(
@@ -119,9 +141,10 @@ class CoverSheets extends Model
         $ar_tt = array();
         $ent= new Entity($csid);
         $objs['SDATA']=array();
-        $objs['SDATA']['parameter']=array('id'=>$csid,'name'=>$ent->getname());
+        $objs['SDATA']['parameter']=array('id'=>$csid,'name'=>$ent->getattr($this->mpprop_cs_name));
         
         
+        //ищем сопроводительный лист по ид
         $params=array();
         $params['csid']=$csid;
         $sql = "SELECT id, id as entityid  FROM \"ETable\" as et WHERE id=:csid"; 
@@ -131,22 +154,68 @@ class CoverSheets extends Model
                 'mindate'=>array('id'=>'mindate','name'=>'mindate','synonym'=>'Cопр.листы с','rank'=>2,'type'=>'date','valmdid'=>TZ_TYPE_EMPTY,'valmdtypename'=>'','class'=>'hidden')
                 );
 
-        //нашли техпроцесс сопроводительного листа
-        $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_el','tt_el0',$this->mpprop_cs_tproc,'id');
+        //нашли техмаршрут сопроводительного листа
+        $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_el','tt_el0',$this->mpprop_cs_troute,'id');
         
-        //нашли количество запуска сопроводительных листов
-        $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_kol_st','tt_el0',$this->mpprop_cs_start,'int');
-        //нашли даты запуска сопроводительных листов
-        $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_dat_st','tt_el0',$this->mpprop_cs_date,'date');
+        $sql = "SELECT el.value as id, el.value as entityid FROM tt_el as el";
+        $ar_tt[] = DataManager::createtemptable($sql, 'tt_tm');
+        
+        //выберем все точки тех маршрута 
+        // нашли значение реквизита Маршрут (ТЧ) у техмаршрута
+        $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_set_tr','tt_tm',$this->mpprop_ref_troute_set,'id');
+//        $sql = "SELECT * FROM tt_set_tr"; 
+//        $res = DataManager::dm_query($sql);
+//        $rows = $res->fetchAll(PDO::FETCH_ASSOC);
+//        die(var_dump($rows));
+        
+        // нашли строки ТЧ Маршрут (ТЧ) техмаршрута - все точки техмаршрута
+        $sql = "select sdl.childid as entityid, sdl.childid as itemid, tr.entityid as trouteid from \"SetDepList\" as sdl
+                    inner join tt_set_tr as tr
+                    ON tr.value=sdl.parentid
+                    AND sdl.rank>0";
+        $ar_tt[] = DataManager::createtemptable($sql, 'tt_route');
+
+        //собрали значения реквизита Порядок для точек маршрута
+        $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_route_rank','tt_route',$this->mpprop_tr_rank,'int');
+        
+        //собрали значения реквизита Наименование для точек маршрута
+        $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_route_name','tt_route',$this->mpprop_tr_name,'str');
+
+        //собрали значения реквизита Активность для точек маршрута
+        $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_route_act','tt_route',$this->mpprop_tr_act,'bool');
+        
+        $sql = "select mr.trouteid, mr.itemid, top.value as tname, rn.value as rank, COALESCE(ac.value, TRUE) as activity from tt_route as mr
+                    left join tt_route_name as top
+                    on mr.itemid=top.entityid
+                    left join tt_route_rank as rn
+                    on mr.itemid=rn.entityid
+                    left join tt_route_act as ac
+                    on mr.itemid=ac.entityid WHERE COALESCE(ac.value, true)=true"; // ORDER BY rn.value
+        $ar_tt[] = DataManager::createtemptable($sql, 'tt_routepoint_all');
         
         //теперь ищем строки таб.частей документов в которых искомые сопр.листы
-        $ar_tt[] = DataManager::getTT_from_ttprop('tt_sel',$this->ar_prop_cs,'id','tt_el');
+        $ar_tt[] = DataManager::getTT_from_ttprop('tt_sel',$this->mpprop_dv_cs,'id','tt_el0');
 
+
+        //теперь ищем последние значения реквизита поступило в найденных строках
+        $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_kol_begn','tt_sel',$this->mpprop_dv_begn,'int');
+        
         //теперь ищем последние значения реквизита годные в найденных строках
         $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_kol_godn','tt_sel',$this->mpprop_dv_godn,'int');
         
         //теперь ищем последние значения реквизита брак в найденных строках
         $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_kol_brak','tt_sel',$this->mpprop_dv_brak,'int');
+        
+        //теперь ищем последние значения реквизита перемещение в найденных строках
+        $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_kol_repl','tt_sel',$this->mpprop_dv_repl,'int');
+
+        //теперь ищем последние значения реквизита точка техмаршрута в найденных строках
+        $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_ptroute','tt_sel',$this->mpprop_dv_ptroute,'id');
+
+        //теперь ищем последние значения реквизита Активность в найденных строках
+        $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_proute_act','tt_sel',$this->mpprop_dv_act,'bool');
+        
+        
         //здесь нашли сами таб.части и доки в которых искомые сопр.листы
         $sql = "select distinct sdl.parentid as setid, its.entityid as docid, ot.value as csid, ot.entityid as itemid FROM tt_sel as ot
                     INNER JOIN \"SetDepList\" as sdl
@@ -162,179 +231,171 @@ class CoverSheets extends Model
         $sql = "select distinct docid as id FROM tt_doc";
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_dc');
         
-        //теперь ищем последние значения реквизита тех.операция в найденных доках
-        $ar_tt[] = DataManager::getTT_from_ttent('tt_oper','tt_dc',$this->prop_to,'id');
-
         //теперь ищем последние значения реквизита дата в найденных доках
         $ar_tt[] = DataManager::getTT_from_ttent('tt_date','tt_dc',$this->propdate,'date');
 
         //теперь ищем последние значения реквизита активность в найденных доках
         $ar_tt[] = DataManager::getTT_from_ttent('tt_act','tt_dc',$this->prop_act,'bool');
-        
-        //теперь ищем порядок техопераций в техпроцессах
-        //здесь нашли таб.часть маршрут для техпроцессов
-        $sql = "select et.value as tprocid, pv_mr.value as mrid from tt_el as et 
-                    inner join \"IDTable\" as it_mr
-                        inner join \"PropValue_id\" as pv_mr
-                        on it_mr.id = pv_mr.id
-                        inner join \"MDProperties\" as mp_mr
-                        on it_mr.propid = mp_mr.id
-                        and mp_mr.propid=:prop_mr
-                    on et.value = it_mr.entityid";
-        $params=array();
-        $params['prop_mr']=$this->prop_mr;
-        $ar_tt[] = DataManager::createtemptable($sql, 'tt_mr0',$params);
-        //здесь нашли строки таб.части маршрута
-        $sql = "select mr.tprocid, mr.mrid, sdl.childid as id FROM tt_mr0 as mr
-                    INNER JOIN \"SetDepList\" as sdl
-                    ON mr.mrid=sdl.parentid
-                    AND sdl.rank>0";
-        $ar_tt[] = DataManager::createtemptable($sql, 'tt_mri');
-        
-        //теперь ищем последние значения реквизита порядок в найденных строках маршрута
-        $ar_tt[] = DataManager::getTT_from_ttent('tt_mr_rank','tt_mri',$this->prop_rank,'int');
-        
-        //здесь нашли маршруты с последними значениями тех.операций   
-        $ar_tt[] = DataManager::getTT_from_ttent('tt_mr_to','tt_mri',$this->prop_to,'id');
+
+        //теперь ищем последние значения реквизита ответственный в найденных доках
+        $ar_tt[] = DataManager::getTT_from_ttent('tt_head','tt_dc',$this->prop_head,'cid');
         
         
-        $sql = "select mr.tprocid, mr.id as mrid, top.value as toperid, rn.value as rank from tt_mri as mr
-                    left join tt_mr_to as top
-                    on mr.id=top.entityid
-                    left join tt_mr_rank as rn
-                    on mr.id=rn.entityid";
-        $ar_tt[] = DataManager::createtemptable($sql, 'tt_mr'); 
-        
-        $sql = "select mr.toperid, dc.docid, dc.itemid, dc.csid, dt.value as tdate, COALESCE(gd.value,0) as godn, COALESCE(br.value,0) as brak, COALESCE(da.value,true) as activity, mr.rank, mr.mrid from tt_mr as mr 
-                inner join tt_oper as op
-                    left join tt_doc as dc
-                        left join tt_act as da
-                        on dc.docid = da.entityid
-                        left join tt_date as dt
-                        on dc.docid = dt.entityid
+        $sql = "select dc.docid, dc.itemid, pr.value as routepoint, dt.dateupdate, dt.value as tdate, COALESCE(bg.value,0) as begn, COALESCE(gd.value,0) as godn, COALESCE(br.value,0) as brak, COALESCE(rp.value,0) as repl, COALESCE(da.value,true) as activity, COALESCE(pr_act.value,true) as item_act from tt_doc as dc
+                        inner join tt_ptroute as pr
+                        on dc.itemid = pr.entityid
+                        left join tt_proute_act as pr_act
+                        on dc.itemid = pr_act.entityid
                         left join tt_kol_godn as gd
                         on dc.itemid = gd.entityid
                         left join tt_kol_brak as br
                         on dc.itemid = br.entityid
-                    on op.entityid = dc.docid
-                on mr.toperid = op.value
-                inner join tt_el as tp
-                on mr.tprocid = tp.value
-                where COALESCE(da.value,true)=true order by mr.rank";
+                        left join tt_kol_repl as rp
+                        on dc.itemid = rp.entityid
+                        left join tt_kol_begn as bg
+                        on dc.itemid = bg.entityid
+                        left join tt_act as da
+                        on dc.docid = da.entityid
+                        left join tt_date as dt
+                        on dc.docid = dt.entityid
+                where COALESCE(da.value,true) AND COALESCE(pr_act.value,true)";
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_all'); 
         
-        $sql = "select dc.mrid, dc.csid, max(tdate) as tdate, sum(dc.godn) as godn, sum(dc.brak) as brak from tt_all as dc group by dc.mrid, dc.csid"; 
+        $sql = "select dc.routepoint, max(dc.dateupdate) as dateupdate, max(dc.tdate) as tdate, max(dc.godn) as godn, max(dc.begn) as begn, sum(dc.repl) as repl, sum(dc.brak) as brak from tt_all as dc group by dc.routepoint"; 
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_sum'); 
-
         
-        $sql = "select mr.toperid, dc.docid, dc.csid, dc.tdate, COALESCE(sm.godn,0) as godn, COALESCE(sm.brak,0) as brak, mr.rank, mr.mrid from tt_mr as mr "
-                . "left join tt_all as dc inner join tt_sum as sm on dc.mrid=sm.mrid and dc.csid=sm.csid and dc.tdate=sm.tdate on mr.mrid = dc.mrid order by mr.rank"; 
+        
+        $sql = "select mr.itemid as routepoint, dc.docid, to_char(sm.tdate,'DD-MM-YYYY') as tdate, ch.synonym as head, COALESCE(sm.godn,0) as godn, COALESCE(sm.brak,0) as brak, COALESCE(sm.repl,0) as repl, COALESCE(sm.begn,0) as begn, mr.rank from tt_routepoint_all as mr "
+                . "inner join tt_sum as sm "
+                    . "inner join tt_all as dc "
+                        . "inner join tt_head as dh "
+                            . "inner join \"CTable\" as ch "
+                            . "on dh.value=ch.id "
+                        . "on dc.docid=dh.entityid "
+                    . "on sm.routepoint=dc.routepoint "
+                    . "and sm.dateupdate=dc.dateupdate "
+                . "on mr.itemid=sm.routepoint "
+                . "order by mr.rank"; 
         $res = DataManager::dm_query($sql);
         
         
         $objs['LDATA']=array();
         $objs['PSET']=array(
-            'toperid'=>array('id'=>'toperid','name'=>'toperid','synonym'=>'Тех.операция','type'=>'id', 'class'=>'active'),
+            'routepoint'=>array('id'=>'routepoint','name'=>'routepoint','synonym'=>'Точка маршрута','type'=>'id', 'class'=>'active'),
+            'tdate'=>array('id'=>'startdate','name'=>'startdate','synonym'=>'Дата операции','type'=>'date', 'class'=>'active'),
+            'begn'=>array('id'=>'begn','name'=>'begn','synonym'=>'Поступило','type'=>'int', 'class'=>'active'),
             'godn'=>array('id'=>'godn','name'=>'godn','synonym'=>'Годные','type'=>'int', 'class'=>'active'),
             'brak'=>array('id'=>'brak','name'=>'brak','synonym'=>'Тех.потери','type'=>'int', 'class'=>'active'),
-            'docid'=>array('id'=>'docid','name'=>'docid','synonym'=>'Документ','type'=>'id', 'class'=>'active'),
-            'tdate'=>array('id'=>'tdate','name'=>'tdate','synonym'=>'Дата операции','type'=>'date', 'class'=>'hidden')
+            'repl'=>array('id'=>'repl','name'=>'repl','synonym'=>'Перенос','type'=>'int', 'class'=>'active'),
+            'docid'=>array('id'=>'docid','name'=>'docid','synonym'=>'Документ','type'=>'id', 'class'=>'hidden'),
+            'head'=>array('id'=>'head','name'=>'head','synonym'=>'Ответственный','type'=>'cid', 'class'=>'active')
         );
         $arr_e= array();
         while($row = $res->fetch(PDO::FETCH_ASSOC)) 
         {
             if (!$show_empty)
             {
-                if (($row['godn']+$row['brak'])==0)
+                if (($row['godn']+$row['brak']+$row['repl'])==0)
                 {
                     continue;
                 }    
             }    
-            $objs['LDATA'][$row['toperid']]=array();
-            $objs['LDATA'][$row['toperid']]['godn']= array('name'=>$row['godn'], 'id'=>'');
-            $objs['LDATA'][$row['toperid']]['brak']= array('name'=>$row['brak'], 'id'=>'');
-            if ($row['toperid']!='')
-            {
-                if (!in_array($row['toperid'], $arr_e)) $arr_e[]=$row['toperid'];
-                $objs['LDATA'][$row['toperid']]['toperid']= array('name'=>$row['toperid'], 'id'=>$row['toperid']);
-            }    
-            else
-            {    
-                $objs['LDATA'][$row['toperid']]['toperid']= array('name'=>'', 'id'=>'');
-            }
+            $rid = $row['routepoint'];
+            $objs['LDATA'][$rid]=array();
+            $objs['LDATA'][$rid]['begn']= array('name'=>$row['begn'], 'id'=>'');
+            $objs['LDATA'][$rid]['godn']= array('name'=>$row['godn'], 'id'=>'');
+            $objs['LDATA'][$rid]['brak']= array('name'=>$row['brak'], 'id'=>'');
+            $objs['LDATA'][$rid]['repl']= array('name'=>$row['repl'], 'id'=>'');
+            if (!in_array($rid, $arr_e)) $arr_e[]=$rid;
+            $objs['LDATA'][$rid]['routepoint'] = array('name'=>$rid, 'id'=>$rid);
             if ($row['docid']!='')
             {
                 if (!in_array($row['docid'], $arr_e)) $arr_e[]=$row['docid'];
-                $objs['LDATA'][$row['toperid']]['docid']= array('name'=>$row['docid'], 'id'=>$row['docid']);
+                $objs['LDATA'][$rid]['docid']= array('name'=>$row['docid'], 'id'=>$row['docid']);
             }  
             else
             {    
-                $objs['LDATA'][$row['toperid']]['docid']= array('name'=>'', 'id'=>'');
+                $objs['LDATA'][$rid]['docid']= array('name'=>'', 'id'=>'');
             }
             if (isset($row['tdate']))
             {    
-                $objs['LDATA'][$row['toperid']]['tdate']= array('name'=>$row['tdate'], 'id'=>'');
+                $objs['LDATA'][$rid]['tdate']= array('name'=>$row['tdate'], 'id'=>'');
             }
             else
             {
-               $objs['LDATA'][$row['toperid']]['tdate']= array('name'=>'', 'id'=>'');
+               $objs['LDATA'][$rid]['tdate']= array('name'=>'', 'id'=>'');
+            }    
+            if (isset($row['head']))
+            {    
+                $objs['LDATA'][$rid]['head']= array('name'=>$row['head'], 'id'=>'');
+            }
+            else
+            {
+               $objs['LDATA'][$rid]['head']= array('name'=>'', 'id'=>'');
             }    
         }
         DataManager::droptemptable($ar_tt);
         if (count($arr_e))
         {
-
+//            $sql = "SELECT * FROM tt_head"; 
+//            $res = DataManager::dm_query($sql);
+//            $rows = $res->fetchAll(PDO::FETCH_ASSOC);
+//            die(var_dump($arr_e));
             $arr_entities = EntitySet::getAllEntitiesToStr($arr_e);
             foreach($objs['LDATA'] as $toperid=>$row)
             {
                 if (array_key_exists($toperid, $arr_entities))
                 {
-                    $objs['LDATA'][$toperid]['toperid']['name']=$arr_entities[$toperid]['name'];
+                    $objs['LDATA'][$toperid]['routepoint']['name']=$arr_entities[$toperid]['name'];
                 }    
                 if (array_key_exists($row['docid']['id'], $arr_entities))
                 {
                     $objs['LDATA'][$toperid]['docid']['name']=$arr_entities[$row['docid']['id']]['name'];
+                }    
+                if (array_key_exists($row['head']['id'], $arr_entities))
+                {
+                    $objs['LDATA'][$toperid]['head']['name']=$arr_entities[$row['head']['id']]['name'];
                 }    
             }
         }
        
         return $objs;	
     }
-    public function getNZPbyCS($tprocid, $mindate='',$show_empty=false)
+    public function getNZPbyCS($trouteid, $mindate='',$show_empty=false)
     {
         $objs = array();
         $objs['actionlist'] = array(array('id'=>'print','name'=>'print','synonym'=>'Печать','icon'=>'print'));
    
         $ar_tt = array();
-        $ent= new Entity($tprocid);
+        $ent= new Entity($trouteid);
         $objs['SDATA']=array();
-        $objs['SDATA']['parameter']=array('id'=>$tprocid,'name'=>$ent->getname());
+        $objs['SDATA']['parameter']=array('id'=>$trouteid,'name'=>$ent->getname());
         
         $params=array();
-        $params['tprocid']=$tprocid;
-        $sql = "SELECT id  FROM \"ETable\" as et WHERE id=:tprocid"; 
+        $params['trouteid']=$trouteid;
+        $sql = "SELECT id, id as entityid FROM \"ETable\" as et WHERE id=:trouteid"; 
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_el00',$params);
         if ($mindate!='')
         {
             //выбрали сопроводительные листы у которых дата запуска больше или равно отбору
-            $ar_tt[] = DataManager::getTT_entity('tt_el0',$this->mdid,$this->propdate,$mindate,'date','>=');
+            $ar_tt[] = DataManager::getTT_entity('tt_el0',$this->cs_mdid,$this->propdate,$mindate,'date','>=');
             $objs['SDATA']['mindate']=array('id'=>'','name'=>$mindate);
         }    
         else 
         {
             $params=array();
-            $params['mdid']=$this->mdid;
-            $sql = "SELECT id  FROM \"ETable\" WHERE mdid=:mdid"; 
+            $params['mdid']=$this->cs_mdid;
+            $sql = "SELECT id, id as entityid  FROM \"ETable\" WHERE mdid=:mdid"; 
             $ar_tt[] = DataManager::createtemptable($sql, 'tt_el0',$params);
             $objs['SDATA']['mindate']=array('id'=>'','name'=>'');
         }
         $objs['PLIST'] = array(
-                'parameter'=>array('id'=>'parameter','name'=>'parameter','synonym'=>'Подразделение','rank'=>1,'type'=>'id','valmdid'=>'50643d39-aec2-485e-9c30-bf29b04db75c','valmdtypename'=>'Refs','class'=>'active'),
+                'parameter'=>array('id'=>'parameter','name'=>'parameter','synonym'=>'Тех.маршрут','rank'=>1,'type'=>'id','valmdid'=>'def88585-c509-4200-8980-19ae0e164bd7','valmdtypename'=>'Refs','class'=>'active'),
                 'mindate'=>array('id'=>'mindate','name'=>'mindate','synonym'=>'Cопр.листы с','rank'=>2,'type'=>'date','valmdid'=>TZ_TYPE_EMPTY,'valmdtypename'=>'','class'=>'active')
                 );
 
-        //выбрали сопроводительные листы у которых техпроцесс соответствует выбранным ранее
-        $ar_tt[] = DataManager::getTT_from_ttent('tt_el','tt_el0',$this->proptproc,'id','tt_el00');
+        //выбрали сопроводительные листы у которых техмаршрут соответствует выбранным ранее
+        $ar_tt[] = DataManager::getTT_from_ttent('tt_el','tt_el0',$this->proptroute,'id','tt_el00');
 
         //нашли количество запуска сопроводительных листов
         $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_kol_st','tt_el',$this->mpprop_cs_start,'int');
@@ -342,12 +403,27 @@ class CoverSheets extends Model
         $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_dat_st','tt_el',$this->mpprop_cs_date,'date');
         
         //теперь ищем строки таб.частей документов в которых искомые сопр.листы
-        $ar_tt[] = DataManager::getTT_from_ttprop('tt_sel',$this->ar_prop_cs,'id','tt_el');
+        $ar_tt[] = DataManager::getTT_from_ttprop('tt_sel',$this->mpprop_dv_cs,'id','tt_el0');
+
+
+        //теперь ищем последние значения реквизита поступило в найденных строках
+        $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_kol_begn','tt_sel',$this->mpprop_dv_begn,'int');
+        
         //теперь ищем последние значения реквизита годные в найденных строках
         $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_kol_godn','tt_sel',$this->mpprop_dv_godn,'int');
         
         //теперь ищем последние значения реквизита брак в найденных строках
         $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_kol_brak','tt_sel',$this->mpprop_dv_brak,'int');
+        
+        //теперь ищем последние значения реквизита перемещение в найденных строках
+        $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_kol_repl','tt_sel',$this->mpprop_dv_repl,'int');
+
+        //теперь ищем последние значения реквизита точка техмаршрута в найденных строках
+        $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_ptroute','tt_sel',$this->mpprop_dv_ptroute,'id');
+
+        //теперь ищем последние значения реквизита Активность в найденных строках
+        $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_proute_act','tt_sel',$this->mpprop_dv_act,'bool');
+        
         //здесь нашли сами таб.части и доки в которых искомые сопр.листы
         $sql = "select distinct sdl.parentid as setid, its.entityid as docid, ot.value as csid, ot.entityid as itemid FROM tt_sel as ot
                     INNER JOIN \"SetDepList\" as sdl
@@ -358,95 +434,92 @@ class CoverSheets extends Model
                     ON ot.entityid=sdl.childid
                     AND sdl.rank>0";
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_doc');
+        
         $sql = "select distinct docid as id FROM tt_doc";
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_dc');
         
-        //теперь ищем последние значения реквизита тех.операция в найденных доках
-        $ar_tt[] = DataManager::getTT_from_ttent('tt_oper','tt_dc',$this->prop_to,'id');
         //теперь ищем последние значения реквизита дата в найденных доках
         $ar_tt[] = DataManager::getTT_from_ttent('tt_date','tt_dc',$this->propdate,'date');
 
         //теперь ищем последние значения реквизита активность в найденных доках
         $ar_tt[] = DataManager::getTT_from_ttent('tt_act','tt_dc',$this->prop_act,'bool');
         
-        //теперь ищем порядок техопераций в техпроцессах
-        //здесь нашли таб.часть маршрут для техпроцессов
-        $sql = "select et.id as tprocid, pv_mr.value as mrid from tt_el00 as et 
-                    inner join \"IDTable\" as it_mr
-                        inner join \"PropValue_id\" as pv_mr
-                        on it_mr.id = pv_mr.id
-                        inner join \"MDProperties\" as mp_mr
-                        on it_mr.propid = mp_mr.id
-                        and mp_mr.propid=:prop_mr
-                    on et.id = it_mr.entityid";
-        $params=array();
-        $params['prop_mr']=$this->prop_mr;
-        $ar_tt[] = DataManager::createtemptable($sql, 'tt_mr0',$params);
-
-        //здесь нашли строки таб.части маршрута
-        $sql = "select mr.tprocid, mr.mrid, sdl.childid as id FROM tt_mr0 as mr
-                    INNER JOIN \"SetDepList\" as sdl
-                    ON mr.mrid=sdl.parentid
+        //выберем все точки тех маршрута 
+        // нашли значение реквизита Маршрут (ТЧ) у техмаршрута
+        $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_set_tr','tt_el00',$this->mpprop_ref_troute_set,'id');
+        
+        // нашли строки ТЧ Маршрут (ТЧ) техмаршрута - все точки техмаршрута
+        $sql = "select sdl.childid as entityid, sdl.childid as itemid, tr.entityid as trouteid from \"SetDepList\" as sdl
+                    inner join tt_set_tr as tr
+                    ON tr.value=sdl.parentid
                     AND sdl.rank>0";
-        $ar_tt[] = DataManager::createtemptable($sql, 'tt_mri');
+        $ar_tt[] = DataManager::createtemptable($sql, 'tt_route');
+
+        //собрали значения реквизита Порядок для точек маршрута
+        $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_route_rank','tt_route',$this->mpprop_tr_rank,'int');
         
-        //теперь ищем последние значения реквизита порядок в найденных строках маршрута
-        $ar_tt[] = DataManager::getTT_from_ttent('tt_mr_rank','tt_mri',$this->prop_rank,'int');
+        //собрали значения реквизита Активность для точек маршрута
+        $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_route_act','tt_route',$this->mpprop_tr_act,'bool');
         
-        //теперь ищем последние значения реквизита активность в найденных строках маршрута
-        $ar_tt[] = DataManager::getTT_from_ttent('tt_mr_act','tt_mri',$this->prop_act,'bool','',FALSE);
-        
-        //здесь нашли маршруты с последними значениями тех.операций   
-        $ar_tt[] = DataManager::getTT_from_ttent('tt_mr_to','tt_mri',$this->prop_to,'id');
-        
-        $sql = "select mr.tprocid, mr.id as mrid, top.value as toperid, rn.value as rank from tt_mri as mr
-                    left join tt_mr_act as ma
-                    on mr.id=ma.entityid
-                    left join tt_mr_to as top
-                    on mr.id=top.entityid
-                    left join tt_mr_rank as rn
-                    on mr.id=rn.entityid 
-                    where COALESCE(ma.value,true)=true";
+        $sql = "select mr.trouteid, mr.itemid, rn.value as rank, COALESCE(ac.value, TRUE) as activity from tt_route as mr
+                    left join tt_route_rank as rn
+                    on mr.itemid=rn.entityid
+                    left join tt_route_act as ac
+                    on mr.itemid=ac.entityid 
+                    WHERE COALESCE(ac.value, true)";
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_mr'); 
         
         
-        $sql = "select dc.docid, dc.itemid, dc.csid, mr.mrid, op.value as toperid, COALESCE(da.value,true) as activity, dt.value as date, gd.value as godn, br.value as brak, tp.value as tprocid, mr.rank from tt_doc as dc 
-                left join tt_oper as op
-                on dc.docid = op.entityid
+        $sql = "select dc.docid, dc.itemid, dc.csid, mr.trouteid, tp.value as routepoint, COALESCE(da.value,true) as activity, dt.value as date, gd.value as godn, rp.value as repl, br.value as brak, mr.rank from tt_doc as dc 
                 left join tt_act as da
                 on dc.docid = da.entityid
                 left join tt_date as dt
                 on dc.docid = dt.entityid
+                left join tt_kol_repl as rp
+                on dc.itemid = rp.entityid
+                left join tt_proute_act as rt_act
+                on dc.itemid = rt_act.entityid
                 left join tt_kol_godn as gd
                 on dc.itemid = gd.entityid
                 left join tt_kol_brak as br
                 on dc.itemid = br.entityid
-                left join tt_el as tp
+                inner join tt_ptroute as tp
                     left join tt_mr as mr
-                    on tp.value = mr.tprocid
-                on dc.csid = tp.entityid where op.value = mr.toperid and COALESCE(da.value,true)=true";
+                    on tp.value = mr.itemid
+                on dc.itemid = tp.entityid 
+                where COALESCE(da.value,true) AND COALESCE(rt_act.value,true)";
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_dtmm');
         //$res = DataManager::dm_query($sql);
         //$rows = $res->fetchAll(PDO::FETCH_ASSOC);
         //die(var_dump($rows));
-        $sql = "select dc.csid, dc.mrid, sum(dc.godn) as godn, sum(dc.brak) as brak  from tt_dtmm as dc group by dc.csid, dc.mrid";
+        $sql = "select dc.csid, dc.routepoint, sum(dc.godn) as godn, sum(dc.repl) as repl, sum(dc.brak) as brak from tt_dtmm as dc group by dc.csid, dc.routepoint";
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_dtmt');
         
-        $sql = "select dc.csid, max(mm.rank) as rank from tt_dtmt as dc inner join tt_dtmm as mm on dc.csid=mm.csid and dc.mrid=mm.mrid group by dc.csid";
+        $sql = "select dc.csid, max(mm.rank) as rank from tt_dtmt as dc "
+                . "inner join tt_dtmm as mm "
+                . "on dc.csid=mm.csid "
+                . "and dc.routepoint=mm.routepoint "
+                . "group by dc.csid";
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_cs_rank');
         
 
-        $sql = "select dc.csid, sum(mm.brak) as brak from tt_dtmt as dc inner join tt_dtmm as mm on dc.csid=mm.csid and dc.mrid=mm.mrid group by dc.csid";
+        $sql = "select dc.csid, sum(mm.repl) as repl, sum(mm.brak) as brak from tt_dtmt as dc "
+                . "inner join tt_dtmm as mm "
+                . "on dc.csid=mm.csid "
+                . "and dc.routepoint=mm.routepoint "
+                . "group by dc.csid";
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_cs_brak');
 
-        $sql = "select dc.csid, mm.rank, dc.godn, mm.toperid from tt_dtmt as dc "
+        $sql = "select dc.csid, mm.rank, dc.godn, mm.routepoint from tt_dtmt as dc "
                 . "inner join tt_dtmm as mm "
-                . "inner join tt_cs_rank as cs "
-                . "on mm.csid=cs.csid and mm.rank=cs.rank "
-                . "on dc.csid = mm.csid and dc.mrid = mm.mrid";
+                    . "inner join tt_cs_rank as cs "
+                    . "on mm.csid=cs.csid "
+                    . "and mm.rank=cs.rank "
+                . "on dc.csid = mm.csid "
+                . "and dc.routepoint = mm.routepoint";
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_cs_godn');
         
-        $sql = "select tp.entityid as csid, tp.value as tprocid, gd.toperid, gd.godn, br.brak, st.value as startkol, dt.value as startdate from tt_el as tp
+        $sql = "select tp.entityid as csid, tp.value as trouteid, gd.routepoint, gd.godn, br.repl, br.brak, st.value as startkol, to_char(dt.value,'DD-MM-YYYY') as startdate from tt_el as tp
                 left join tt_cs_godn as gd
                 on tp.entityid = gd.csid
                 left join tt_cs_brak as br
@@ -463,32 +536,31 @@ class CoverSheets extends Model
             'startkol'=>array('id'=>'startkol','name'=>'startkol','synonym'=>'Запуск','type'=>'int', 'class'=>'active'),
             'godn'=>array('id'=>'godn','name'=>'godn','synonym'=>'Годные','type'=>'int', 'class'=>'active'),
             'brak'=>array('id'=>'brak','name'=>'brak','synonym'=>'Тех.потери','type'=>'int', 'class'=>'active'),
-            'toperid'=>array('id'=>'toperid','name'=>'toperid','synonym'=>'тех.операция','type'=>'id', 'class'=>'active')
+            'repl'=>array('id'=>'repl','name'=>'repl','synonym'=>'Перенос','type'=>'int', 'class'=>'active'),
+            'routepoint'=>array('id'=>'routepoint','name'=>'routepoint','synonym'=>'Точка маршрута','type'=>'id', 'class'=>'active')
         );
         $arr_e= array();
         while($row = $res->fetch(PDO::FETCH_ASSOC)) 
         {
-            if (!$show_empty)
+            if (($row['godn']+$row['brak']+$row['repl'])==0)
             {
-                if (($row['godn']+$row['brak'])==0)
-                {
-                    continue;
-                }    
+                continue;
             }    
             $objs['LDATA'][$row['csid']]=array();
             $objs['LDATA'][$row['csid']]['csid']= array('name'=>$row['tprocid'], 'id'=>$row['tprocid']);
             $objs['LDATA'][$row['csid']]['godn']= array('name'=>$row['godn'], 'id'=>'');
+            $objs['LDATA'][$row['csid']]['repl']= array('name'=>$row['repl'], 'id'=>'');
             $objs['LDATA'][$row['csid']]['brak']= array('name'=>$row['brak'], 'id'=>'');
             $objs['LDATA'][$row['csid']]['startkol']= array('name'=>$row['startkol'], 'id'=>'');
             $objs['LDATA'][$row['csid']]['startdate']= array('name'=>$row['startdate'], 'id'=>'');
-            $objs['LDATA'][$row['csid']]['toperid']= array('name'=>$row['toperid'], 'id'=>$row['toperid']);
+            $objs['LDATA'][$row['csid']]['routepoint']= array('name'=>$row['routepoint'], 'id'=>$row['routepoint']);
             if ($row['csid'])
             {
                 if (!in_array($row['csid'], $arr_e)) $arr_e[]=$row['csid'];
             }
-            if ($row['toperid'])
+            if ($row['routepoint'])
             {
-                if (!in_array($row['toperid'], $arr_e)) $arr_e[]=$row['toperid'];
+                if (!in_array($row['routepoint'], $arr_e)) $arr_e[]=$row['routepoint'];
             }    
         }
        DataManager::droptemptable($ar_tt);
@@ -501,9 +573,9 @@ class CoverSheets extends Model
                 {
                     $objs['LDATA'][$csid]['csid']['name']=$arr_entities[$csid]['name'];
                 }    
-                if (array_key_exists($row['toperid']['id'], $arr_entities))
+                if (array_key_exists($row['routepoint']['id'], $arr_entities))
                 {
-                    $objs['LDATA'][$csid]['toperid']['name']=$arr_entities[$row['toperid']['id']]['name'];
+                    $objs['LDATA'][$csid]['routepoint']['name']=$arr_entities[$row['routepoint']['id']]['name'];
                 }    
             }
         }
@@ -521,10 +593,11 @@ class CoverSheets extends Model
                 'mindate'=>array('id'=>'mindate','name'=>'mindate','synonym'=>'Cопр.листы с','rank'=>2,'type'=>'date','valmdid'=>TZ_TYPE_EMPTY,'valmdtypename'=>'','class'=>'active')
                 );
         $objs['PSET']=array(
-            'tprocid'=>array('id'=>'tprocid','name'=>'tprocid','synonym'=>'tprocid','type'=>'id', 'class'=>'active'),
+            'trouteid'=>array('id'=>'trouteid','name'=>'trouteid','synonym'=>'Техмаршрут','type'=>'id', 'class'=>'active'),
             'startkol'=>array('id'=>'startkol','name'=>'startkol','synonym'=>'Запуск','type'=>'int', 'class'=>'active'),
             'godn'=>array('id'=>'godn','name'=>'godn','synonym'=>'Годные','type'=>'int', 'class'=>'active'),
-            'brak'=>array('id'=>'brak','name'=>'brak','synonym'=>'Тех.потери','type'=>'int', 'class'=>'active')
+            'brak'=>array('id'=>'brak','name'=>'brak','synonym'=>'Тех.потери','type'=>'int', 'class'=>'active'),
+            'repl'=>array('id'=>'repl','name'=>'repl','synonym'=>'Перенос','type'=>'int', 'class'=>'active')
         );
         $objs['LDATA']=array();
         $objs['SDATA']=array();
@@ -543,40 +616,53 @@ class CoverSheets extends Model
         {
             return $objs;
         }    
-        //выбрали техпроцессы у которых подразделение равно отбору
+        
+        //выбрали техмаршруты у которых подразделение равно отбору
          $ent= new Entity($divid);
-         $ar_tt[] = DataManager::getTT_entity('tt_el00',$this->tproc_mdid,$this->prop_div,$divid,'id','=');
+         $ar_tt[] = DataManager::getTT_entity('tt_el00',$this->troute_mdid,$this->prop_div,$divid,'id','=');
          $objs['SDATA']['parameter']=array('id'=>$divid,'name'=>$ent->getname());
         if ($mindate!='')
         {
             //выбрали сопроводительные листы у которых дата запуска больше или равно отбору
-            $ar_tt[] = DataManager::getTT_entity('tt_el0',$this->mdid,$this->propdate,$mindate,'date','>=');
+            $ar_tt[] = DataManager::getTT_entity('tt_el0',$this->cs_mdid,$this->propdate,$mindate,'date','>=');
             $objs['SDATA']['mindate']=array('id'=>'','name'=>$mindate);
         }    
         else 
         {
             $params=array();
-            $params['mdid']=$this->mdid;
-            $sql = "SELECT id  FROM \"ETable\" WHERE mdid=:mdid"; 
+            $params['mdid']=$this->cs_mdid;
+            $sql = "SELECT id, id as entityid  FROM \"ETable\" WHERE mdid=:mdid"; 
             $ar_tt[] = DataManager::createtemptable($sql, 'tt_el0',$params);
             $objs['SDATA']['mindate']=array('id'=>'','name'=>'');
         }
-        //выбрали сопроводительные листы у которых техпроцесс соответствует выбранным ранее
-        $ar_tt[] = DataManager::getTT_from_ttent('tt_el','tt_el0',$this->proptproc,'id','tt_el00');
+        //выбрали сопроводительные листы у которых техмаршрут соответствует выбранным ранее
+        $ar_tt[] = DataManager::getTT_from_ttent('tt_el','tt_el0',$this->proptroute,'id','tt_el00');
 
         //нашли количество запуска сопроводительных листов
         $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_kol_st','tt_el',$this->mpprop_cs_start,'int');
         //нашли даты запуска сопроводительных листов
         $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_dat_st','tt_el',$this->mpprop_cs_date,'date');
         
-        //теперь ищем строки таб.частей документов в которых искомые сопр.листы
-        $ar_tt[] = DataManager::getTT_from_ttprop('tt_sel',$this->ar_prop_cs,'id','tt_el');
         
+        //теперь ищем строки таб.частей документов в которых искомые сопр.листы
+        $ar_tt[] = DataManager::getTT_from_ttprop('tt_sel',$this->mpprop_dv_cs,'id','tt_el0');
+
+
         //теперь ищем последние значения реквизита годные в найденных строках
         $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_kol_godn','tt_sel',$this->mpprop_dv_godn,'int');
         
         //теперь ищем последние значения реквизита брак в найденных строках
         $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_kol_brak','tt_sel',$this->mpprop_dv_brak,'int');
+        
+        //теперь ищем последние значения реквизита перемещение в найденных строках
+        $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_kol_repl','tt_sel',$this->mpprop_dv_repl,'int');
+
+        //теперь ищем последние значения реквизита точка техмаршрута в найденных строках
+        $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_ptroute','tt_sel',$this->mpprop_dv_ptroute,'id');
+
+        //теперь ищем последние значения реквизита Активность в найденных строках
+        $ar_tt[] = DataManager::getTT_from_ttent_prop('tt_proute_act','tt_sel',$this->mpprop_dv_act,'bool');
+        
         //здесь нашли сами таб.части и доки в которых искомые сопр.листы
         $sql = "select distinct sdl.parentid as setid, its.entityid as docid, ot.value as csid, ot.entityid as itemid FROM tt_sel as ot
                     INNER JOIN \"SetDepList\" as sdl
@@ -591,131 +677,117 @@ class CoverSheets extends Model
         $sql = "select distinct docid as id FROM tt_doc";
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_dc');
         
-        //теперь ищем последние значения реквизита тех.операция в найденных доках
-        $ar_tt[] = DataManager::getTT_from_ttent('tt_oper','tt_dc',$this->prop_to,'id');
-        
         //теперь ищем последние значения реквизита дата в найденных доках
         $ar_tt[] = DataManager::getTT_from_ttent('tt_date','tt_dc',$this->propdate,'date');
         
         //теперь ищем последние значения реквизита активность в найденных доках
         $ar_tt[] = DataManager::getTT_from_ttent('tt_act','tt_dc',$this->prop_act,'bool','',FALSE);
-        
-        
-        //теперь ищем порядок техопераций в техпроцессах
-        //здесь нашли таб.часть маршрут для техпроцессов
-        $sql = "select et.id as tprocid, pv_mr.value as mrid from tt_el00 as et 
-                    inner join \"IDTable\" as it_mr
-                        inner join \"PropValue_id\" as pv_mr
-                        on it_mr.id = pv_mr.id
-                        inner join \"MDProperties\" as mp_mr
-                        on it_mr.propid = mp_mr.id
-                        and mp_mr.propid=:prop_mr
-                    on et.id = it_mr.entityid";
-        $params=array();
-        $params['prop_mr']=$this->prop_mr;
-        $ar_tt[] = DataManager::createtemptable($sql, 'tt_mr0',$params);
-        
 
-        //здесь нашли строки таб.части маршрута
-        $sql = "select mr.tprocid, mr.mrid, sdl.childid as id FROM tt_mr0 as mr
-                    INNER JOIN \"SetDepList\" as sdl
-                    ON mr.mrid=sdl.parentid
+        
+        $sql = "select distinct value as id FROM tt_ptroute";
+        $ar_tt[] = DataManager::createtemptable($sql, 'tt_routepoint');
+        
+        $sql = "select sdl.childid as routepoint, sdl.parentid as setid from \"SetDepList\" as sdl
+                    inner join tt_routepoint as tr
+                    ON tr.id=sdl.childid
                     AND sdl.rank>0";
-        $ar_tt[] = DataManager::createtemptable($sql, 'tt_mri');
+        $ar_tt[] = DataManager::createtemptable($sql, 'tt_routeset');
         
-        //теперь ищем последние значения реквизита порядок в найденных строках маршрута
-        $ar_tt[] = DataManager::getTT_from_ttent('tt_mr_rank','tt_mri',$this->prop_rank,'int');
+        $sql = "select it.entityid as trouteid, rs.routepoint as routepoint from \"PropValue_id\" as pv
+                    inner join \"IDTable\" as it
+                    ON pv.id = it.id
+                    inner join tt_routeset as rs
+                    on pv.value=rs.setid";
+        $ar_tt[] = DataManager::createtemptable($sql, 'tt_troute');
+
+        //теперь ищем последние значения реквизита ранг в найденных точках маршрута
+        $ar_tt[] = DataManager::getTT_from_ttent('tt_route_rank','tt_routepoint',$this->prop_rank,'int','',TRUE);
         
-        //теперь ищем последние значения реквизита активность в найденных строках маршрута
-        $ar_tt[] = DataManager::getTT_from_ttent('tt_mr_act','tt_mri',$this->prop_act,'bool','',FALSE);
-        
-        //здесь нашли маршруты с последними значениями тех.операций   
-        $ar_tt[] = DataManager::getTT_from_ttent('tt_mr_to','tt_mri',$this->prop_to,'id');
-        
-        $sql = "select mr.tprocid, mr.id as mrid, top.value as toperid, rn.value as rank, COALESCE(ma.value,true) as activity from tt_mri as mr
-                    left join tt_mr_act as ma
-                    on mr.id=ma.entityid
-                    left join tt_mr_to as top
-                    on mr.id=top.entityid
-                    left join tt_mr_rank as rn
-                    on mr.id=rn.entityid
-                    where COALESCE(ma.value,true)=true";
-        
+        $sql = "select mr.trouteid, mr.routepoint, rn.value as rank from tt_troute as mr
+                    left join tt_route_rank as rn
+                    on mr.routepoint=rn.entityid";
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_mr'); 
-//        $sqlp = "select * from tt_mr";
-//        $res = DataManager::dm_query($sqlp);
-//        die(var_dump($res->fetchAll(PDO::FETCH_ASSOC)));    
         
         
-        $sql = "select dc.docid, dc.itemid, mr.mrid, dc.csid, op.value as toperid, dt.value as date, COALESCE(da.value,true) as activity, gd.value as godn, br.value as brak, tp.value as tprocid, mr.rank from tt_doc as dc 
-                left join tt_oper as op
-                on dc.docid = op.entityid
+        
+        $sql = "select dc.docid, dc.itemid, mr.trouteid, dc.csid, tp.value as routepoint, dt.value as date, COALESCE(da.value,true) as activity, gd.value as godn, br.value as brak, rp.value as repl, mr.rank from tt_doc as dc 
                 left join tt_act as da
                 on dc.docid = da.entityid
                 left join tt_date as dt
                 on dc.docid = dt.entityid
                 left join tt_kol_godn as gd
                 on dc.itemid = gd.entityid
+                left join tt_kol_repl as rp
+                on dc.itemid = rp.entityid
+                left join tt_proute_act as rt_act
+                on dc.itemid = rt_act.entityid
                 left join tt_kol_brak as br
                 on dc.itemid = br.entityid
-                left join tt_el as tp
+                left join tt_ptroute as tp
                     left join tt_mr as mr
-                    on tp.value = mr.tprocid
-                on dc.csid = tp.entityid where op.value=mr.toperid and COALESCE(da.value,true)=true";
+                    on tp.value = mr.routepoint
+                on dc.itemid = tp.entityid 
+                where COALESCE(da.value,true) AND COALESCE(rt_act.value,true)";
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_dtmm');
         
-        $sql = "select dc.csid, dc.mrid, dc.docid, dc.toperid, dc.date, dc.tprocid, dc.rank, sum(dc.godn) as godn, sum(dc.brak) as brak from tt_dtmm as dc group by dc.csid, dc.mrid, dc.docid, dc.toperid, dc.date, dc.tprocid, dc.rank";
+        $sql = "select dc.csid, dc.routepoint, dc.trouteid, max(dc.date) as date, dc.rank, sum(dc.godn) as godn, sum(dc.brak) as brak, sum(dc.repl) as repl from tt_dtmm as dc group by dc.csid, dc.routepoint, dc.trouteid, dc.rank";
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_dtms');
+//        $sqlp = "select * from tt_dtms";
+//        $res = DataManager::dm_query($sqlp);
+//        die(var_dump($res->fetchAll(PDO::FETCH_ASSOC)));    
         
-        $sql = "select dc.csid, dc.mrid, max(dc.rank) as rank, sum(dc.godn) as godn, sum(dc.brak) as brak  from tt_dtms as dc group by dc.csid, dc.mrid";
+        $sql = "select dc.csid, dc.trouteid, max(dc.rank) as rank, sum(dc.brak) as brak, sum(dc.repl) as repl from tt_dtms as dc group by dc.csid, dc.trouteid";
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_dtmt');
         
         $sql = "select dc.csid, max(dc.rank) as rank from tt_dtmt as dc group by dc.csid";
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_cs_rank');
 
-        $sql = "select dc.csid, sum(mm.brak) as brak from tt_dtmt as dc inner join tt_dtms as mm on dc.csid=mm.csid and dc.mrid=mm.mrid group by dc.csid";
+        $sql = "select dc.csid, sum(mm.brak) as brak from tt_dtmt as dc inner join tt_dtms as mm on dc.csid=mm.csid and dc.trouteid=mm.trouteid group by dc.csid";
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_cs_brak');
+        
+        $sql = "select dc.csid, sum(mm.repl) as repl from tt_dtmt as dc inner join tt_dtms as mm on dc.csid=mm.csid and dc.trouteid=mm.trouteid group by dc.csid";
+        $ar_tt[] = DataManager::createtemptable($sql, 'tt_cs_repl');
 
-        $sql = "select dc.csid, dc.rank, dc.godn, mm.toperid from tt_dtmt as dc "
+        $sql = "select dc.csid, dc.rank, dc.trouteid, dt.godn, st.value as startkol from tt_dtmt as dc "
                 . "inner join tt_cs_rank as cs "
-                . "on dc.csid=cs.csid and dc.rank=cs.rank "
-                . "inner join tt_mr as mm "
-                . "on dc.rank = mm.rank and dc.mrid = mm.mrid";
+                . "on dc.csid=cs.csid "
+                . "and dc.rank=cs.rank "
+                . "inner join tt_dtms as dt "
+                    . "left join tt_kol_st as st "
+                    . "on dt.csid = st.entityid "
+                . "on dc.csid=dt.csid "
+                . "and dc.rank=dt.rank ";
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_cs_godn');
         
         
-        $sql = "select tp.entityid as csid, tp.value as tprocid, gd.toperid, gd.godn, br.brak, st.value as startkol, dt.value as startdate from tt_el as tp
+        $sql = "select tp.entityid as csid, gd.trouteid, gd.godn, br.brak, rp.repl, gd.startkol from tt_el as tp
                 left join tt_cs_godn as gd
                 on tp.entityid = gd.csid
                 left join tt_cs_brak as br
                 on tp.entityid = br.csid
-                left join tt_kol_st as st
-                on tp.entityid = st.entityid
-                left join tt_dat_st as dt
-                on tp.entityid = dt.entityid";
+                left join tt_cs_repl as rp
+                on tp.entityid = rp.csid";
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_cs');
+
         
-        $sql = "select tp.tprocid, sum(tp.godn) as godn, sum(tp.brak) as brak, sum(tp.startkol) as startkol, min(tp.startdate) as startdate from tt_cs as tp group by tp.tprocid";
+        $sql = "select tp.trouteid, sum(tp.godn) as godn, sum(tp.brak) as brak, sum(tp.repl) as repl, sum(tp.startkol) as startkol from tt_cs as tp group by tp.trouteid";
         $res = DataManager::dm_query($sql);
         $arr_e= array();
         while($row = $res->fetch(PDO::FETCH_ASSOC)) 
         {
-            if (!$show_empty)
+            if (($row['godn']+$row['brak']+$row['repl'])==0)
             {
-                if (($row['godn']+$row['brak'])==0)
-                {
-                    continue;
-                }    
+                continue;
             }    
-            $objs['LDATA'][$row['tprocid']]=array();
-            $objs['LDATA'][$row['tprocid']]['tprocid']= array('name'=>$row['tprocid'], 'id'=>$row['tprocid']);
-            $objs['LDATA'][$row['tprocid']]['godn']= array('name'=>$row['godn'], 'id'=>'');
-            $objs['LDATA'][$row['tprocid']]['brak']= array('name'=>$row['brak'], 'id'=>'');
-            $objs['LDATA'][$row['tprocid']]['startkol']= array('name'=>$row['startkol'], 'id'=>'');
-            $objs['LDATA'][$row['tprocid']]['startdate']= array('name'=>$row['startdate'], 'id'=>'');
-            if ($row['tprocid'])
+            if ($row['trouteid'])
             {  
-              if (!in_array($row['tprocid'], $arr_e)) $arr_e[]=$row['tprocid'];
+                $objs['LDATA'][$row['trouteid']]=array();
+                $objs['LDATA'][$row['trouteid']]['trouteid']= array('name'=>$row['trouteid'], 'id'=>$row['trouteid']);
+                $objs['LDATA'][$row['trouteid']]['godn']= array('name'=>$row['godn'], 'id'=>'');
+                $objs['LDATA'][$row['trouteid']]['brak']= array('name'=>$row['brak'], 'id'=>'');
+                $objs['LDATA'][$row['trouteid']]['repl']= array('name'=>$row['repl'], 'id'=>'');
+                $objs['LDATA'][$row['trouteid']]['startkol']= array('name'=>$row['startkol'], 'id'=>'');
+                if (!in_array($row['trouteid'], $arr_e)) $arr_e[]=$row['trouteid'];
             }      
         }
        DataManager::droptemptable($ar_tt);
@@ -726,7 +798,7 @@ class CoverSheets extends Model
             {
                 if (array_key_exists($tprocid, $arr_entities))
                 {
-                    $objs['LDATA'][$tprocid]['tprocid']['name']=$arr_entities[$tprocid]['name'];
+                    $objs['LDATA'][$tprocid]['trouteid']['name']=$arr_entities[$tprocid]['name'];
                 }    
             }
         }

@@ -16,8 +16,8 @@ class Controller_CoverSheets extends Controller
 	{
             if ($arResult['MODE']=='PRINT') 
             {
-                $data = $this->model->get_data($arResult);
                 $arResult['TITLE']= 'Отчет '.$this->model->getname();
+                $data = $this->model->get_data($arResult);
                 $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/components/reps/coversheets/coversheets_view.php";
                 $arResult['jscript']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/components/reps/coversheets/coversheets.js";
 		$this->view->generate($arResult, 'print_view.php', $data);

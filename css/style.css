@@ -118,3 +118,92 @@ input.form-value {	/* тултип */
   -moz-font-feature-settings: 'liga';
   -moz-osx-font-smoothing: grayscale;
 }
+
+body.toprint {
+    padding: 0;
+    margin: 0;
+}
+.print_header { 
+    width: 100%;
+    padding: 0;
+    margin: 0;
+}
+.print_footer { 
+    width: 100%;
+    margin: 5px auto;
+    padding: 5px;
+}
+    
+table.toprint {
+    font-size: 10px;  
+    empty-cells: show;
+    width: 100%; /* Ширина таблицы */
+    line-height: 20px;
+    border-collapse: collapse; /* Убираем двойные линии между ячейками */
+}
+table.toprint th, table.toprint td {
+    padding: 3px; /* Поля вокруг содержимого таблицы */
+    border: 1px solid black; /* Параметры рамки */
+}
+table.toprint th[vt='int'], table.toprint td[vt='int'] {
+    width: 50px;
+    text-align:center;
+}
+table.toprint th[vt='nom'], table.toprint td[vt='nom'] {
+    width: 20px;
+    text-align:center;
+}
+table.toprint th[vt='str'], table.toprint td[vt='str'] {
+    width: 200px;
+}
+.print_img { 
+    display: inline-block;
+    vertical-align: top;
+    margin-right: 1px;
+    margin-left: 1px;
+    padding: 0;
+    width: 10%;
+}
+.print_col1 { 
+    display: inline-block;
+    padding-left: 25px;
+    vertical-align: top;
+    margin-right: 5px;
+    width: 22%;
+}
+.print_col2 { 
+    display: inline-block;
+    vertical-align: top;
+    margin-right: 10px;
+    width: 38%;
+}
+.print_col3 { 
+    display: inline-block;
+    vertical-align: top;
+    margin-right: 5px;
+    width: 22%;
+}
+.print_col50 { 
+    display: inline-block;
+    vertical-align: top;
+    margin-right: 5px;
+    width: 45%;
+}
+.side_text { 
+    text-align: right;
+    font-size: 12px;  
+}
+.small_text { 
+    text-align: left;
+    font-size: 10px;  
+}
+.normal_text { 
+    margin: 5px auto;
+    padding: 5px;
+    text-align: left;
+    font-size: 14px;  
+}
+.img_text {
+  padding-left: 30 px; 
+} 
+

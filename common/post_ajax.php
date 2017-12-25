@@ -113,30 +113,35 @@ function loadData()
     },    
     'Entity_Entity_SET_EDIT_LIST'=> function( $idm) {
         $data = $idm->getdata();
-        $mdprop = new Mdproperty($data['filter_id']['id']);
-        $arMD = Entity::getEntityDetails($idm->getcurid());
-        $event_trig = DataManager::get_event_trigger('onSelect',$arMD['mdid'] , $mdprop->getpropstemplate()->getid());
-        if ($event_trig)
-        {
-            die(var_dump($event_trig));
-        }   
-        else
-        {
+        $propid = $data['filter_id']['id'];
+        if ($propid)
+        {    
+            $curid = $idm->getcurid();
+            $arMD = Entity::getEntityDetails($curid);
+            $mdprop = new Mdproperty($propid);
+            $valmdentity = $mdprop->getpropstemplate()->getvalmdentity();
             $data = array();
-            $data['itemid'] = array('id'=>$mdprop->getpropstemplate()->getvalmdentity()->getid(),'name'=>'');
+            $data['curid'] = array('id'=>$curid,'name'=>'');
+            $data['itemid'] = array('id'=>$valmdentity->getid(),'name'=>'');
+            $data['docid'] = array('id'=>$idm->getitemid(),'name'=>'');
             $data['filter_id']= array('id'=>'','name'=>'');
             $data['filter_val']= array('id'=>'','name'=>'');
             $data['filter_min']= array('id'=>'','name'=>'');
             $data['filter_max']= array('id'=>'','name'=>'');
-            if (($mdprop->getpropstemplate()->getvalmdentity()->getmdtypename()=='Cols')||($mdprop->getpropstemplate()->getvalmdentity()->getmdtypename()=='Comps'))
-            {    
-                return CollectionSet::getCollectionByFilter($data,$idm->getmode(),$idm->getaction());
-            }
-            else 
+            $event_trig = DataManager::get_event_trigger('onSelect',$arMD['mdid'] , $mdprop->getpropstemplate()->getid());
+            if ($event_trig)
             {
-                return EntitySet::getEntitiesByFilter($data,$idm->getmode(),$idm->getaction());
-            }
+                die(var_dump($event_trig));
+            }   
+            else
+            {    
+                if (($valmdentity->getmdtypename()=='Cols')||($valmdentity->getmdtypename()=='Comps'))
+                {    
+                    return CollectionSet::getCollectionByFilter($data,$idm->getmode(),$idm->getaction());
+                }
+            }    
         }    
+        return EntitySet::getEntitiesByFilter($data,$idm->getmode(),$idm->getaction());
     },   
     'Entity_Entity_SET_EDIT_CHOICE'=> function( $idm) {
         $entity = new Entity($idm->getcurid());

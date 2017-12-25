@@ -93,6 +93,11 @@ function onloadlist(data)
 }
 function onLoadValID(data)
 {
+    var mode = $("input[name='mode']").val();    
+    if ('TITLE' in data)
+    {
+        $("p#print-title").html(data['TITLE']);
+    }    
     if ('SDATA' in data)
     {    
         for(var cid in data['PLIST'])
@@ -119,6 +124,10 @@ function onLoadValID(data)
             for(var cid in data['PSET'])
             {
                 cls = data['PSET'][cid]['class'];
+                if ((mode=='PRINT')&&(cls=='hidden'))
+                {
+                    continue;
+                }    
                 if (cid in data['LDATA'][id])
                 {    
                     var dname = data['LDATA'][id][cid]['name'];
@@ -210,13 +219,10 @@ $('body').on('dblclick','#entitylist tr',function ()
     var href='';
     if ($action=='CoverSheets')
     {
-        if ($curcol=='docid')
+        var $curid = $(this).find('td#docid').attr('it');
+        if ($curid!='')
         {    
-            var $curid = $(this).find('td#docid').attr('it')
-            if ($curid!='')
-            {    
-                href="\\"+$curid+"\\view";
-            }    
+            href="\\"+$curid+"\\view";
         }    
     }   
     else
@@ -226,7 +232,8 @@ $('body').on('dblclick','#entitylist tr',function ()
     }    
     if (href!='')
     {
-        window.open(href, "_blank");
+        var otherWindow = window.open(href,"_blank");
+        otherWindow.opener = null;
     }    
 });
 
@@ -406,7 +413,8 @@ $('body').on('click', '#print', function (e)
     if (str!='')
     {
         href="\\print\\"+$itemid+str;
-        window.open(href, "_blank");
+        var otherWindow = window.open(href,"_blank");
+        otherWindow.opener = null;
     }    
 });
 

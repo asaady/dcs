@@ -418,22 +418,44 @@ function show_uploadfile($data)
 {
     console.log($data)
 }
-
+function setvalid($obj,cid,cname)
+{
+    $obj.html(cname);
+    $obj.attr('it',cid);
+}
+function setvals(data)
+{
+    if (!'status' in data.items)
+    {
+        console.log(data);
+        return;
+    }    
+    if (data.items['status']!='OK')
+    {
+        console.log(data);
+        return;
+    }    
+    var $row = $('tr#'+data.items['id']);
+    $.each(data.items['objs'], function(key, val) 
+    {
+        var $td = $row.find('td#'+key);
+        setvalid($td,val.id,val.name);
+    });    
+}
 function submitModalForm(e)
 {
     e.preventDefault();
     var x = $('div.ivalue-block');
     var $ci = $(x).find('input');
     var action = $("input[name='action']").val();
-    var $curcol = $('#tablehead th.info');
+    var $pan = $('.tab-pane.fade.in.active');
+    var $curcol = $pan.find('#tablehead th.info');
     var propid = $curcol.attr('id');
-    var $currow = $('#entitylist tr.info');
-    var etd = $currow.find('td#'+propid);
+    var $currow = $pan.find('#entitylist tr.info');
+    var $etd = $currow.find('td#'+propid);
     var cnm = $ci.val();
     var cid = $ci.attr('it');
     var typ = $ci.attr('type');
-    etd.html(cnm);
-    etd.attr('it',cid);
     $(x).hide();
     if (typ=='file')
     {
@@ -472,8 +494,8 @@ function submitModalForm(e)
     var $data = {action:action, propid: propid, id: cid, type:typ, name:cnm, itemid:$currow.attr('id'), command:'save', prefix:'field'};
     $.getJSON(
          '/common/get_ajax.php',
-         $data
-
+         $data,
+         setvals
      );
 }
 
@@ -573,9 +595,12 @@ $('body').on('dblclick','#entitylist td',function ()
 $('body').on('click','button.form-value#list', function(e)
 {
     e.preventDefault();
+    var $pan = $('.tab-pane.fade.in.active');
+    var $tr = $pan.find('tr.info'); 
+    var $th = $pan.find('th.info'); 
     var action = $("input[name='action']").val();  
-    $("input[name='curid']").val($('tr.info').attr('id')); 
-    $("input[name='filter_id']").val($('th.info').attr('id')); 
+    $("input[name='curid']").val($tr.attr('id')); 
+    $("input[name='filter_id']").val($th.attr('id')); 
     $("input[name='command']").val('list'); 
     $data = $('.row :input').serializeArray();
     $.ajax({
@@ -1007,7 +1032,15 @@ $('body').on('click', '#history', function (e)
     }    
 });
 
-
+$('body').on('click', '#print', function (e) 
+{
+    var $itemid = $("input[name='itemid']").val();
+    var href='';
+    e.preventDefault();
+    href="\\print\\"+$itemid;
+    var otherWindow = window.open(href,"_blank");
+    otherWindow.opener = null;
+});
 
 function before_save() 
 {
@@ -1038,6 +1071,7 @@ function save()
 function save_success (result)
 {
     $('#tzModal').modal('hide');
+    
     location.href=getprefix()+result['id']+'/edit';
     console.log(result);
 };

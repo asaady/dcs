@@ -208,6 +208,30 @@ class Route {
                                 }    
                             }    
                         }    
+                        else 
+                        {
+                            if ($arResult['MODE'] == 'PRINT')
+                            {
+                                $ent = new Entity($ritem);
+                                $compname = $ent->getmdentity()->getname();
+                                $model_name = 'Prn'.$compname;
+                                $model_file = $model_name.'.php';
+                                $model_path = "app/components/prnforms/".strtolower($compname)."/".$model_file;
+                                if(file_exists($model_path))
+                                {
+                                    $tcontroller_name = 'Controller_'.$model_name;
+                                    $tcontroller_path = "app/components/prnforms/".strtolower($compname)."/".$tcontroller_name.'.php';
+                                    if(file_exists($controller_path))
+                                    {
+                                        $classname = $item['classname'];
+                                        $controller_path = $tcontroller_path;
+                                        $controller_name = $tcontroller_name;
+                                        include $model_path;
+                                        include $controller_path;
+                                    }
+                                }
+                            }   
+                        }
                     }
                 }
             }

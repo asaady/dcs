@@ -2,6 +2,7 @@
 namespace tzVendor;
 use PDO;
 use DateTime;
+use tzVendor\Filter;
 
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/tz_const.php");
 
@@ -24,11 +25,9 @@ class EntitySet extends Model {
     {
         return $this->mditem;
     }
-    function get_data($mode='') {
-      $plist=MdpropertySet::getMDProperties($this->id,$mode," WHERE mp.mdid = :mdid AND mp.ranktoset>0 ",true);
-      
-      return 
-            array(
+    function get_data($mode='') 
+    {
+        return array(
           'id'=>$this->id,
           'name'=>$this->name,
           'synonym'=>$this->synonym,
@@ -36,12 +35,12 @@ class EntitySet extends Model {
           'mdtype'=>$this->mditem->getname(),
           'mditem'=>$this->mditem->getid(),
           'mditemsynonym'=>$this->mditem->getsynonym(),
-          'PSET' => $plist,
+          'PSET' => MdpropertySet::getMDProperties($this->id,$mode," WHERE mp.mdid = :mdid AND mp.ranktoset>0 ",true),
           'navlist' => array(
               $this->mditem->getid() => $this->mditem->getsynonym(),
               $this->id => $this->synonym
-          )
-          );
+            )
+        );
     }
     function create($data) 
     {
@@ -120,7 +119,6 @@ class EntitySet extends Model {
         }
         if ($strwhere!='')
         {
-            $strorder = "";
             $strjoin = "it.entityid";
             $sql = "SELECT DISTINCT it.entityid as id FROM \"PropValue_$ptype\" as pv INNER JOIN \"IDTable\" as it ON pv.id=it.id AND it.propid=:propid"; 
             $params['propid']=$propid;
@@ -131,16 +129,15 @@ class EntitySet extends Model {
             if ($key_edate!==FALSE)
             {
                 //если есть реквизит с установленным флагом isedate сортируем по этому реквизиту по убыванию
-                $strwhere = "";
-                $strorder = " order by pv.value DESC";
-                $strjoin = "it.entityid";
-                $sql = "SELECT it.entityid as id, pv.value FROM \"PropValue_date\" as pv INNER JOIN \"IDTable\" as it ON pv.id=it.id AND it.propid=:propid"; 
-                $params['propid']=$key_edate;
+                $strjoin = "et.id";
+                $sql = "SELECT et.id, COALESCE(pv.value,'epoch'::timestamp) as value FROM \"ETable\" as et LEFT JOIN \"IDTable\" as it  INNER JOIN \"PropValue_date\" as pv ON pv.id=it.id AND it.propid=:propid ON et.id=it.entityid "; 
+                $strwhere = " et.mdid=:mdid";
+                $params['propid'] = $key_edate;
+                $params['mdid'] = $mdid;
             }        
             else 
             {
                 $strwhere = " et.mdid=:mdid";
-                $strorder = "";
                 $strjoin = "et.id";
                 $sql = "SELECT et.id FROM \"ETable\" as et"; 
                 $params['mdid'] = $mdid;
@@ -283,28 +280,270 @@ class EntitySet extends Model {
                 if (array_key_exists($rid, $row))
                 {
                     $crow = $row[$rid];
-                    if (array_key_exists($crow['id'], $arr_entities)){
-                        $ldata[$id][$rid]['name']=$arr_entities[$crow['id']]['name'];
+                    if (array_key_exists($crow['id'], $arr_entities))
+                    {
+                        $ldata[$id][$rid]['name'] = $arr_entities[$crow['id']]['name'];
                     }    
                 }        
             }
         }    
     }
+    public static function add_filter_val($ent_obj,$mdid,&$ent_filter)
+    {
+        $ent_plist = $ent_obj->properties();
+        //определим нужно ли фильтровать строки по реквизитам
+        //поищем среди реквизитов объекта-хозяина реквизиты совпадающие по шаблону с реквизитами выбираемых строк
+        //это реквизиты выбираемых строк
+        $arr_ent_propid = array_column($ent_plist, 'propid','id'); // это массив шаблонов реквизитов объекта хозяина
+        $plist = MdpropertySet::getMDProperties($mdid, 'CONFIG', " WHERE mp.mdid = :mdid AND mp.ranktoset>0 ",true);
+        foreach ($plist as $prop)
+        {
+            if ($prop['type']=='id') //фильтруем только по полям ссылочного типа
+            {
+                $propid = $prop['propid']; // ид шаблона реквизита
+                $key = array_search($propid, $arr_ent_propid);
+                if ($key!==FALSE)
+                {
+                    //нашли реквизит по которому надо отфильтровать строки и добавили к массиву фильтров
+                    $ent_filter[$prop['id']] = new Filter($prop['id'],$ent_obj->getattrid($key));
+                }        
+            }    
+        }   
+    }   
+    public static function get_tt_items($docid,$mdid,$curid,&$ent_filter,$entities)
+    {        
+        $filter_id = '';
+        $filter_pid = '';
+        $tt_et = '';
+        //надо найти Объекты у которых есть ТЧ к которой относятся запрошенные строки ТЧ
+        $sql = "select mi.name as mditem, mdp.name as mdname, mdp.id as mdid, mp.id as pid, mp.propid, pv.value as setmdid from \"MDTable\" as mdp
+                    inner join \"CTable\" as mi
+                    on mdp.mditem = mi.id
+                    inner join \"MDProperties\" as mp 
+                        inner join \"CTable\" as ct
+                            inner join \"MDTable\" as md
+                            on ct.mdid=md.id
+                            inner join \"CProperties\" as cp
+                                inner join \"CPropValue_mdid\" as pv
+                                on cp.id=pv.pid
+                                and pv.value in (
+                                    select mdp.id from \"MDTable\" as mdp
+                                        inner join \"CTable\" as mi
+                                        on mdp.mditem = mi.id
+                                        and mi.name='Sets'
+                                        inner join \"MDProperties\" as mp 
+                                            inner join \"CTable\" as ct
+                                                inner join \"MDTable\" as md
+                                                on ct.mdid=md.id
+                                                inner join \"CProperties\" as cp
+                                                        inner join \"CPropValue_mdid\" as pv
+                                                        on cp.id=pv.pid
+                                                        and pv.value=:mdid
+                                                on ct.mdid=cp.mdid
+                                                and cp.name='valmdid'
+                                                and pv.id=ct.id
+                                            and md.name = 'PropsTemplate'
+                                            on mp.propid = ct.id
+                                        on mp.mdid=mdp.id
+                                    )
+                            on ct.mdid=cp.mdid
+                            and cp.name='valmdid'
+                            and pv.id=ct.id
+                        and md.name = 'PropsTemplate'
+                        on mp.propid = ct.id
+                    on mp.mdid=mdp.id";
+        $params = array();
+        $params['mdid'] = $mdid;
+        $res = DataManager::dm_query($sql,$params);
+        $ar_obj = array();
+        while($row = $res->fetch(PDO::FETCH_ASSOC)) 
+        {
+            $ar_obj[$row['mdid']] = $row;
+        }
+        $ent_obj = new Entity($curid); // получим объект хозяин 
+        $ent_plist = $ent_obj->properties();
+        foreach ($ent_plist as $prop)
+        {
+            if ($prop['type']<>'id')
+            {
+                continue;
+            }    
+            //проверка: у объекта хозяина есть реквизит тогоже mdid что и у владельца выбираемой сущности
+            if (!array_key_exists($prop['valmdid'],$ar_obj))
+            {
+                continue;
+            }   
+            //нашли реквизит который имеет в себе ТЧ и строки ТЧ которые надо выбрать
+            $filter_id = $prop['id'];
+            $filter_pid = $ar_obj[$prop['valmdid']]['pid'];
+            break;    
+        }   
+        if ($filter_id<>'')
+        {
+            $item = new Entity($ent_obj->getattrid($filter_id));
+            self::add_filter_val($item,$mdid,$ent_filter);
+            if ($ent_obj->getmdentity()->getmdtypename()=='Items')
+            {
+                //хозяин объект сам является строкой
+                $doc = new Entity($docid);
+                self::add_filter_val($doc,$mdid,$ent_filter);
+            }   
+            $dop='';
+            $params = array();
+            if (count($entities))
+            {
+                $dop = " and it.childid in :str_entities";
+                $params['str_entities'] =  "('".implode("','", $entities)."')"; 
+            }    
+            $setid = $item->getattrid($filter_pid); // это ИД ТЧ к которой проинадлежат искомые строки
+            $sql = "SELECT it.childid as id, it.rank as rownum  FROM \"SetDepList\" as it WHERE it.parentid=:entityid and it.rank > 0";
+            $params['entityid'] = $setid;
+            $tt_et = DataManager::createtemptable($sql, 'tt_et',$params);
+        }   
+        return $tt_et;
+    }
+    static function arr_rls($propid, $access_prop,$edit_mode)
+    {
+        $rls=array();
+        foreach ($access_prop as $prop)
+        {
+            if ($prop['propid']==$propid)
+            {
+                if (($edit_mode==='EDIT')||($edit_mode==='SET_EDIT')||($edit_mode==='CREATE')||($edit_mode==='CREATE_PROPERTY'))
+                {
+                    if ($prop['wr']===true)
+                    {    
+                        $rls[]=$prop['value'];
+                    }    
+                }    
+                else 
+                {
+                    if (($prop['rd']===true)||($prop['wr']===true))
+                    {    
+                        $rls[]=$prop['value'];
+                    }    
+                }
+            }    
+        }    
+        return $rls;
+    }
+
+    static function sqltext_entitylist($mdid,$plist,$filter,$arr_prop,$access_prop,$edit_mode,&$params)
+    {
+        $str0_req='SELECT et.id';
+        $str_req='';
+        $str_p = '';
+        $orderstr='';
+        $activity_id = array_search('activity', array_column($plist,'name','id'));
+        foreach($plist as $row) 
+        {
+            $rid = $row['id'];
+            $rowname = str_replace(" ","",strtolower($row['name']));
+            $str0_t = ", tv_$rowname.propid as propid_$rowname, pv_$rowname.value as name_$rowname, '' as id_$rowname";
+            $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            if ($row['type']=='id')
+            {
+                $arr_id[$rid]=$row;
+                $str0_t = ", tv_$rowname.propid as propid_$rowname, '' as name_$rowname, pv_$rowname.value as id_$rowname";
+                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            }
+            elseif ($row['type']=='cid') 
+            {
+                $str0_t = ", tv_$rowname.propid as propid_$rowname, ct_$rowname.synonym as name_$rowname, pv_$rowname.value as id_$rowname";
+                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname INNER JOIN \"CTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            }
+            elseif ($row['type']=='mdid') 
+            {
+                $str0_t = ", tv_$rowname.propid as propid_$rowname, ct_$rowname.synonym as name_$rowname, pv_$rowname.value as id_$rowname";
+                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname INNER JOIN \"MDTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            }
+            elseif ($row['type']=='int') 
+            {
+                if (strtolower($row['name'])=='rank') 
+                {
+                    $orderstr= ' order by name_'.$rowname;
+                }    
+            }
+            elseif ($row['type']=='date') 
+            {
+                if ($row['isedate']) 
+                {
+                    $orderstr= ' order by name_'.$rowname.' DESC';
+                }    
+                $str0_t = ", tv_$rowname.propid as propid_$rowname, date_trunc('second', COALESCE(pv_$rowname.value,'epoch'::timestamp)) as name_$rowname, '' as id_$rowname";
+                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            }
+            if ($activity_id!==FALSE)
+            {
+                if ($rid==$activity_id)
+                {
+                    $str0_t = ", tv_$rowname.propid as propid_$rowname, COALESCE(pv_$rowname.value,true) as name_$rowname, '' as id_$rowname";
+                    $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+                }    
+            }    
+            $str0_req .= $str0_t;
+            $str_req .=$str_t;
+            
+            if ($row['valmdid']==$mdid)    
+            {
+                //rls совпал с объектом - в таком случае фильтруем по id объекта а не по реквизиту объекта
+                continue;
+            }  
+            else
+            {
+                if (in_array($row['propid'], $arr_prop))
+                {
+                    $rls = self::arr_rls($row['propid'], $access_prop, $edit_mode);
+                    if (!count($rls))
+                    {    
+                        //rls есть а доступных значений реквизита нет - значит доступ к списку запрещен
+                        return $objs;
+                    }
+                    else 
+                    {
+                        $filter[$rid] = new Filter($rid, $rls);
+                    }    
+                }        
+            }    
+        }
+        $str0_req .=" FROM tt_et as et";
+        $sql = $str0_req.$str_req;
+        
+        $strw = Filter::getstrwhere($filter, 'pv_','.value',$params);
+        $show_erased='';
+        if ($activity_id!==FALSE)
+        {
+            $show_erased = DataManager::getSetting('show_deleted_rows');
+        }    
+        if (strtolower($show_erased)=='false')
+        {
+            $strw .= ' AND COALESCE(pv_activity.value,true)';
+        }    
+        if ($strw!='')
+        {    
+            $strw = substr($strw,5);
+            $sql .= " WHERE $strw";
+        }
+        $sql .= $orderstr;
+        return $sql;
+    }
+
     public static function getEntitiesByFilter($filter, $mode='', $edit_mode='',$limit=TZ_COUNT_REC_BY_PAGE, $page=1, $order='name') 
     {
     	$objs = array();
-	$objs['MD'] = array();
 	$objs['LDATA'] = array();
 	$objs['PSET'] = array();
         $objs['actionlist'] = DataManager::getActionsbyItem('EntitySet',$mode,$edit_mode);
         
-        $propid = $filter['filter_id']['id'];
+        $curid = $filter['curid']['id']; //это уид объекта для которого запрошена выборка
+        $propid = $filter['filter_id']['id']; //это уид реквизита отбора для выборки
+        $docid = (array_key_exists('docid', $filter) ? $filter['docid']['id'] : '');  
         $ptype = '';
+        $mdid = '';
+        $ent_filter = array();
         if ($propid!='')
         {
-            $arprop = Mdproperty::getProperty($propid);
-            $ptype = $arprop['type'];
-            $mdid = $arprop['mdid'];
+            $ent_filter[$propid] = new Filter($propid,$filter['filter_val']['id']);
         }
         else
         {
@@ -317,48 +556,50 @@ class EntitySet extends Model {
                 return $objs;
             }
         }
-        $arMD = Mdentity::getMD($mdid);
-        $objs['MD'] =  array(
-                              'mdid'	=> $mdid,
-                              'mditem'	=> $arMD['mditem'],
-                              'mdsynonym'	=> $arMD['synonym'],
-                              'mdtypename'	=> $arMD['mdtypename'],
-                              'mdtypedescription'	=> $arMD['mdtypedescription']
-                              );
 	$offset=(int)($page-1)*$limit;
-        
+        $access_prop = array();
+        $arr_prop = array();
         $entities = array();
         if (!User::isAdmin())
         {
             //вкл rls: добавим поля отбора в список реквизитов динамического списка
             $access_prop = self::get_access_prop();
-            
             $arr_prop = array_unique(array_column($access_prop,'propid'));
             $expr = function($row) use ($arr_prop) { return (($row['ranktoset']==0)&&(!in_array($row['propid'], $arr_prop))); };            
-
+        }    
+        else
+        {
+            $expr = function($row){ return ($row['ranktoset']==0); };
+        }    
+        $tt_et = '';
+        if (count($arr_prop))
+        {    
             foreach ($arr_prop as $prop)
             {
                 $props_templ = new PropsTemplate($prop);
                 if ($props_templ->getvalmdentity()->getid()==$mdid)
                 {
+                    //на объект есть список доступа - тогда просто выбираем эти объекты из списка
                     $entities = array_unique(array_column(array_filter($access_prop,function($row) use ($prop) { return ($row['propid']==$prop); }),'value'));
                 }    
             }    
-        }    
-        else
-        {
-            $access_prop = array();
-            $arr_prop = array();
-            $expr = function($row){ return ($row['ranktoset']==0); };
-        }    
-        $tt_et = '';
-        if (!count($entities))
-        {    
-            $tt_et = self::get_findEntitiesByProp('tt_et', $mdid, $propid, $ptype, $access_prop, $filter ,$limit);
         }
+        $tpropid = $arprop['propid']; // ид шаблона реквизита который выбираем
+        $mdentity = new Mdentity($mdid); //метаданные объекта который выбираем
+        if ($mdentity->getmdtypename()=='Items') //запрошены строки ТЧ?
+        {
+            $tt_et = self::get_tt_items($docid,$mdid,$curid,$ent_filter,$entities);
+        }    
         else
         {
-            $tt_et = self::get_EntitiesFromList($entities,'tt_et',$limit);
+            if (count($entities))
+            {
+                $tt_et = self::get_EntitiesFromList($entities,'tt_et',$limit);
+            }    
+        }    
+        if ($tt_et=='')
+        {
+            $tt_et = self::get_findEntitiesByProp('tt_et', $mdid, $propid, $ptype, $access_prop, $ent_filter ,$limit);
         }    
         if ($tt_et=='')
         {
@@ -379,164 +620,31 @@ class EntitySet extends Model {
             }
             $plist[] = $row;
         }    
-        $str0_req='SELECT et.id';
-        $str_req='';
-        $str_p = '';
-        $filtername='';
-        $filtertype='';
-        $rls = array();
-        $arr_id=array();
-        $orderstr='';
-        $activity_id = array_search('activity', array_column($plist,'name','id'));
+        $arr_id = array();
+        //получим ассоциированный массив реквизитов с ссылочного типа
         foreach($plist as $row) 
         {
             $rid = $row['id'];
-            $rowname = strtolower(str_replace(" ","",strtolower($row['name'])));
-            $str0_t = ", tv_$rowname.propid as propid_$rowname, pv_$rowname.value as name_$rowname, '' as id_$rowname";
-            $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
             if ($row['type']=='id')
             {
                 $arr_id[$rid]=$row;
-                $str0_t = ", tv_$rowname.propid as propid_$rowname, '' as name_$rowname, pv_$rowname.value as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
             }
-            elseif ($row['type']=='cid') 
-            {
-                $str0_t = ", tv_$rowname.propid as propid_$rowname, ct_$rowname.synonym as name_$rowname, pv_$rowname.value as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname INNER JOIN \"CTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
-            }
-            elseif ($row['type']=='mdid') 
-            {
-                $str0_t = ", tv_$rowname.propid as propid_$rowname, ct_$rowname.synonym as name_$rowname, pv_$rowname.value as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname INNER JOIN \"MDTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
-            }
-            elseif ($row['type']=='date') 
-            {
-                if ($row['isedate']) 
-                {
-                    $orderstr= ' order by name_'.$rowname.' DESC';
-                }    
-                $str0_t = ", tv_$rowname.propid as propid_$rowname, date_trunc('second',pv_$rowname.value) as name_$rowname, '' as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
-            }
-            if ($activity_id!==FALSE)
-            {
-                if ($rid==$activity_id)
-                {
-                    $str0_t = ", tv_$rowname.propid as propid_$rowname, COALESCE(pv_$rowname.value,true) as name_$rowname, '' as id_$rowname";
-                    $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
-                }    
-            }    
-            $str0_req .= $str0_t;
-            $str_req .=$str_t;
-            if ($filter['filter_id']!='')
-            {
-                if ($rid==$filter['filter_id'])
-                {
-                    $filtername = "pv_$rowname.value";
-                    $filtertype = "$row[type]";
-                }    
-            }
-            
-            if ($row['valmdid']==$mdid)    
-            {
-                //rls совпал с объектом - в таком случае фильтруем по id объекта а не по реквизиту объекта
-                continue;
-            }  
-            else
-            {
-                if (in_array($row['propid'], $arr_prop))
-                {
-                    $rls['$rid']=array('name'=>$rowname,'field'=>"pv_$rowname.value",'type'=>"$row[type]",'value'=>array());
-                    foreach ($access_prop as $prop)
-                    {
-                        if ($prop['propid']==$row['propid'])
-                        {
-                            if (($edit_mode==='EDIT')||($edit_mode==='SET_EDIT')||($edit_mode==='CREATE')||($edit_mode==='CREATE_PROPERTY'))
-                            {
-                                if ($prop['wr']===true)
-                                {    
-                                    $rls['$rid']['value'][]=$prop['value'];
-                                }    
-                            }    
-                            else 
-                            {
-                                if (($prop['rd']===true)||($prop['wr']===true))
-                                {    
-                                    $rls['$rid']['value'][]=$prop['value'];
-                                }    
-                            }
-                        }    
-                    }    
-                }        
-            }    
-        }
-        $strwhere='';
-        if ($filtername!='')
-        {
-            $strwhere = DataManager::getstrwhere($filter,$filtertype,$filtername);
-        }
-        $str0_req .=" FROM tt_et as et";
-        $sql = $str0_req.$str_req;
-        $strw = '';
-        if ($strwhere!='')
-        {
-            $strw .= ' AND '.$strwhere;
-        }
-        $strrls='';
+        }    
+        
         $params = array();
-        if (count($rls))
+        $sql = self::sqltext_entitylist($mdid,$plist,$ent_filter,$arr_prop,$access_prop,$edit_mode,$params);
+        if ($sql=='')
         {
-            foreach ($rls as $irls)
-            {
-                if (count($irls['value'])>1)
-                {    
-                    if (($irls['type']=='id')||($irls['type']=='cid')||($irls['type']=='mdid'))
-                    {
-                        $strval = "('".implode("','", $irls['value'])."')"; 
-                    }    
-                    else
-                    {
-                        $strval = "(".implode(",", $irls['value']).")"; 
-                    }    
-                    $strrls .= ' AND '.$irls['field'].' in '.$strval;
-                }
-                elseif (count($irls['value'])==1)
-                {
-                    $strrls .= ' AND '.$irls['field'].'= :'.$irls['name'];
-                    $params[$irls['name']] = $irls['value'][0];
-                }   
-                else
-                {
-                    //rls есть а доступных значений реквизита нет - значит доступ к списку запрещен
-                    return $objs;
-                }    
-            }    
-            $strw .= $strrls;
+            $objs['RES']='access denied';
+            return $objs;
         }    
-        $show_erased='';
-        if ($activity_id!==FALSE)
-        {
-            $show_erased = DataManager::getSetting('show_deleted_rows');
-        }    
-        if (strtolower($show_erased)=='false')
-        {
-            $strw .= ' AND COALESCE(pv_activity.value,true)';
-        }    
-        if ($strw!='')
-        {    
-            $strw = substr($strw,5);
-            $sql .= " WHERE $strw";
-        }
-        $sql .= $orderstr;
-        $objs['SQL']=$sql;
 	$res = DataManager::dm_query($sql,$params);
+        
+        
         $arr_e = array();
-        $objs['ENT'] = array();
         while($row = $res->fetch(PDO::FETCH_ASSOC)) {
-            $objs['ENT'][] = $row;
             $objs['LDATA'][$row['id']]=array();
-            $objs['LDATA'][$row['id']]['id'] = array('id'=>$row['id'],'name'=>$row['id']);
+            $objs['LDATA'][$row['id']]['id'] = array('id'=>$row['id'],'name'=>'');
             $objs['LDATA'][$row['id']]['class'] ='active';               
             foreach($plist as $row_plist) 
             {
@@ -574,7 +682,6 @@ class EntitySet extends Model {
                 }    
             }
         }
-        
         if (count($arr_e))
         {
             $arr_entities = self::getAllEntitiesToStr($arr_e);
@@ -746,7 +853,7 @@ class EntitySet extends Model {
                                     if (array_key_exists($valid, $objs))
                                     {
                                         $cname = $objs[$valid];
-                                        $objs[$entityid]['name'].=" $cname[name]";
+                                        $objs[$entityid]['name'] .= " $cname[name]";
                                     }
                                 }
                                 else
@@ -763,14 +870,16 @@ class EntitySet extends Model {
                                     }    
                                     $objs[$entityid]['name'].=" $name";
                                 }
-                           }
+                            }
                         }
                     }    
-                    substr($objs[$entityid]['name'],1);
+                    if ($objs[$entityid]['name']!='')
+                    {    
+                        $objs[$entityid]['name'] = trim($objs[$entityid]['name']);
+                    }    
                 }
             }    
         }
-
         return $objs;
     }
     public static function getEntitiesByName($mdid,$name) 

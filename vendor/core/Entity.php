@@ -356,8 +356,8 @@ class Entity extends Model {
         $val='';
 	if(array_key_exists($propid, $this->data))
         {
-	  $this->data[$propid]['name']=$valname;
-          $this->data[$propid]['id']=$valid;
+	  $this->data[$propid]['name'] = $valname;
+          $this->data[$propid]['id'] = $valid;
 	}  
         return $this;
     }
@@ -365,9 +365,60 @@ class Entity extends Model {
     public function update($data)     
     {
         $objs = $this->before_save($data);
-	$res = DataManager::dm_query("BEGIN");
         $id = $this->id;
-        $cnt=0;
+        $vals = array();
+        //первый проход дополним значениями зависимых реквизитов
+	foreach($objs as $propval){
+            $propid = $propval['id'];
+            if ($propid =='id')
+            {
+                continue;
+            }
+            if(!array_key_exists($propid,$this->plist))
+            {
+                continue;
+            }
+            $type = $this->plist[$propid]['type'];
+            if ($type=='id')
+            {
+                $p_ent = new Entity($propval['nvalid']);
+                $vals[$propid]=array('id'=>$propval['nvalid'],'name'=>$p_ent->getname());
+                //заполним пересекающиеся реквизиты ссылочного типа
+                $tpropid = $this->plist[$propid]['propid'];
+                foreach($this->plist as $prop)
+                {
+                    if ($prop['type']!='id')
+                    {
+                        continue;
+                    }    
+                    $ctpropid = $prop['propid'];
+                    if ($ctpropid==$tpropid)
+                    {
+                        continue;
+                    }    
+                    foreach($p_ent->plist as $e_prop)
+                    {
+                        if ($e_prop['propid']<>$ctpropid)
+                        {
+                            continue;
+                        }    
+                        $vals[$prop['id']]=array('id'=>$p_ent->getattrid($e_prop['id']),'name'=>$p_ent->getattr($e_prop['id']));
+                        break;
+                    }    
+                }    
+            }    
+            elseif ($type=='cid')
+            {
+                $p_ent = new CollectionItem($propval['nvalid']);
+                $vals[$propid]=array('id'=>$propval['nvalid'],'name'=>$p_ent->getname());
+            }    
+            else
+            {
+                $vals[$propid]=array('id'=>'','name'=>$propval['nval']);
+            }    
+	}
+        $objs = $this->before_save($vals);
+	$res = DataManager::dm_query("BEGIN");
 	foreach($objs as $propval){
             $propid = $propval['id'];
             if ($propid =='id')
@@ -380,9 +431,9 @@ class Entity extends Model {
             }
             $type = $this->plist[$propid]['type'];
             $params = array();
-            $params['userid']=$_SESSION['user_id'];
-            $params['id']=$id;
-            $params['propid']=$propid;
+            $params['userid'] = $_SESSION['user_id'];
+            $params['id'] = $id;
+            $params['propid'] = $propid;
 	    $sql = "INSERT INTO \"IDTable\" (userid, entityid, propid) VALUES (:userid, :id, :propid) RETURNING \"id\"";
 	    $res = DataManager::dm_query($sql,$params);
 	    if(!$res) {
@@ -394,22 +445,22 @@ class Entity extends Model {
             if (($type=='id')||($type=='cid'))
             {
                 $t_val = $propval['nvalid'];
-                if ($t_val=='')
+                if ($t_val == '')
                 {
-                    $t_val=TZ_EMPTY_ENTITY;
+                    $t_val = TZ_EMPTY_ENTITY;
                 }    
             }    
 	    $sql = "INSERT INTO \"PropValue_$type\" (id, value) VALUES ( :id, :value)";
             $params = array();
             if ($type=='file')
             {
-                $params['value']= str_replace(" ","_",trim($this->name))."_".$this->plist[$propid]['name'].strrchr($t_val,'.');
+                $params['value'] = str_replace(" ","_",trim($this->name))."_".$this->plist[$propid]['name'].strrchr($t_val,'.');
             }    
             else
             {
-                $params['value']=$t_val;
+                $params['value'] = $t_val;
             }    
-            $params['id']=$row['id'];
+            $params['id'] = $row['id'];
 	    $res = DataManager::dm_query($sql,$params);
 	    if(!$res) {
                 $res = DataManager::dm_query("ROLLBACK");
@@ -420,13 +471,14 @@ class Entity extends Model {
         if ($cnt>0)
         {    
             $res = DataManager::dm_query("COMMIT");	
-            return array('status'=>'OK', 'id'=>$this->id, 'msg'=>$sql, 'obj'=>$objs, 'plist'=>$this->plist);
+            $status = 'OK';
         }
         else
         {
             $res = DataManager::dm_query("ROLLBACK");
-            return array('status'=>'NONE','msg'=>"Нет измененных записей ");
+            $status = 'NONE';
         }    
+        return array('status'=>$status, 'id'=>$this->id, 'objs'=>$vals);
     }
     function before_delete() 
     {

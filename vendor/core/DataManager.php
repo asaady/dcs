@@ -988,7 +988,7 @@ class DataManager {
         $sql = "SELECT tper.entityid, tper.propid, tper.id as verid FROM tt_per0 AS tper INNER JOIN tt_it0 as tid ON tper.entityid=tid.entityid AND tper.propid=tid.propid AND tper.dateupdate=tid.dateupdate"; 
         $ar_tt0[] = self::createtemptable($sql, 'tt_sel0');
 
-        $sql = "SELECT ts.entityid as id, ts.propid, pv.value FROM tt_sel0 AS ts 
+        $sql = "SELECT ts.entityid, ts.entityid as id, ts.propid, pv.value FROM tt_sel0 AS ts 
                         INNER JOIN \"PropValue_$type\" AS pv
                         ON ts.verid = pv.id where pv.value$oper:val";
         $params=array();
@@ -1002,7 +1002,7 @@ class DataManager {
         $ar_tt0 = array();
         $params=array();
         $params['propid']=$propid;
-        $sql = "SELECT it.entityid, it.propid FROM \"IDTable\" as it "
+        $sql = "SELECT DISTINCT it.entityid, it.propid FROM \"IDTable\" as it "
                     . "inner join $tt_ent as et "
                     . "on it.entityid=et.id "
                     . "inner join \"MDProperties\" as pt "
@@ -1013,6 +1013,7 @@ class DataManager {
         $sql = "SELECT max(it.dateupdate) AS dateupdate, it.entityid, it.propid FROM \"IDTable\" as it INNER JOIN tt_per0 AS et ON it.entityid=et.entityid AND it.propid=et.propid
                       GROUP BY it.entityid, it.propid";
         $ar_tt0[] = DataManager::createtemptable($sql, 'tt_it0');
+        
         $sqlfilt = '';
         if ($tt_val!='')
         {
@@ -1020,7 +1021,7 @@ class DataManager {
         }
         if ($existonly)
         {
-            $sql = "SELECT tper.entityid, tper.propid, pv.value FROM tt_it0 AS tper 
+            $sql = "SELECT tper.entityid, tper.propid, pv.value, it.dateupdate FROM tt_it0 AS tper 
                             INNER JOIN \"IDTable\" as it
                                 INNER JOIN \"PropValue_$type\" AS pv$sqlfilt
                                 ON it.id = pv.id
@@ -1030,7 +1031,7 @@ class DataManager {
         }    
         else
         {
-            $sql = "SELECT tper.entityid, tper.propid, pv.value FROM tt_it0 AS tper 
+            $sql = "SELECT tper.entityid, tper.propid, pv.value, it.dateupdate FROM tt_it0 AS tper 
                             LEFT JOIN \"IDTable\" as it
                                 INNER JOIN \"PropValue_$type\" AS pv$sqlfilt
                                 ON it.id = pv.id
@@ -1038,8 +1039,8 @@ class DataManager {
                             AND tper.propid=it.propid
                             AND tper.dateupdate=it.dateupdate";
         }    
-        
         $res = DataManager::createtemptable($sql, $ttname);
+        
         DataManager::droptemptable($ar_tt0);
         return $res;
     }
@@ -1054,6 +1055,7 @@ class DataManager {
                     . "inner join \"MDProperties\" as pt "
                     . "on it.propid=pt.id "
                     . "and pt.id=:propid"; 
+        
         $ar_tt0[] = DataManager::createtemptable($sql, 'tt_per0', $params);
 
         $sql = "SELECT max(it.dateupdate) AS dateupdate, it.entityid, it.propid FROM \"IDTable\" as it INNER JOIN tt_per0 AS et ON it.entityid=et.entityid AND it.propid=et.propid
@@ -1062,7 +1064,7 @@ class DataManager {
 
         if ($tt_val=='')
         {
-            $sql = "SELECT tper.entityid, tper.propid, pv.value FROM tt_it0 AS tper 
+            $sql = "SELECT tper.entityid, tper.entityid as id, tper.propid, pv.value FROM tt_it0 AS tper 
                             INNER JOIN \"IDTable\" as it
                                 INNER JOIN \"PropValue_$type\" AS pv
                                 ON it.id = pv.id
@@ -1072,7 +1074,7 @@ class DataManager {
         }   
         else 
         {
-            $sql = "SELECT tper.entityid, tper.propid, pv.value FROM tt_it0 AS tper 
+            $sql = "SELECT tper.entityid, tper.entityid as id, tper.propid, pv.value FROM tt_it0 AS tper 
                             INNER JOIN \"IDTable\" as it
                                 INNER JOIN \"PropValue_$type\" AS pv
                                     inner join $tt_val AS ch
@@ -1096,8 +1098,9 @@ class DataManager {
                         inner join $tt_val as el0
                         on pv.value=el0.entityid
                       on it.id=pv.id 
-                      where it.propid in $prop_ent";
-        $ar_tt0[] = DataManager::createtemptable($sql, 'tt_per0');
+                      where it.propid = :propid";
+        $params['propid'] = $prop_ent;
+        $ar_tt0[] = DataManager::createtemptable($sql, 'tt_per0',$params);
 
         $sql = "SELECT max(it.dateupdate) AS dateupdate, it.entityid, it.propid FROM \"IDTable\" as it INNER JOIN tt_per0 AS et ON it.entityid=et.entityid AND it.propid=et.propid
                       GROUP BY it.entityid, it.propid";

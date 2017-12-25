@@ -1,5 +1,6 @@
 <?php
 namespace tzVendor;
+use Exception;
 use PDO;
 
 class Mditem extends Model {

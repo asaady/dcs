@@ -168,4 +168,57 @@ class View
             echo "</tbody>";
             echo "</table>";
         }        
+        public static function outContentToPrint($arResult, $data)
+        {
+            echo "<div class=\"row\">";
+            $props=$data['PLIST'];
+            $size=count($props);
+            if ($size)
+            {    
+                echo "<form class=\"form-inline\" role=\"form\">\n";
+                echo "<div class=\"row\">";
+                for($i=0 ; $i<$size; $i++)
+                {
+                    $t=$props[$i];
+                    if($t['rank']==0) continue;
+                    if($t['rank']%2)
+                    {
+                        self::outfield($t,'col-md-4',$arResult['MODE']);
+                        if (($i+1) < $size)
+                        {
+                            if(($props[$i+1]['rank']%2)==0)
+                            {
+                                $i++;
+                                $t=$props[$i];
+                                self::outfield($t,'col-md-4',$arResult['MODE']);
+                            }
+                        }
+                    } 
+                    else 
+                    {
+                        self::outfield($t,'col-md-offset-4 col-md-4',$arResult['MODE']);
+                    }
+                }
+                echo "</div>";
+                echo "</form>";
+            }    
+            echo "<table class=\"table toprint\">";
+            echo "<thead>";
+            echo "<tr>";
+            foreach($data['PSET'] as $key=>$val)
+            {  
+                $cls = $val['class'];
+                if ($cls=='hidden')
+                {
+                    continue;
+                }    
+                echo "<th id=\"$key\" vt=\"$val[type]\" $cls>$val[synonym]</th>";
+            }
+            echo "</tr>";
+            echo "</thead>";
+            echo "<tbody id=\"entitylist\" class=\"list\">";
+            echo "</tbody>";
+            echo "</table>";
+            echo "</div>";
+        }        
 }

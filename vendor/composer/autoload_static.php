@@ -20,10 +20,11 @@ class ComposerStaticInit70ff5a14963b3be2d353e74573085465
             1 => __DIR__ . '/../..' . '/app/components/reps/coversheets',
             2 => __DIR__ . '/../..' . '/app/components/reps/plannedjobs',
             3 => __DIR__ . '/../..' . '/app/components/reps/prodselection',
-            4 => __DIR__ . '/../..' . '/app/components/utils/uploadset',
-            5 => __DIR__ . '/../..' . '/app/components/utils/uploadobject',
-            6 => __DIR__ . '/../..' . '/app/components/trigs',
-            7 => __DIR__ . '/../..' . '/app/api',
+            4 => __DIR__ . '/../..' . '/app/components/prnforms/coversheets',
+            5 => __DIR__ . '/../..' . '/app/components/utils/uploadset',
+            6 => __DIR__ . '/../..' . '/app/components/utils/uploadobject',
+            7 => __DIR__ . '/../..' . '/app/components/trigs',
+            8 => __DIR__ . '/../..' . '/app/api',
         ),
     );
 

@@ -5,8 +5,9 @@ body {
     padding-left: 15px;
     background-color: #fff;
 }
-body.toprint { 
-    padding:1px;
+body.toprint {
+    padding: 0;
+    margin: 0;
 }
 .navbar-default {
     background-color: #E6E6E6;
@@ -122,10 +123,6 @@ input.form-value {	/* тултип */
   -moz-osx-font-smoothing: grayscale;
 }
 
-body.toprint {
-    padding: 0;
-    margin: 0;
-}
 .print_header { 
     width: 100%;
     padding: 0;

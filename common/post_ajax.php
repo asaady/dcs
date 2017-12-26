@@ -109,7 +109,8 @@ function loadData()
     },    
     'Entity_EDIT_SAVE'=> function( $idm) {
         $entity = new Entity($idm->getitemid());
-        return $entity->update($idm->getdata());
+        $res = $entity->update($idm->getdata());
+        return $res;
     },    
     'Entity_Entity_SET_EDIT_LIST'=> function( $idm) {
         $data = $idm->getdata();

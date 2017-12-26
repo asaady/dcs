@@ -419,6 +419,7 @@ class Entity extends Model {
 	}
         $objs = $this->before_save($vals);
 	$res = DataManager::dm_query("BEGIN");
+        $upd = array();
 	foreach($objs as $propval){
             $propid = $propval['id'];
             if ($propid =='id')
@@ -454,12 +455,9 @@ class Entity extends Model {
             $params = array();
             if ($type=='file')
             {
-                $params['value'] = str_replace(" ","_",trim($this->name))."_".$this->plist[$propid]['name'].strrchr($t_val,'.');
+                $t_val = str_replace(" ","_",trim($this->name))."_".$this->plist[$propid]['name'].strrchr($t_val,'.');
             }    
-            else
-            {
-                $params['value'] = $t_val;
-            }    
+            $params['value'] = $t_val;
             $params['id'] = $row['id'];
 	    $res = DataManager::dm_query($sql,$params);
 	    if(!$res) {
@@ -467,6 +465,7 @@ class Entity extends Model {
                 return array('status'=>'ERROR','msg'=>"Невозможно добавить в таблицу PropValue_$type запись ".$sql);
 	    }
             $cnt++;
+            $upd[$propid] = array('value'=>$t_val,'type'=>$type, 'name'=>$vals[$propid]['name']);
 	}
         if ($cnt>0)
         {    
@@ -478,7 +477,7 @@ class Entity extends Model {
             $res = DataManager::dm_query("ROLLBACK");
             $status = 'NONE';
         }    
-        return array('status'=>$status, 'id'=>$this->id, 'objs'=>$vals);
+        return array('status'=>$status, 'id'=>$this->id, 'objs'=>$upd);
     }
     function before_delete() 
     {
@@ -566,10 +565,10 @@ class Entity extends Model {
             } 
             elseif ($prop['type']=='bool') 
             {
-                if (substr($pval,0,1)==substr($nval,0,1)) 
+                if ((bool)$pval==(bool)$nval) 
                 {
                     continue;
-                }    
+                }   
             } 
             else 
             {

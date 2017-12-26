@@ -434,7 +434,7 @@ function setvals(data)
     {
         console.log(data);
         return;
-    }    
+    }   
     var $row = $('tr#'+data.items['id']);
     $.each(data.items['objs'], function(key, val) 
     {
@@ -815,26 +815,18 @@ function before_delete_success(result)
     $mt.find("tr").remove();
     $mt.find("td").remove();
     
-    $mh.append("<tr>");
-    $mh.find('tr').append("<th>Объект</th>");    
-    $mh.find('tr').append("<th>Наименование</th>");    
-    $mh.find('tr').append("<th>Действие</th>");    
-    $mh.append("</tr>");
+    $mh.append("<tr><th>Объект</th><th>Наименование</th><th>Действие</th></tr>");
     
     if (Object.keys(result).length) 
     {
-        for(var i in result) 
+        $.each(result, function(key, val) 
         {
-            if(result.hasOwnProperty(i))
+            if (key!='handlername')
             {
-                $mt.append('<tr>');
-                $mt.append('<td>'+result[i].name+'</td>');
-                $mt.append('<td>'+result[i].pval+'</td>');
-                $mt.append('<td>'+result[i].nval+'</td>');
-                $mt.append('</tr>');
+                $mt.append('<tr><td>'+val.name+'</td><td>'+val.pval+'</td><td>'+val.nval+'</td></tr>');
                 len++;
-            }    
-        }
+            }
+        });    
     }
     if (len)
     {    
@@ -1085,25 +1077,17 @@ function before_save_success(result)
     $mt.find("tr").remove();
     $mt.find("td").remove();
     
-    $mh.append("<tr>");
-    $mh.find('tr').append("<th>Реквизит</th>");    
-    $mh.find('tr').append("<th>Значение было</th>");    
-    $mh.find('tr').append("<th>Новое значение</th>");    
-    $mh.append("</tr>");
+    $mh.append("<tr><th>Реквизит</th><th>Значение было</th><th>Новое значение</th></tr>");
     if (Object.keys(result).length) 
     {
-        for(var i in result) 
+        $.each(result, function(key, val) 
         {
-            if(result.hasOwnProperty(i))
+            if (key!='handlername')
             {
-                $mt.append('<tr>');
-                $mt.append('<td>'+result[i].name+'</td>');
-                $mt.append('<td>'+result[i].pval+'</td>');
-                $mt.append('<td>'+result[i].nval+'</td>');
-                $mt.append('</tr>');
+                $mt.append('<tr><td>'+val.name+'</td><td>'+val.pval+'</td><td>'+val.nval+'</td></tr>');
                 len++;
-            }    
-        }
+            }
+        });    
     }
     if (len)
     {    

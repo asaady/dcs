@@ -1145,16 +1145,6 @@ $(document).ready(function()
       success: onLoadValID
       }
     );
-    if ((action=='EDIT')||(action=='CREATE'))
-    {    
-        var $input = $('.datepicker').pickadate({
-                selectMonths: true,
-                selectYears: true,
-                format: 'yyyy-mm-dd',
-                formatSubmit: 'yyyy-mm-dd'
-            });
-            
-    }
     $("body").one('OnResize',function(){
         var x = $('div.ivalue-block');
         if (x!=undefined) 

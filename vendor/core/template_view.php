@@ -135,9 +135,14 @@
         <script src="/js/jquery-3.2.1.min.js"></script>
         <script src="/js/bootstrap.min.js"></script>    
         <script src="/js/moment.js"></script>
-        <script src="/js/picker.js"></script>
-        <script src="/js/picker.date.js"></script>
-        <script src="/js/picker.time.js"></script>
+<?php
+        if (($arResult['ACTION']=='EDIT')||($arResult['ACTION']=='CREATE'))
+        {
+            echo "<script src=\"/js/picker.js\"></script>";
+            echo "<script src=\"/js/picker.date.js\"></script>";
+            echo "<script src=\"/js/picker.time.js\"></script>";
+        }
+?>
         <script src="/js/scripts.js"></script>
         <script src="/js/ajax_form.js"></script>
         <script type="text/javascript">
@@ -155,7 +160,16 @@
                 }
             })      
         };
+
 <?php
+        if (($arResult['ACTION']=='EDIT')||($arResult['ACTION']=='CREATE'))
+        {
+            echo "$('input.form-control[it=date]').pickadate({
+                    selectMonths: true,
+                    format: 'yyyy-mm-dd',
+                    formatSubmit: 'yyyy-mm-dd'
+                  });";
+        }        
         if (array_key_exists('jscript', $arResult))
         {
             include $arResult['jscript'];

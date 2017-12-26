@@ -150,6 +150,13 @@ class MdpropertySet extends Model
                     $class = 'hidden';
                 }    
             }    
+            if ($row['isenumber'])
+            {
+                if (!User::isAdmin())
+                {    
+                    $class = 'readonly';
+                }    
+            }    
             $prow =  array('id'=> $rid,
                             'name'=> $row['name'],
                             'synonym'=> $row['synonym'],

@@ -850,7 +850,7 @@ class DataManager {
         {
             if ($prop['isedate'])
             {
-               $objs[TZ_EMPTY_ENTITY][$prop['id']]= array('name'=>date("c"),'id'=>'');
+               $objs[TZ_EMPTY_ENTITY][$prop['id']]= array('name'=>date("Y-m-d"),'id'=>'');
             }    
             else 
             {
@@ -859,11 +859,12 @@ class DataManager {
                     $user = CollectionSet::getCDetails($_SESSION['user_id']);
                     $objs[TZ_EMPTY_ENTITY][$prop['id']]= array('name'=>$user['synonym'],'id'=>$_SESSION['user_id']);
                 }    
-                elseif (strtolower ($prop['name_propid'])=='number')
-                {
-                    $number = self::getNumber($prop['id'])+1;
-                    $objs[TZ_EMPTY_ENTITY][$prop['id']]= array('name'=>$number,'id'=>'');
-                }    
+// отказ от присваивания номера при создании формы в пользу присваивания номера при записи нового                
+//                elseif (strtolower ($prop['name_propid'])=='number')
+//                {
+//                    $number = self::getNumber($prop['id'])+1;
+//                    $objs[TZ_EMPTY_ENTITY][$prop['id']]= array('name'=>$number,'id'=>'');
+//                }    
                 else
                 {
                     $key = array_search($prop['propid'], array_column($settings, 'propid'));

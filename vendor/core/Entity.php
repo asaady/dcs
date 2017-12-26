@@ -597,9 +597,9 @@ class Entity extends Model {
             if ($edate=='') {
                 return array('status'=>'ERROR','msg'=>'date is empty');
             }
-            if ($enumber=='') {
-                return array('status'=>'ERROR','msg'=>'number is empty');
-            }
+//            if ($enumber=='') {
+//                return array('status'=>'ERROR','msg'=>'number is empty');
+//            }
         }    
 	$res = DataManager::dm_query("BEGIN");
         $mdid = $this->mdentity->getid();
@@ -617,6 +617,13 @@ class Entity extends Model {
             if ($propid=='id') continue;
             $valname = $this->data[$propid]['name'];
             $valid  = $this->data[$propid]['id'];
+            if ($prop['isenumber'])
+            {
+                if ($valname=='')
+                {
+                    $valname = DataManager::getNumber($prop['id'])+1;
+                }    
+            }
             if ($prop['type']=='id')
             {
                 if (($valid!=TZ_EMPTY_ENTITY)&&($valid!=''))  
@@ -838,7 +845,7 @@ class Entity extends Model {
             }
             elseif ($row['type']=='date') 
             {
-                $str0_t = ", tv_$rowname.propid as propid_$rowname, date_trunc('second',pv_$rowname.value) as name_$rowname, '' as id_$rowname";
+                $str0_t = ", tv_$rowname.propid as propid_$rowname, to_char(pv_$rowname.value,'DD.MM.YYYY') as name_$rowname, '' as id_$rowname";
                 $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
             }
                 

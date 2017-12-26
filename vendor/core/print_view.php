@@ -40,9 +40,6 @@
     </main>    
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="/js/jquery-3.2.1.min.js"></script>
-    <script src="/js/picker.js"></script>
-    <script src="/js/picker.date.js"></script>
-    <script src="/js/picker.time.js"></script>
     <script src="/js/scripts.js"></script>
     <script src="/js/ajax_form.js"></script>
     <script type="text/javascript">

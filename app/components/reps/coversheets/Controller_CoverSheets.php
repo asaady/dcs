@@ -17,6 +17,7 @@ class Controller_CoverSheets extends Controller
             if ($arResult['MODE']=='PRINT') 
             {
                 $arResult['TITLE']= 'Отчет '.$this->model->getname();
+                $arResult['ACTION']='VIEW';
                 $data = $this->model->get_data($arResult);
                 $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/components/reps/coversheets/coversheets_view.php";
                 $arResult['jscript']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/components/reps/coversheets/coversheets.js";
@@ -25,7 +26,7 @@ class Controller_CoverSheets extends Controller
             else
             {    
 		$data = $this->model->get_data($arResult);
-                $arResult['ACTION']=$data['mdname'];
+                $arResult['ACTION']='EDIT';
                 $arResult['TITLE']= 'Отчет '.$this->model->getname();
                 $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/components/reps/coversheets/coversheets_view.php";
                 $arResult['jscript']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/components/reps/coversheets/coversheets.js";

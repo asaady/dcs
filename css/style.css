@@ -5,6 +5,9 @@ body {
     padding-left: 15px;
     background-color: #fff;
 }
+body.toprint { 
+    padding:1px;
+}
 .navbar-default {
     background-color: #E6E6E6;
 }

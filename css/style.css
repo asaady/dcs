@@ -149,6 +149,10 @@ table.toprint th[vt='int'], table.toprint td[vt='int'] {
     width: 50px;
     text-align:center;
 }
+table.toprint th[vt='int'], table.toprint td[vt='float'] {
+    width: 50px;
+    text-align:right;
+}
 table.toprint th[vt='nom'], table.toprint td[vt='nom'] {
     width: 20px;
     text-align:center;

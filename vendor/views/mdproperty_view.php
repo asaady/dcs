@@ -100,6 +100,16 @@
     <div class="row">
             <div class="col-xs-12 col-sm-4 col-md-4">
                 <div class="form-group">
+                    <label for="isdepend" class="control-label">IS DEPENDENT</label>
+                        <input type="text" class="form-control" id="isdepend" it="bool" name="isdepend" value="">
+                        <ul class="types_list">
+                            <li id="false">false</li>
+                            <li id="true">true</li>
+                        </ul>
+                </div>    
+            </div>    
+            <div class="col-xs-12 col-sm-4 col-md-4">
+                <div class="form-group">
                     <label for="length" class="control-label">LENGTH</label>
                     <input type="number" class="form-control" id="length" name="length" it="int" value="">
                 </div>    

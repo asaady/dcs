@@ -18,6 +18,7 @@ class Mdproperty extends Model {
     protected $ranktoset;
     protected $isedate;
     protected $isenumber;
+    protected $isdepend;
     protected $valmdid;
     protected $name_valmdid;
     protected $valmdtypename;
@@ -49,6 +50,7 @@ class Mdproperty extends Model {
             $this->ranktoset = $arData['ranktoset'];
             $this->isedate = $arData['isedate'];
             $this->isenumber = $arData['isenumber'];
+            $this->isdepend = $arData['isdepend'];
             $this->valmdid = $arData['valmdid'];
             $this->name_valmdid = $arData['valmdname'];
             $this->valmdtypename = $arData['valmdtypename'];
@@ -69,6 +71,7 @@ class Mdproperty extends Model {
             $this->ranktoset = 0;    
             $this->isedate = false;        
             $this->isenumber = false;        
+            $this->isdepend = false;
         }
         $this->mdentity = new Mdentity($mdid);
         $this->version=time();
@@ -80,6 +83,10 @@ class Mdproperty extends Model {
     function getvalmdid()
     {
         return $this->valmdid;
+    }
+    function isdepend()
+    {
+        return $this->isdepend;
     }
     function getpropstemplate()
     {
@@ -100,7 +107,8 @@ class Mdproperty extends Model {
                         array('id'=>'ranktoset','name'=>'ranktoset','synonym'=>'RANKTOSET','rank'=>8,'type'=>'str','valmdid'=>TZ_EMPTY_ENTITY,'valmdtypename'=>TZ_TYPE_EMPTY,'class'=>'active'),
                         array('id'=>'ranktostring','name'=>'ranktostring','synonym'=>'RANKTOSTRING','rank'=>9,'type'=>'str','valmdid'=>TZ_EMPTY_ENTITY,'valmdtypename'=>TZ_TYPE_EMPTY,'class'=>'active'),
                         array('id'=>'isedate','name'=>'isedate','synonym'=>'ISEDATE','rank'=>13,'type'=>'bool','valmdid'=>TZ_EMPTY_ENTITY,'valmdtypename'=>TZ_TYPE_EMPTY,'class'=>'active'),
-                        array('id'=>'isenumber','name'=>'isenumber','synonym'=>'ISENUMBER','rank'=>14,'type'=>'bool','valmdid'=>TZ_EMPTY_ENTITY,'valmdtypename'=>TZ_TYPE_EMPTY,'class'=>'active')
+                        array('id'=>'isenumber','name'=>'isenumber','synonym'=>'ISENUMBER','rank'=>14,'type'=>'bool','valmdid'=>TZ_EMPTY_ENTITY,'valmdtypename'=>TZ_TYPE_EMPTY,'class'=>'active'),
+                        array('id'=>'isdepend','name'=>'isdepend','synonym'=>'IS DEPENDENT','rank'=>15,'type'=>'bool','valmdid'=>TZ_EMPTY_ENTITY,'valmdtypename'=>TZ_TYPE_EMPTY,'class'=>'active')
                     ),
                     'navlist'=>array(
                     $this->mdentity->getmditem()=>$this->mdentity->getmditemsynonym(),
@@ -123,7 +131,8 @@ class Mdproperty extends Model {
             'ranktoset'=>array('id'=>'ranktoset','name'=>'ranktoset','synonym'=>'RANKTOSET','rank'=>8,'type'=>'int','valmdtype'=>TZ_TYPE_EMPTY,'class'=>'active'),
             'ranktostring'=>array('id'=>'ranktostring','name'=>'ranktostring','synonym'=>'RANKTOSTRING','rank'=>9,'type'=>'int','valmdtype'=>TZ_TYPE_EMPTY,'class'=>'active'),
             'isedate'=>array('id'=>'isedate','name'=>'isedate','synonym'=>'ISEDATE','rank'=>13,'type'=>'bool','valmdtype'=>TZ_TYPE_EMPTY,'class'=>'active'),
-            'isenumber'=>array('id'=>'isenumber','name'=>'isenumber','synonym'=>'ISENUMBER','rank'=>14,'type'=>'bool','valmdtype'=>TZ_TYPE_EMPTY,'class'=>'active')
+            'isenumber'=>array('id'=>'isenumber','name'=>'isenumber','synonym'=>'ISENUMBER','rank'=>14,'type'=>'bool','valmdtype'=>TZ_TYPE_EMPTY,'class'=>'active'),
+            'isdepend'=>array('id'=>'isdepend','name'=>'isdepend','synonym'=>'IS DEPENDENT','rank'=>15,'type'=>'bool','valmdtype'=>TZ_TYPE_EMPTY,'class'=>'active')
                    );
     }
             
@@ -485,7 +494,8 @@ class Mdproperty extends Model {
                               'ranktostring'=>$mdprop['rank'],
                               'ranktoset'=>$mdprop['rank'],
                               'isedate'=>($mdprop['isedate'] ? 'TRUE':'FALSE'),
-                              'isenumber'=>($mdprop['isenumber'] ? 'TRUE':'FALSE')
+                              'isenumber'=>($mdprop['isenumber'] ? 'TRUE':'FALSE'),
+                              'isdepend'=>($mdprop['isdepend'] ? 'TRUE':'FALSE')
                               );
                 $res = self::createMDProperty($arMDProperty);
             }

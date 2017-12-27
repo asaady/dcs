@@ -653,6 +653,8 @@ class EntitySet extends Model {
                 $field_id = "propid_$field_val";
                 $rowid = "id_$field_val";
                 $rowname = "name_$field_val";
+                $r_name = $row[$rowname];
+                $r_id = $row[$rowid];
                 if (strtolower($row_plist['name'])=='activity')
                 {
                     if ($row[$rowname]===false)
@@ -667,19 +669,17 @@ class EntitySet extends Model {
                             $arr_e[]=$row[$rowid];
                         }
                     }
-                    $objs['LDATA'][$row['id']][$row[$field_id]] = array('id'=>$row[$rowid],'name'=>'');
-                }
-                elseif ($row_plist['type']=='cid')
-                {
-                    $objs['LDATA'][$row['id']][$row[$field_id]] = array('id'=>$row[$rowid],'name'=>$row[$rowname]);
-                }else{
-                    $rname = $row[$rowname];
-                    if ($row_plist['type']=='date')
+                    $r_name = '';
+                } else {
+                    if ($row_plist['type'] == 'date')
                     {
-                        $rname =substr($rname,0,10);
+                        $r_name =substr($rname,0,10);
                     }    
-                    $objs['LDATA'][$row['id']][$row[$field_id]] = array('id'=>'','name'=>$rname);
                 }    
+                $objs['LDATA'][$row['id']][$row[$field_id]] = array('id'=>$r_id,'name'=>$r_name);
+                if ($row_plist['ranktostring'] > 0) {
+                    $arr_name[$row_plist['ranktostring']] = $r_name;
+                }
             }
         }
         if (count($arr_e))

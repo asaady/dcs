@@ -130,7 +130,7 @@ class MdpropertySet extends Model
         {    
             $class = 'readonly';
         }
-        $row = array('id'=>'id','name'=> 'id','synonym'=> 'ID','class'=>$class,'valmdid'=>'','valmdtypename'=>'str','type'=>'str','rank'=>1,'ranktostring'=>0,'isedate'=>false,'isenumber'=>false);
+        $row = array('id'=>'id','name'=> 'id','synonym'=> 'ID','class'=>$class,'valmdid'=>'','valmdtypename'=>'str','type'=>'str','rank'=>1,'ranktostring'=>0,'isedate'=>false,'isenumber'=>false,'isdepend'=>false);
         if ($byid)
         {    
             $objs['id'] = $row;
@@ -166,6 +166,7 @@ class MdpropertySet extends Model
                             'type'=>$row['type'],
                             'isedate'=>$row['isedate'],
                             'isenumber'=>$row['isenumber'],
+                            'isdepend'=>$row['isdepend'],
                             'rank'=>$row['rank'],
                             'name_propid'=>$row['name_propid'],
                             'propid'=>$row['propid'],

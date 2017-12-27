@@ -16,7 +16,7 @@ class Entity extends Model {
     
     public function __construct($id,$version=0,$mode='')
     {
-        if ($id=='') {
+        if ($id == '') {
             throw new Exception("Class Entity constructor: id is empty");
         }
         $arData = self::getEntityDetails($id);
@@ -29,19 +29,22 @@ class Entity extends Model {
             $mdid = $id;
         }
         $this->mdentity = new Mdentity($mdid);
-        $this->plist = MdpropertySet::getMDProperties($mdid, 'CONFIG', " WHERE mp.mdid = :mdid ",true);
+        $this->plist = MdpropertySet::getMDProperties($mdid, 'CONFIG', 
+                                            " WHERE mp.mdid = :mdid ",
+                                            true);
         $this->data = $this->entity_data();
         $this->edate = $this->getpropdate();
         $this->enumber = $this->getpropnumber();
         $this->synonym = $this->name;
         $this->name = $this->gettoString();
         $this->mode = $mode;
-        $prop_activity = array_search("activity", array_column($this->plist,'name','id'));
-        if ($prop_activity!==FALSE)
+        $prop_activity = array_search("activity", 
+                                array_column($this->plist,'name','id'));
+        if ($prop_activity !== FALSE)
         {    
             $this->activity = $this->getattr($prop_activity); 
         }
-        if ($this->activity!==FALSE)
+        if ($this->activity !== FALSE)
         {
             $this->activity = TRUE;
         }
@@ -101,14 +104,15 @@ class Entity extends Model {
     {
         return $this->mdentity;
     }
-    function get_data($mode='') 
+    function get_data($mode = '') 
     {
-        if ($this->mdentity->getmdtypename()!='Items')
+        if ($this->mdentity->getmdtypename() != 'Items')
         {
             $navlist = array(
-                    $this->mdentity->getmditem()=>$this->mdentity->getmditemsynonym(),
-                    $this->mdentity->getid()=>$this->mdentity->getsynonym(),
-                    $this->id=>$this->getshortname()
+                    $this->mdentity->getmditem() => 
+                                $this->mdentity->getmditemsynonym(),
+                    $this->mdentity->getid() => $this->mdentity->getsynonym(),
+                    $this->id => $this->getshortname()
                 );
         }   
         else
@@ -118,31 +122,37 @@ class Entity extends Model {
             $entity = new Entity($entityid);
             $mdentity = $entity->getmdentity();
             $navlist = array(
-                    $mdentity->getmditem()=>$mdentity->getmditemsynonym(),
-                    $mdentity->getid()=>$mdentity->getsynonym(),
-                    $entity->getid()=>$entity->getshortname(),
+                    $mdentity->getmditem() => $mdentity->getmditemsynonym(),
+                    $mdentity->getid() => $mdentity->getsynonym(),
+                    $entity->getid() => $entity->getshortname(),
                     $this->id => $this->name
                 );
         }    
-        $plist = MdpropertySet::getMDProperties($this->mdentity->getid(),$mode," WHERE mp.mdid = :mdid ");
+        $plist = MdpropertySet::getMDProperties($this->mdentity->getid(),
+                                        $mode,
+                                        " WHERE mp.mdid = :mdid ");
         $sets = array();
-        foreach ($plist as $prop) 
-        {
-            if ($prop['valmdtypename']!='Sets')
-            {
+        foreach ($plist as $prop) {
+            if ($prop['valmdtypename']!='Sets') {
                 continue;
             }
-            $setprop = MdpropertySet::getMDProperties($prop['valmdid'],$mode," WHERE mp.mdid = :mdid ");
-            foreach ($setprop as $sprop) 
-            {    
-                if ($sprop['valmdtypename']=='Items')
-                {
-                    $sets[$prop['id']]= MdpropertySet::getMDProperties($sprop['valmdid'],$mode," WHERE mp.mdid = :mdid and mp.ranktoset>0 ",true);
+            $setprop = MdpropertySet::getMDProperties($prop['valmdid'],
+                                                $mode,
+                                                " WHERE mp.mdid = :mdid ");
+            foreach ($setprop as $sprop) {    
+                if ($sprop['valmdtypename']=='Items') {
+                    $sets[$prop['id']] = MdpropertySet::getMDProperties(
+                            $sprop['valmdid'],
+                            $mode,
+                            " WHERE mp.mdid = :mdid and mp.ranktoset>0 ",
+                            true
+                        );
                     break;
                 }    
             }
         }  
-        return array('id'=>$this->id,
+        return array(
+                'id'=>$this->id,
                 'version'=>$this->version,
                 'name'=>$this->name,
                 'activity'=>$this->activity,
@@ -159,7 +169,8 @@ class Entity extends Model {
     
     public static function get_set_by_item($itemid)
     {
-        $sql="SELECT parentid, childid, rank FROM \"SetDepList\" where childid = :itemid";
+        $sql = "SELECT parentid, childid, rank FROM \"SetDepList\" "
+                . "where childid = :itemid";
         $res = DataManager::dm_query($sql,array('itemid'=>$itemid));
         if(!$res) {
             return TZ_EMPTY_ENTITY;
@@ -173,7 +184,10 @@ class Entity extends Model {
     }
     public static function get_entity_by_setid($setid)
     {
-        $sql="SELECT it.entityid, max(it.dateupdate) from \"PropValue_id\" as pv inner join \"IDTable\" as it on pv.id=it.id where pv.value=:setid group by it.entityid";
+        $sql = "SELECT it.entityid, max(it.dateupdate) from \"PropValue_id\" as pv "
+                . "inner join \"IDTable\" as it on pv.id=it.id "
+                . "where pv.value=:setid "
+                . "group by it.entityid";
 
         $res = DataManager::dm_query($sql,array('setid'=>$setid));
         $row = $res->fetch(PDO::FETCH_ASSOC);
@@ -192,67 +206,56 @@ class Entity extends Model {
 	    if(array_key_exists($v,$data))
             {
                 $this->data[$v]['name']=$data[$v]['name'];
-                if (($aritem['type']==='id')||($aritem['type']==='cid')||($aritem['type']==='mdid'))
-                {
-                    if ($data[$v]['id']!=='')
+                if (($aritem['type'] === 'id')||
+                    ($aritem['type'] === 'cid')||
+                    ($aritem['type'] === 'mdid')) {
+                    if ($data[$v]['id'] !== '')
                     {    
-                        $this->data[$v]['id']=$data[$v]['id'];
-                    }
-                    else 
-                    {
-                        $this->data[$v]['name']='';
-                        $this->data[$v]['id']=TZ_EMPTY_ENTITY;
+                        $this->data[$v]['id'] = $data[$v]['id'];
+                    } else {
+                        $this->data[$v]['name'] = '';
+                        $this->data[$v]['id'] = TZ_EMPTY_ENTITY;
                     }
                 }
-	    }
-            else 
-            {
-                $this->data[$v]['name']='';
-                $this->data[$v]['id']=TZ_EMPTY_ENTITY;
+	    } else {
+                $this->data[$v]['name'] = '';
+                $this->data[$v]['id'] = TZ_EMPTY_ENTITY;
 	    }  
 	}
         $this->edate = $this->getpropdate();
         $this->enumber = $this->getpropnumber();
         $this->name = $this->gettoString();
         $this->synonym = $this->name;
-        
     }
     
     public function gettoString() 
     {
-        $artoStr=array();
+        $artoStr = array();
         foreach($this->plist as $prop)
         {
-            if ($prop['ranktostring']>0) 
+            if ($prop['ranktostring'] > 0) 
             {
-              $artoStr[$prop['id']]=$prop['ranktostring'];
+              $artoStr[$prop['id']] = $prop['ranktostring'];
             }
         }
-        if (!count($artoStr)) 
-        {
-            foreach($this->plist as $prop)
-            {
-              if ($prop['rank']>0) 
-              {
-                $artoStr[$prop['id']]=$prop['rank'];
-              }  
+        if (!count($artoStr)) {
+            foreach($this->plist as $prop) {
+                if ($prop['rank'] > 0) {
+                  $artoStr[$prop['id']] = $prop['rank'];
+                }  
             }
-            if (count($artoStr)) 
-            {
+            if (count($artoStr)) {
               asort($artoStr);
               array_splice($artoStr,1);
             }  
-        }
-        else
-        {
+        } else {
             asort($artoStr);
         }
-        if (count($artoStr)) 
-        {
-            $res='';
-            foreach($artoStr as $prop=>$rank)
+        if (count($artoStr)) {
+            $res = '';
+            foreach($artoStr as $prop => $rank)
             {
-                if ($this->mdentity->getmdtypename()=='Docs')
+                if ($this->mdentity->getmdtypename() == 'Docs')
                 {
                     if ($this->plist[$prop]['isenumber'])
                     {
@@ -323,7 +326,7 @@ class Entity extends Model {
     {
 	return $this->plist;
     }
-    function getproperty($propid)
+    public function getproperty($propid)
     {
         $val=array();
 	if(array_key_exists($propid, $this->plist))
@@ -361,8 +364,66 @@ class Entity extends Model {
 	}  
         return $this;
     }
-    
+    public function update_dependent_properties($data)
+    {
+        $res = array();
+        $ar_propid = array_column($this->properties(), 'propid','id');
+        foreach ($data as $pid => $val) {
+            $prop = $this->getproperty($pid);
+            $ar_rel = DataManager::get_related_fields($prop['propid']);
+            foreach ($ar_rel as $rel) {
+                $dep_pid = array_search($rel['depend'], $ar_propid);
+                if ($dep_pid===FALSE) {
+                    continue;
+                }        
+                //проверим найденный реквизит на свойство isdepend - зависимый
+                $dep_prop = $this->getproperty($dep_pid);
+                if ($dep_prop['isdepend']) {
+                    //получим текущее значение зависимого реквизита
+                    $curval = $this->data[$dep_pid]['id'];
+                    $dep_ent = new Entity($curval);
+                    $arr_dep_ent_propid = array_column($dep_ent->properties(),'propid','id');
+                    $dep_ent_pid = array_search($prop['propid'],$arr_dep_ent_propid);
+                    if ($dep_ent_pid === FALSE) {
+                        continue;
+                    }
+                    //текущее значение ведущего реквизита у найденного значения зависимого реквизита
+                    $cur_val_dep_ent = $dep_ent->getattrid($dep_ent_pid);
+                    if ($cur_val_dep_ent != $this->data[$pid]['id']) {
+                        //значение не совпало - сбрасываем значение зависимого реквизита
+                        $res[$dep_pid] = array('value'=>TZ_EMPTY_ENTITY,'type'=>$dep_prop['type'], 'name'=>'');
+                    }
+                    //попробуем найти объекты зависимого реквизита  - в надежде установить единственное значение
+                    $filter = array();
+                    $filter['itemid'] =  array('id' => $dep_ent->getmdentity()->getid(),'name' => '');
+                    $filter['curid'] = array('id'=>'','name'=>'');
+                    $filter['filter_id']= array('id'=>$pid,'name'=>'');
+                    $filter['filter_val']= array('id'=>$data[$pid]['id'],'name'=>'');
+                    $filter['filter_min']= array('id'=>'','name'=>'');
+                    $filter['filter_max']= array('id'=>'','name'=>'');
+                    $ar_dep_data = EntitySet::getEntitiesByFilter($filter,'ENTERPISE','VIEW');
+                    if (count($ar_dep_data['LDATA']) == 1) {
+                        foreach ($ar_dep_data['LDATA'] as $dep_entid => $obj) {
+                            $res[$dep_pid] = array('value'=>$dep_entid,'type'=>$dep_prop['type'], 'name'=>'');
+                            break;
+                        }
+                    }    
+                }
+            }
+        }    
+    }        
+
     public function update($data)     
+    {
+        $res = $this->update_properties($data);
+        if ($res['status']=='OK')
+        {
+            $res['objs'] += $this->update_dependent_properties($res['objs']);
+        }    
+        return $res;
+    }
+    
+    public function update_properties($data)     
     {
         $objs = $this->before_save($data);
         $id = $this->id;

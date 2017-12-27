@@ -439,12 +439,6 @@ $('body').on('click', '#build', function (e)
       }
     );
 });
-
-$('input.form-control[it=date]').pickadate({
-    selectMonths: true,
-    format: 'yyyy-mm-dd',
-    formatSubmit: 'yyyy-mm-dd'
-});
 $(document).ready(function() 
 { 
     var filter_val = $("input[name='filter_val']").val();

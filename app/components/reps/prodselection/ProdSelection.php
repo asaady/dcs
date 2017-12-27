@@ -57,6 +57,7 @@ class ProdSelection extends Model
     public function get_data($data)
     {
         $sdata = array();
+        $title = "Отчет ". $this->name;
         $plist = array(
                 array('id'=>'doc1','name'=>'doc1','synonym'=>'Документ по изд.1','rank'=>3,'type'=>'id','valmdid'=>$this->doc_mdid,'valmdtypename'=>'Docs','class'=>'active'),
                 array('id'=>'doc2','name'=>'doc2','synonym'=>'Документ по изд.2','rank'=>4,'type'=>'id','valmdid'=>$this->doc_mdid,'valmdtypename'=>'Docs','class'=>'active'),
@@ -81,6 +82,7 @@ class ProdSelection extends Model
           'id'=>$this->id,
           'name'=>$this->name,
           'version'=>$this->version,
+          'TITLE' => $title,     
           'PLIST' => $plist,   
           'PSET' => $pset,   
           'SDATA' => $sdata,   

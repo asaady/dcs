@@ -378,6 +378,7 @@ class Entity extends Model {
                 }        
                 //проверим найденный реквизит на свойство isdepend - зависимый
                 $dep_prop = $this->getproperty($dep_pid);
+                $dep_mdentity = new Mdentity($dep_prop['valmdid']);
                 if ($dep_prop['isdepend']) {
                     //получим текущее значение зависимого реквизита
                     $curval = $this->data[$dep_pid]['id'];
@@ -385,7 +386,7 @@ class Entity extends Model {
                         $dep_ent = new Entity($curval);
                         $cur_val_dep_ent = '';
                         //текущее значение ведущего реквизита у найденного значения зависимого реквизита
-                        if ($dep_ent->getmdentity()->getmdtypename() == 'Items') {
+                        if ($dep_mdentity->getmdtypename() == 'Items') {
                             //это строка тч - получим объект владелeц этой ТЧ
                             // получим массив ид метаданных которые имеют у себя такую строку ТЧ 
                             $ar_obj = DataManager::get_obj_by_item($curval);
@@ -407,17 +408,21 @@ class Entity extends Model {
                             $res[$dep_pid] = array('value'=>TZ_EMPTY_ENTITY,'type'=>$dep_prop['type'], 'name'=>'');
                         }
                     }    
+                    
                     //попробуем найти объекты зависимого реквизита  - в надежде установить единственное значение
                     $filter = array();
-                    die(var_dump($dep_prop));
                     $filter['itemid'] =  array('id' => $dep_prop['valmdid'],'name' => '');
                     $filter['curid'] = array('id'=>$this->id,'name'=>'');
-                    $filter['filter_id']= array('id'=>$pid,'name'=>'');
-                    $filter['filter_val']= array('id'=>$data[$pid]['id'],'name'=>'');
+                    if ($this->getmdentity()->getmdtypename() == 'Items') {
+                        //это строка тч - в фильтр передадим объект владелец ТЧ
+                        $filter['docid'] = array('id'=>$data[$pid]['value'],'name'=>'');
+                    }
+                    $filter['filter_id']= array('id'=>'','name'=>'');
+                    $filter['filter_val']= array('id'=>'','name'=>'');
                     $filter['filter_min']= array('id'=>'','name'=>'');
                     $filter['filter_max']= array('id'=>'','name'=>'');
                     $ar_dep_data = EntitySet::getEntitiesByFilter($filter,'ENTERPISE','VIEW');
-                    if (count($ar_dep_data['LDATA']) == 1) {
+                    if (count($ar_dep_data['LDATA']) > 0) {
                         foreach ($ar_dep_data['LDATA'] as $dep_entid => $obj) {
                             asort($ar_dep_data['LNAME'][$dep_entid]);
                             $fname = '';
@@ -430,28 +435,33 @@ class Entity extends Model {
                             $res[$dep_pid] = array('value'=>$dep_entid,'id'=>$dep_entid,'type'=>$dep_prop['type'], 'name'=>$fname);
                             break;
                         }
-                    }    
+                    }
+                    if (count($res) == 0) {
+                        $res[$dep_pid] = array('value'=>TZ_EMPTY_ENTITY,'type'=>$dep_prop['type'], 'name'=>'');                    
+                    }
                 }
             }
         }    
         if (count($res) > 0) {
-            $res = $this->update_properties($res);
+            $res = $this->update_properties($res,1);
         }
         return $res;
     }        
 
     public function update($data)     
     {
-        $res = $this->update_properties($data);
+        $res = $this->update_properties($data,0);
         if ($res['status']=='OK')
         {
             $res1 = $this->update_dependent_properties($res['objs']);
-            $res = array_merge($res,$res1);
+            if (is_array($res1['objs'])) {
+                $res['objs'] += $res1['objs'];
+            }
         }    
         return $res;
     }
     
-    public function update_properties($data)     
+    public function update_properties($data,$n=0)     
     {
         $objs = $this->before_save($data);
         $id = $this->id;

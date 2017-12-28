@@ -640,7 +640,7 @@ class EntitySet extends Model {
                 } else {
                     if ($row_plist['type'] == 'date')
                     {
-                        $r_name =substr($rname,0,10);
+                        $r_name = substr($r_name,0,10);
                     }    
                 }    
                 $objs['LDATA'][$row['id']][$row[$field_id]] = array('id'=>$r_id,'name'=>$r_name);

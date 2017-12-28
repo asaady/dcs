@@ -310,61 +310,23 @@ class EntitySet extends Model {
             }    
         }   
     }   
+    
+    //получаем объекты владельцы строк ТЧ
     public static function get_tt_items($docid,$mdid,$curid,&$ent_filter,$entities)
     {        
         $filter_id = '';
         $filter_pid = '';
         $tt_et = '';
         //надо найти Объекты у которых есть ТЧ к которой относятся запрошенные строки ТЧ
-        $sql = "select mi.name as mditem, mdp.name as mdname, mdp.id as mdid, mp.id as pid, mp.propid, pv.value as setmdid from \"MDTable\" as mdp
-                    inner join \"CTable\" as mi
-                    on mdp.mditem = mi.id
-                    inner join \"MDProperties\" as mp 
-                        inner join \"CTable\" as ct
-                            inner join \"MDTable\" as md
-                            on ct.mdid=md.id
-                            inner join \"CProperties\" as cp
-                                inner join \"CPropValue_mdid\" as pv
-                                on cp.id=pv.pid
-                                and pv.value in (
-                                    select mdp.id from \"MDTable\" as mdp
-                                        inner join \"CTable\" as mi
-                                        on mdp.mditem = mi.id
-                                        and mi.name='Sets'
-                                        inner join \"MDProperties\" as mp 
-                                            inner join \"CTable\" as ct
-                                                inner join \"MDTable\" as md
-                                                on ct.mdid=md.id
-                                                inner join \"CProperties\" as cp
-                                                        inner join \"CPropValue_mdid\" as pv
-                                                        on cp.id=pv.pid
-                                                        and pv.value=:mdid
-                                                on ct.mdid=cp.mdid
-                                                and cp.name='valmdid'
-                                                and pv.id=ct.id
-                                            and md.name = 'PropsTemplate'
-                                            on mp.propid = ct.id
-                                        on mp.mdid=mdp.id
-                                    )
-                            on ct.mdid=cp.mdid
-                            and cp.name='valmdid'
-                            and pv.id=ct.id
-                        and md.name = 'PropsTemplate'
-                        on mp.propid = ct.id
-                    on mp.mdid=mdp.id";
-        $params = array();
-        $params['mdid'] = $mdid;
-        $res = DataManager::dm_query($sql,$params);
-        $ar_obj = array();
-        while($row = $res->fetch(PDO::FETCH_ASSOC)) 
-        {
-            $ar_obj[$row['mdid']] = $row;
+        $ar_obj = DataManager::get_parentmd_by_item($mdid);
+        if (count($ar_obj) == 0) {
+            return tt_et;
         }
         $ent_obj = new Entity($curid); // получим объект хозяин 
         $ent_plist = $ent_obj->properties();
         foreach ($ent_plist as $prop)
         {
-            if ($prop['type']<>'id')
+            if ($prop['type'] != 'id')
             {
                 continue;
             }    
@@ -378,7 +340,7 @@ class EntitySet extends Model {
             $filter_pid = $ar_obj[$prop['valmdid']]['pid'];
             break;    
         }   
-        if ($filter_id<>'')
+        if ($filter_id != '')
         {
             $item = new Entity($ent_obj->getattrid($filter_id));
             self::add_filter_val($item,$mdid,$ent_filter);
@@ -404,23 +366,25 @@ class EntitySet extends Model {
     }
     static function arr_rls($propid, $access_prop,$edit_mode)
     {
-        $rls=array();
+        $rls = array();
         foreach ($access_prop as $prop)
         {
-            if ($prop['propid']==$propid)
+            if ($prop['propid'] == $propid)
             {
-                if (($edit_mode==='EDIT')||($edit_mode==='SET_EDIT')||($edit_mode==='CREATE')||($edit_mode==='CREATE_PROPERTY'))
-                {
-                    if ($prop['wr']===true)
+                if (($edit_mode === 'EDIT')||
+                    ($edit_mode === 'SET_EDIT')||
+                    ($edit_mode === 'CREATE')||
+                    ($edit_mode === 'CREATE_PROPERTY')) {
+                    if ($prop['wr'] === true)
                     {    
-                        $rls[]=$prop['value'];
+                        $rls[] = $prop['value'];
                     }    
                 }    
                 else 
                 {
-                    if (($prop['rd']===true)||($prop['wr']===true))
+                    if (($prop['rd'] === true)||($prop['wr'] === true))
                     {    
-                        $rls[]=$prop['value'];
+                        $rls[] = $prop['value'];
                     }    
                 }
             }    
@@ -544,6 +508,7 @@ class EntitySet extends Model {
         if ($propid!='')
         {
             $ent_filter[$propid] = new Filter($propid,$filter['filter_val']['id']);
+            $mdid = $ent_filter[$propid]->getmdid();
         }
         else
         {
@@ -597,13 +562,13 @@ class EntitySet extends Model {
                 $tt_et = self::get_EntitiesFromList($entities,'tt_et',$limit);
             }    
         }    
-        if ($tt_et=='')
+        if ($tt_et == '')
         {
             $tt_et = self::get_findEntitiesByProp('tt_et', $mdid, $propid, $ptype, $access_prop, $ent_filter ,$limit);
         }    
-        if ($tt_et=='')
+        if ($tt_et == '')
         {
-            $objs['RES']='list entities is empty';
+            $objs['RES'] = 'list entities is empty';
             return $objs;
         }
         
@@ -642,10 +607,12 @@ class EntitySet extends Model {
         
         
         $arr_e = array();
+        $arr_name = array();
         while($row = $res->fetch(PDO::FETCH_ASSOC)) {
             $objs['LDATA'][$row['id']]=array();
             $objs['LDATA'][$row['id']]['id'] = array('id'=>$row['id'],'name'=>'');
             $objs['LDATA'][$row['id']]['class'] ='active';               
+            $arr_name[$row['id']] = array();
             foreach($plist as $row_plist) 
             {
                 $rid = $row_plist['id'];
@@ -678,7 +645,7 @@ class EntitySet extends Model {
                 }    
                 $objs['LDATA'][$row['id']][$row[$field_id]] = array('id'=>$r_id,'name'=>$r_name);
                 if ($row_plist['ranktostring'] > 0) {
-                    $arr_name[$row_plist['ranktostring']] = $r_name;
+                    $arr_name[$row['id']][$row_plist['ranktostring']] = $r_name;
                 }
             }
         }
@@ -693,12 +660,17 @@ class EntitySet extends Model {
                     {
                         $crow = $row[$rid];
                         if (array_key_exists($crow['id'], $arr_entities)){
-                            $objs['LDATA'][$id][$rid]['name']=$arr_entities[$crow['id']]['name'];
+                            $objs['LDATA'][$id][$rid]['name'] = $arr_entities[$crow['id']]['name'];
+                            if ($prow['ranktostring'] > 0) {
+                                $arr_name[$row['id']][$prow['ranktostring']] = $arr_entities[$crow['id']]['name'];
+                            }
+                            
                         }    
                     }        
                 }
             }    
         }
+        $objs['LNAME'] = $arr_name;
         $objs['PSET'] = MdpropertySet::getMDProperties($mdid,$mode," WHERE mp.mdid = :mdid AND mp.ranktoset>0 ",true);
         $sql = "SELECT count(*) as countrec FROM tt_tv";
 	$res = DataManager::dm_query($sql);	

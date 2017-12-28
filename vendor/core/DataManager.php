@@ -1096,7 +1096,7 @@ class DataManager {
 
     public static function get_related_fields($propid) {
 
-        $sql = "select pv_lead.value as lead, pv.dep.value as depend from \"CTable\" as ct
+        $sql = "select pv_lead.value as lead, pv_dep.value as depend from \"CTable\" as ct
                     inner join \"MDTable\" as mt
                     on ct.mdid = mt.id
                     and mt.name='RelatedFields'
@@ -1144,5 +1144,70 @@ class DataManager {
         $res = DataManager::dm_query($sql, $params);
         return $res->fetchAll(PDO::FETCH_ASSOC);
     }
-
+    
+    //возвращает массив ид сущностей которые содержат в ТЧ указанную строку
+    //itemid - ид строки ТЧ
+    public static function get_obj_by_item($itemid)
+    {
+        $sql = "select it.entityid as id from \"IDTable\" as it
+                    inner join \"PropValue_id\" as pv
+                        inner join \"SetDepList\" as sdl
+                        on pv.value = sdl.parentid
+                        and sdl.childid = :itemid
+                    on it.id=pv.id";
+        $params = array();
+        $params['itemid'] = $itemid;
+        $res = DataManager::dm_query($sql,$params);
+        return $res->fetchAll(PDO::FETCH_ASSOC);
+    }        
+    //возвращает массив объектов метаданных которые содержат в ТЧ метаданные указанной строки 
+    //mdid - ид метаданных строки ТЧ
+    public static function get_parentmd_by_item($mdid)
+    {        
+        $sql = "select mi.name as mditem, mdp.name as mdname, mdp.id as mdid, mp.id as pid, mp.propid, pv.value as setmdid from \"MDTable\" as mdp
+                    inner join \"CTable\" as mi
+                    on mdp.mditem = mi.id
+                    inner join \"MDProperties\" as mp 
+                        inner join \"CTable\" as ct
+                            inner join \"MDTable\" as md
+                            on ct.mdid=md.id
+                            inner join \"CProperties\" as cp
+                                inner join \"CPropValue_mdid\" as pv
+                                on cp.id=pv.pid
+                                and pv.value in (
+                                    select mdp.id from \"MDTable\" as mdp
+                                        inner join \"CTable\" as mi
+                                        on mdp.mditem = mi.id
+                                        and mi.name='Sets'
+                                        inner join \"MDProperties\" as mp 
+                                            inner join \"CTable\" as ct
+                                                inner join \"MDTable\" as md
+                                                on ct.mdid=md.id
+                                                inner join \"CProperties\" as cp
+                                                        inner join \"CPropValue_mdid\" as pv
+                                                        on cp.id=pv.pid
+                                                        and pv.value=:mdid
+                                                on ct.mdid=cp.mdid
+                                                and cp.name='valmdid'
+                                                and pv.id=ct.id
+                                            and md.name = 'PropsTemplate'
+                                            on mp.propid = ct.id
+                                        on mp.mdid=mdp.id
+                                    )
+                            on ct.mdid=cp.mdid
+                            and cp.name='valmdid'
+                            and pv.id=ct.id
+                        and md.name = 'PropsTemplate'
+                        on mp.propid = ct.id
+                    on mp.mdid=mdp.id";
+        $params = array();
+        $params['mdid'] = $mdid;
+        $res = DataManager::dm_query($sql,$params);
+        $ar_obj = array();
+        while($row = $res->fetch(PDO::FETCH_ASSOC)) 
+        {
+            $ar_obj[$row['mdid']] = $row;
+        }
+        return $ar_obj;
+    }    
 }

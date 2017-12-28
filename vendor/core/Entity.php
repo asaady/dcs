@@ -381,22 +381,37 @@ class Entity extends Model {
                 if ($dep_prop['isdepend']) {
                     //получим текущее значение зависимого реквизита
                     $curval = $this->data[$dep_pid]['id'];
-                    $dep_ent = new Entity($curval);
-                    $arr_dep_ent_propid = array_column($dep_ent->properties(),'propid','id');
-                    $dep_ent_pid = array_search($prop['propid'],$arr_dep_ent_propid);
-                    if ($dep_ent_pid === FALSE) {
-                        continue;
-                    }
-                    //текущее значение ведущего реквизита у найденного значения зависимого реквизита
-                    $cur_val_dep_ent = $dep_ent->getattrid($dep_ent_pid);
-                    if ($cur_val_dep_ent != $this->data[$pid]['id']) {
-                        //значение не совпало - сбрасываем значение зависимого реквизита
-                        $res[$dep_pid] = array('value'=>TZ_EMPTY_ENTITY,'type'=>$dep_prop['type'], 'name'=>'');
-                    }
+                    if (($curval != TZ_EMPTY_ENTITY)&&($curval != '')) {
+                        $dep_ent = new Entity($curval);
+                        $cur_val_dep_ent = '';
+                        //текущее значение ведущего реквизита у найденного значения зависимого реквизита
+                        if ($dep_ent->getmdentity()->getmdtypename() == 'Items') {
+                            //это строка тч - получим объект владелeц этой ТЧ
+                            // получим массив ид метаданных которые имеют у себя такую строку ТЧ 
+                            $ar_obj = DataManager::get_obj_by_item($curval);
+                            foreach ($ar_obj as $ent_parent) {
+                                $cur_val_dep_ent = $ent_parent['id'];
+                                break;
+                            }
+                        } else {
+                            $arr_dep_ent_propid = array_column($dep_ent->properties(),'propid','id');
+                            $dep_ent_pid = array_search($prop['propid'],$arr_dep_ent_propid);
+                            if ($dep_ent_pid === FALSE) {
+                                //среди реквизитов зависимого объекта нет шаблона реквизита текущего объекта
+                                continue;
+                            }
+                            $cur_val_dep_ent = $dep_ent->getattrid($dep_ent_pid);
+                        }
+                        if ($cur_val_dep_ent != $this->data[$pid]['id']) {
+                            //значение не совпало - сбрасываем значение зависимого реквизита
+                            $res[$dep_pid] = array('value'=>TZ_EMPTY_ENTITY,'type'=>$dep_prop['type'], 'name'=>'');
+                        }
+                    }    
                     //попробуем найти объекты зависимого реквизита  - в надежде установить единственное значение
                     $filter = array();
-                    $filter['itemid'] =  array('id' => $dep_ent->getmdentity()->getid(),'name' => '');
-                    $filter['curid'] = array('id'=>'','name'=>'');
+                    die(var_dump($dep_prop));
+                    $filter['itemid'] =  array('id' => $dep_prop['valmdid'],'name' => '');
+                    $filter['curid'] = array('id'=>$this->id,'name'=>'');
                     $filter['filter_id']= array('id'=>$pid,'name'=>'');
                     $filter['filter_val']= array('id'=>$data[$pid]['id'],'name'=>'');
                     $filter['filter_min']= array('id'=>'','name'=>'');
@@ -404,13 +419,25 @@ class Entity extends Model {
                     $ar_dep_data = EntitySet::getEntitiesByFilter($filter,'ENTERPISE','VIEW');
                     if (count($ar_dep_data['LDATA']) == 1) {
                         foreach ($ar_dep_data['LDATA'] as $dep_entid => $obj) {
-                            $res[$dep_pid] = array('value'=>$dep_entid,'type'=>$dep_prop['type'], 'name'=>'');
+                            asort($ar_dep_data['LNAME'][$dep_entid]);
+                            $fname = '';
+                            foreach ($ar_dep_data['LNAME'][$dep_entid] as $rank => $cname) {
+                                $fname .= ' '.trim($cname);
+                            }
+                            if ($fname != '') {
+                                $fname = trim($fname);
+                            }
+                            $res[$dep_pid] = array('value'=>$dep_entid,'id'=>$dep_entid,'type'=>$dep_prop['type'], 'name'=>$fname);
                             break;
                         }
                     }    
                 }
             }
         }    
+        if (count($res) > 0) {
+            $res = $this->update_properties($res);
+        }
+        return $res;
     }        
 
     public function update($data)     
@@ -418,7 +445,8 @@ class Entity extends Model {
         $res = $this->update_properties($data);
         if ($res['status']=='OK')
         {
-            $res['objs'] += $this->update_dependent_properties($res['objs']);
+            $res1 = $this->update_dependent_properties($res['objs']);
+            $res = array_merge($res,$res1);
         }    
         return $res;
     }
@@ -429,44 +457,42 @@ class Entity extends Model {
         $id = $this->id;
         $vals = array();
         //первый проход дополним значениями зависимых реквизитов
-	foreach($objs as $propval){
+	foreach($objs as $propval) {
             $propid = $propval['id'];
-            if ($propid =='id')
-            {
+            if ($propid == 'id') {
                 continue;
             }
-            if(!array_key_exists($propid,$this->plist))
-            {
+            if(!array_key_exists($propid,$this->plist)) {
                 continue;
             }
             $type = $this->plist[$propid]['type'];
-            if ($type=='id')
-            {
-                $p_ent = new Entity($propval['nvalid']);
-                $vals[$propid]=array('id'=>$propval['nvalid'],'name'=>$p_ent->getname());
-                //заполним пересекающиеся реквизиты ссылочного типа
-                $tpropid = $this->plist[$propid]['propid'];
-                foreach($this->plist as $prop)
-                {
-                    if ($prop['type']!='id')
-                    {
-                        continue;
-                    }    
-                    $ctpropid = $prop['propid'];
-                    if ($ctpropid==$tpropid)
-                    {
-                        continue;
-                    }    
-                    foreach($p_ent->plist as $e_prop)
-                    {
-                        if ($e_prop['propid']<>$ctpropid)
-                        {
+            if ($type == 'id') {
+                $n_name = '';
+                $n_id = TZ_EMPTY_ENTITY;
+                if (($propval['nvalid'] != TZ_EMPTY_ENTITY)&&($propval['nvalid'] != '')) {
+                    $p_ent = new Entity($propval['nvalid']);
+                    $n_name = $p_ent->getname();
+                    $n_id = $propval['nvalid'];
+                    //заполним пересекающиеся реквизиты ссылочного типа
+                    $tpropid = $this->plist[$propid]['propid'];
+                    foreach($this->plist as $prop) {
+                        if ($prop['type'] != 'id') {
                             continue;
                         }    
-                        $vals[$prop['id']]=array('id'=>$p_ent->getattrid($e_prop['id']),'name'=>$p_ent->getattr($e_prop['id']));
-                        break;
+                        $ctpropid = $prop['propid'];
+                        if ($ctpropid == $tpropid) {
+                            continue;
+                        }    
+                        foreach($p_ent->plist as $e_prop) {
+                            if ($e_prop['propid'] != $ctpropid) {
+                                continue;
+                            }    
+                            $vals[$prop['id']] = array('id' => $p_ent->getattrid($e_prop['id']), 'name' => $p_ent->getattr($e_prop['id']));
+                            break;
+                        }    
                     }    
-                }    
+                }
+                $vals[$propid]=array('id'=>$n_id,'name'=>$n_name);
             }    
             elseif ($type=='cid')
             {

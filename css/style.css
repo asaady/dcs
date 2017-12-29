@@ -3,7 +3,8 @@ body {
     padding-right: 15px;
     padding-bottom: 8px;
     padding-left: 15px;
-    background-color: #fff;
+    /*background-color: #fff;*/
+    background-color: rgb(46, 100, 254);
 }
 body.toprint {
     padding: 0;

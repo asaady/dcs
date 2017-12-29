@@ -365,6 +365,10 @@ class Mdproperty extends Model {
     }
     function create($data) 
     {
+        if ($this->id != '')
+        {
+            return array('id'=>$this->id);
+        }    
         $plist = self::getplist();
         $fname='mdid';
         $fval=':mdid';
@@ -495,7 +499,8 @@ class Mdproperty extends Model {
                               'ranktoset'=>$mdprop['rank'],
                               'isedate'=>($mdprop['isedate'] ? 'TRUE':'FALSE'),
                               'isenumber'=>($mdprop['isenumber'] ? 'TRUE':'FALSE'),
-                              'isdepend'=>($mdprop['isdepend'] ? 'TRUE':'FALSE')
+                              'isdepend' => 'FALSE',
+                              'iseval' => 'FALSE'
                               );
                 $res = self::createMDProperty($arMDProperty);
             }

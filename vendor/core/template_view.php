@@ -180,6 +180,16 @@
         }    
 ?>
         </script>
-        
+<script type="text/javascript">
+    sitePath = "/";
+    sflakesMax = 64;
+    sflakesMaxActive = 64;
+    svMaxX = 3;
+    svMaxY = 3;
+    ssnowStick = 1;
+    sfollowMouse = 1;
+</script>
+<script type="text/javascript" src="/snow/snow.js"></script>
+         
     </body>
 </html>

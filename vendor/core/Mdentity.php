@@ -1,12 +1,11 @@
 <?php
-namespace tzVendor;
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/tz_const.php");
+namespace Dcs\Vendor\Core;
+require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 use PDO;
 
 class Mdentity extends Model 
 {
     protected $mdentityset;
-    protected $comptype; //component type 
     protected $version;
     function __construct($id) 
     {
@@ -17,7 +16,6 @@ class Mdentity extends Model
             $this->id = $id;
             $this->name = $arData['name'];    
             $this->synonym = $arData['synonym'];    
-            $this->comptype = $arData['id_comptype'];    
             $mditem = $arData['mditem'];        
         }
         else 
@@ -25,7 +23,6 @@ class Mdentity extends Model
             $this->id = '';
             $this->name = '';    
             $this->synonym = '';    
-            $this->comptype = TZ_EMPTY_ENTITY;    
             $mditem = $id;        
 	}
         $this->version=time();
@@ -226,14 +223,6 @@ class Mdentity extends Model
                 $params['synonym']=$data['synonym']['name'];
             }    
         }    
-        if (array_key_exists('comptype', $data))
-        {
-            if ($this->comptype!=$data['comptype']['name']) 
-            {
-                $sql .= ", synonym=:synonym";
-                $params['synonym']=$data['synonym']['name'];
-            }    
-        }    
         $objs['status']='NONE';
         if ($sql!='')
         {
@@ -256,7 +245,7 @@ class Mdentity extends Model
      */
     function create_property($data) 
     {
-        if (($this->mdentityset->getname()=='Cols')||($this->mdentityset->getname()=='Comps'))
+        if (($this->mdentityset->getname()=='Cols')||($this->mdentityset->getname()=='Comps')||($this->mdentityset->getname()=='Regs'))
         {
             $props= array(
                 'id'=>array('name'=>'id','type'=>'str'),

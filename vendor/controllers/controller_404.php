@@ -1,5 +1,5 @@
 <?php
-use tzVendor\Controller;
+use Dcs\Vendor\Controller;
 
 class Controller_404 extends Controller
 {

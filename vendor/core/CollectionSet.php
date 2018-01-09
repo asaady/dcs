@@ -1,12 +1,12 @@
 <?php
-namespace tzVendor;
+namespace Dcs\Vendor\Core;
 
-use tzVendor\Mditem;
-use tzVendor\CollectionItem;
-use tzVendor\CpropertySet;
+//use dcs\vendor\core\Mditem;
+//use dcs\vendor\core\CollectionItem;
+//use dcs\vendor\core\CpropertySet;
 use PDO;
 
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/tz_const.php");
+require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 
 class CollectionSet extends Model {
     protected $mditem;
@@ -97,9 +97,9 @@ class CollectionSet extends Model {
         {
             $sql = "SELECT ct.name, ct.id, ct.synonym FROM \"CTable\" as ct WHERE ct.mdid=:mdid and ct.name=:name";
             $sth = DataManager::dm_query($sql,array('mdid'=>$res[0]['id'],'name'=>$itemname));        
-            $res = $sth->fetch(PDO::FETCH_ASSOC);
+            return $sth->fetch(PDO::FETCH_ASSOC);
         }   
-        return $res;
+        return FALSE;
     }
     public static function getMDCollectionByName($name,$equal_only=false) 
     {
@@ -167,7 +167,7 @@ class CollectionSet extends Model {
         }
         else
         {
-            $sql = "SELECT et.id as cid FROM \"CTable\" as et WHERE et.mdid=:mdid LIMIT ".TZ_COUNT_REC_BY_PAGE; 
+            $sql = "SELECT et.id as cid FROM \"CTable\" as et WHERE et.mdid=:mdid LIMIT ".DCS_COUNT_REC_BY_PAGE; 
             $params=array('mdid'=>$mdid);
         }    
         $res = DataManager::dm_query($sql,$params);
@@ -211,7 +211,7 @@ class CollectionSet extends Model {
         return $objs;
     }
     
-    public static function getCollectionByFilter($filter, $mode='',$edit_mode='', $limit=TZ_COUNT_REC_BY_PAGE, $page=1, $order='name') 
+    public static function getCollectionByFilter($filter, $mode='',$edit_mode='', $limit=DCS_COUNT_REC_BY_PAGE, $page=1, $order='name') 
     {
         
     	$objs = array();
@@ -349,7 +349,7 @@ class CollectionSet extends Model {
 	$objs['TOP_REC']=$offset+1;
 	if ($objs['CNT_REC']<$objs['TOP_REC'])
 	  $objs['TOP_REC']=$objs['CNT_REC'];
-	$objs['BOT_REC']=$offset+TZ_COUNT_REC_BY_PAGE;
+	$objs['BOT_REC']=$offset+DCS_COUNT_REC_BY_PAGE;
 	if ($objs['CNT_REC']<$objs['BOT_REC'])
 	  $objs['BOT_REC'] = $objs['CNT_REC'];
 	

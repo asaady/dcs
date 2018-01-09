@@ -1,28 +1,44 @@
 {
-    "name": "tzportal/autoload-composer",
+    "name": "dcs/autoload-composer",
     "description": "Description class files for tzportal",
     "type": "library",
-    "license": "MIT",
+    "license": "GPL",
     "authors": [
         {
             "name": "Arman Sadybekov",
-            "email": "sadybekov@npptez.ru"
+            "email": "asaady@gmail.com"
         }
     ],
     "require": {},
     "autoload": {
         "psr-4": {
-            "tzVendor\\": [
-                "vendor/core",
-                "app/components/reps/coversheets",
-                "app/components/reps/plannedjobs",
-                "app/components/reps/prodselection",
-                "app/components/prnforms/coversheets",
-                "app/components/utils/uploadset",
-                "app/components/utils/uploadobject",
-                "app/components/trigs",
-                "app/api"
+            "Dcs\\Vendor\\Core\\": [
+                "vendor/core/"
+            ],
+            "Dcs\\Vendor\\Controllers\\": [
+                "vendor/controllers/"
+            ],
+            "Dcs\\App\\Components\\Reps\\": [
+                "app/components/reps/"
+            ],
+            "Dcs\\App\\Components\\Prnforms\\Coversheets\\": [
+                "app/components/prnforms/coversheets/"
+            ],
+            "Dcs\\App\\Components\\Utils\\Uploadset\\": [
+                "app/components/utils/uploadset/"
+            ],
+            "Dcs\\App\\Components\\Utils\\Uploadobject\\": [
+                "app/components/utils/uploadobject/"
+            ],
+            "Dcs\\App\\Components\\Trigs\\": [
+                "app/components/trigs/"
+            ],
+            "Dcs\\App\\Api\\": [
+                "app/api/"
             ]
         }
+    },
+    "config": {
+        "optimize-autoloader": true
     }
 }

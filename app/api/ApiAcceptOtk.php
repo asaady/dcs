@@ -1,6 +1,10 @@
 <?php
-namespace tzVendor;
+namespace dcs\app\api;
 use PDO;
+use dcs\vendor\core\Common_data;
+use dcs\vendor\core\DataManager;
+use dcs\vendor\core\MdpropertySet;
+use dcs\vendor\core\Entity;
 
 class ApiAcceptOtk
 {

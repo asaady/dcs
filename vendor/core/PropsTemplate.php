@@ -1,9 +1,9 @@
 <?php
 
-namespace tzVendor;
+namespace Dcs\Vendor\Core;
 use PDO;
-use tzVendor\DataManager;
-use tzVendor\Mdentity;
+//use dcs\vendor\core\DataManager;
+//use dcs\vendor\core\Mdentity;
 
 
 class PropsTemplate extends Model {

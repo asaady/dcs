@@ -1,5 +1,5 @@
 <?php
-namespace tzVendor;
+namespace Dcs\Vendor\Core;
 
 class InputDataManager {
     protected $itemid;
@@ -40,7 +40,7 @@ class InputDataManager {
             $pval = filter_input(INPUT_POST, $key, FILTER_SANITIZE_SPECIAL_CHARS);
             $curkey = substr($key,5);
             $this->data[$curkey]['name']=$pval;
-            if ($pval==TZ_EMPTY_ENTITY) {
+            if ($pval==DCS_EMPTY_ENTITY) {
                 $this->data[$key]['name']='';
             }
         }

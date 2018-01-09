@@ -1,12 +1,16 @@
 <?php
-namespace tzVendor;
+namespace dcs\app\components\reps\prodselection;
 
 use PDO;
 use PDOStatement;
-use tzVendor\Entity;
-use tzVendor\Hungarian;
+use dcs\vendor\core\Entity;
+use dcs\vendor\core\DcsHung;
+use dcs\vendor\core\Model;
+use dcs\vendor\core\CollectionItem;
+use dcs\vendor\core\DataManager;
+use dcs\vendor\core\Common_data;
 
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/tz_const.php");
+require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 
 class ProdSelection extends Model 
 {
@@ -416,7 +420,7 @@ class ProdSelection extends Model
 //        Common_data::_log('/log','COSTS : '.$dump);
         
         //$hung = new Hungarian($costs);
-        $hung = new tzHung($costs);
+        $hung = new DcsHung($costs);
         $res = $hung->execute();
 //        ob_start();
 //        var_dump($res);

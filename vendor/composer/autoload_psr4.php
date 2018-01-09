@@ -6,5 +6,12 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
-    'tzVendor\\' => array($vendorDir . '/core', $baseDir . '/app/components/reps/coversheets', $baseDir . '/app/components/reps/plannedjobs', $baseDir . '/app/components/reps/prodselection', $baseDir . '/app/components/prnforms/coversheets', $baseDir . '/app/components/utils/uploadset', $baseDir . '/app/components/utils/uploadobject', $baseDir . '/app/components/trigs', $baseDir . '/app/api'),
+    'Dcs\\Vendor\\Core\\' => array($vendorDir . '/core'),
+    'Dcs\\Vendor\\Controllers\\' => array($vendorDir . '/controllers'),
+    'Dcs\\App\\Components\\Utils\\Uploadset\\' => array($baseDir . '/app/components/utils/uploadset'),
+    'Dcs\\App\\Components\\Utils\\Uploadobject\\' => array($baseDir . '/app/components/utils/uploadobject'),
+    'Dcs\\App\\Components\\Trigs\\' => array($baseDir . '/app/components/trigs'),
+    'Dcs\\App\\Components\\Reps\\' => array($baseDir . '/app/components/reps'),
+    'Dcs\\App\\Components\\Prnforms\\Coversheets\\' => array($baseDir . '/app/components/prnforms/coversheets'),
+    'Dcs\\App\\Api\\' => array($baseDir . '/app/api'),
 );

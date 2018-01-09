@@ -1,9 +1,11 @@
 <?php
-use tzVendor\Controller;
-use tzVendor\View;
-use tzVendor\MdentitySet;
-use tzVendor\Mdentity;
-use tzVendor\CollectionSet;
+namespace Dcs\Vendor\Controllers;
+
+use Dcs\Vendor\Core\Controller;
+use Dcs\Vendor\Core\View;
+use Dcs\Vendor\Core\MdentitySet;
+use Dcs\Vendor\Core\Mdentity;
+use Dcs\Vendor\Core\CollectionSet;
 
 class Controller_MdentitySet extends Controller
 {

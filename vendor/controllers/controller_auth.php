@@ -1,7 +1,7 @@
 <?php
-use tzVendor\Controller;
-use tzVendor\View;
-use tzVendor\AuthorizationAjaxRequest;
+use dcs\vendor\core\Controller;
+use dcs\vendor\core\View;
+use dcs\vendor\core\User;
 
 class Controller_Auth extends Controller
 {
@@ -14,7 +14,7 @@ class Controller_Auth extends Controller
 	function action_index($arResult)
 	{       
                 $data = array();
-                if (tzVendor\User::isAuthorized())
+                if (User::isAuthorized())
                 {    
                     $data['id']=$_SESSION['user_id'];
                 }

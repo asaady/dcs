@@ -1,8 +1,8 @@
 <?php
-namespace tzVendor;
+namespace Dcs\Vendor\Core;
 use PDO;
 use DateTime;
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/tz_const.php");
+require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 
 class Download {
     protected $id;
@@ -22,7 +22,7 @@ class Download {
             header("Status: 404 Not Found");
             exit;
         }
-        $destPath = $_SERVER['DOCUMENT_ROOT'] . TZ_UPLOAD_DIR;
+        $destPath = $_SERVER['DOCUMENT_ROOT'] . DCS_UPLOAD_DIR;
         while($row = $res->fetch(PDO::FETCH_ASSOC)) 
         {
             $fname = $row['value'];

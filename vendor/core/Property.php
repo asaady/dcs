@@ -1,85 +1,83 @@
-<?php>
-namespace tzVendor;
+<?php
+namespace Dcs\Vendor\Core;
 
-class MDProperty extends Model {
-    protected $MDEntity;
+//use Dcs\Vendor\Core\Model;
+//use Dcs\Vendor\Core\iModel as iModel;
+//
+interface iProperty extends iModel
+{
+    public function getvalmdid();
+    public function getvalmdname();
+    public function getvalmdtypename();
+    public function gettype(); 
+    public function getlength();
+    public function getprec();
+    public function getranktoset();
+    public function getranktostring();
+    public function getrank();
+}
+
+class Property extends Model implements iProperty 
+{
     protected $type;
     protected $length;
     protected $prec;
     protected $rank;
-    protected $periodic;
-    protected $periodwidth;
-    
-    
-    public function __construct($id, $mdid='') {
-        if ($id=''){
-            if ($mdid='') {
-                die("class.MDProperty constructor: mdid is empty");
-                throw new Exception("class.MDPropertySet constructor: mdid is empty");
-            }    
-            $this->MDEntity = new MDEntity($mdid);
-            $this->id = '';
-            $this->name = '';    
-            $this->synonym = '';    
-            $this->propid = '';    
-            $this->type = 'str';    
-            $this->length = 10;    
-            $this->prec = 0;    
-            $this->rank = 999;    
-            $this->periodic = false;        
-            $this->periodwidth = '';        
-            $this->ranktostring = 0;        
-            $this->isedate = false;        
-            $this->valmdid = '';        
-            $this->valmdname = '';        
-        }else {
-            $arData = DataManager::getPropMDbyID($id);
-            $this->MDEntity = new MDEntity($arData['mdid']);
-            $this->id = $id;
-            $this->name = $arData['name'];    
-            $this->synonym = $arData['synonym'];    
-            $this->propid = $arData['propid'];    
-            $this->type = $arData['type'];    
-            $this->length = $arData['proplength'];    
-            $this->prec = $arData['propprec'];
-            $this->rank = $arData['rank'];        
-            $this->periodic = $arData['periodic'];
-            $this->periodwidth = $arData['periodwidth'];
-            $this->ranktostring = $arData['ranktostring'];
-            $this->isedate = $arData['isedate'];
-            $this->valmdid = $arData['valmdid'];
-            $this->valmdname = $arData['valmdname'];
-        }
+    protected $ranktostring;
+    protected $ranktoset;
+    protected $valmdid;
+    protected $valmdname;
+    protected $valmdtypename;
+        
+    function __construct($arData) {
+        $this->id = $arData['id'];
+        $this->name = $arData['name'];    
+        $this->synonym = $arData['synonym'];  
+        $this->type = $arData['type'];    
+        $this->length = $arData['length'];    
+        $this->prec = $arData['prec'];
+        $this->rank = $arData['rank'];        
+        $this->ranktostring = $arData['ranktostring'];
+        $this->valmdid = $arData['valmdid'];
+        $this->valmdname = $arData['valmdname'];
+        $this->valmdtypename = $arData['valmdtypename'];
     }
-    function get_data() {
-      return array('id'=>$this->id,      
-                    'name'=>$this->name,
-                    'synonym'=>$this->synonym,
-                    'type'=>$this->type,
-                    'propid'=>$this->propid,
-                    'length'=>$this->length,
-                    'prec'=>$this->prec,
-                    'rank'=>$this->rank,
-                    'periodic'=>$this->periodic,
-                    'periodwidth'=>$this->periodwidth,
-                    'ranktostring'=>$this->ranktostring,
-                    'isedate'=>$this->isedate,
-                    'valmdid'=>$this->valmdid,
-                    'valmdname'=>$this->valmdname,
-                    'navlist'=>array(
-                    $this->MDEntity->getmditem()=>$this->MDEntity->getmditemsynonym(),
-                    $this->MDEntity->getid()=>$this->MDEntity->getsynonym(),
-                    $this->id=>$this->synonym
-                    ),        
-                   'actionlist'=>DataManager::getActionsbyItem($this->MDEntity->getmditem())          
-                    );
 
-     }
-    function gettype() {
+    public function gettype() 
+    {
       return $this->type;
-     }
-    function settype($val) {
-	$this->type=$val;
+    }
+    public function getvalmdid() 
+    {
+      return $this->valmdid;
+    }
+    public function getvalmdname() 
+    {
+      return $this->valmdname;
+    }
+    public function getvalmdtypename() 
+    {
+      return $this->valmdtypename;
+    }
+    public function getlength() 
+    {
+      return $this->length;
+    }
+    public function getprec() 
+    {
+      return $this->prec;
+    }
+    public function getranktoset() 
+    {
+      return $this->ranktoset;
+    }
+    public function getranktostring() 
+    {
+      return $this->ranktostring;
+    }
+    public function getrank() 
+    {
+      return $this->rank;
     }
 }
 

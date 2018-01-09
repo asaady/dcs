@@ -1,378 +1,166 @@
 <?php
-namespace tzVendor;
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/tz_const.php");
+namespace Dcs\Vendor\Core;
 
-use tzVendor\Common_data;
+//use Dcs\Vendor\Controllers as Controllers;
+
+require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
+
+use PDO;
+//use Dcs\Vendor\Controllers\Controller_MdentitySet;
+//use dcs\vendor\core\InputDataManager;
+//use dcs\vendor\core\Common_data;
+//use dcs\vendor\core\User;
+//use dcs\vendor\core\DcsContext;
 
 class Route {
-        private static function controller_run($controller_path,$controller_name,$action_name,$classname, $arResult)
-        {    
-            if ($arResult['MODE']=='DOWNLOAD')    
-            {
-                $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/controllers/controller_download.php";
-                $controller_name='Controller_Download';
-                if($controller_name=='Controller_404')
+    protected $routes;
+    protected $classname = '';
+    protected $action_name = '';
+    protected $controller_name = '';
+    protected $controller_file = '';
+    protected $controller_path = '';
+    protected $modes;
+    protected $context;
+    
+    function __construct()
+    {
+        $this->modes = array(
+        'ENTERPRISE' => function() {
+                $item = self::getContentByID($this->context->getattr('ITEMID'));
+                $this->classname = $item['classname'];
+                $this->controller_name = 'Controller_'.$item['classname'];    
+                if ($this->classname == 'CollectionItem')
                 {
-                    $action_name = 'action_error';
-                }
-                else 
-                {
-                    $action_name = 'action_index';
-                }
-            }    
-            if(file_exists($controller_path))
-            {
-                require_once("$controller_path");
-            } 
-            else 
-            {
-                die("file not found: $controller_path");
-            }
-            if ($classname=='')
-            {
-                $controller = new $controller_name();
-            } 
-            else 
-            {
-                $controller = new $controller_name($arResult['ITEMID']);
-            }
-            $action = $action_name;
-            if(method_exists($controller, $action))
-            {
-                $controller->$action($arResult);
-            }
-            else
-            {
-                if ($arResult['MODE']=='API') 
-                {
-                    $data = array();
-                    $data['STATUS']="ERROR";
-                    $data['MESSAGE']="action not found : $action for controller $controller_name";
-                    Common_data::_log(TZ_API_LOG,$data['MESSAGE']);
-                    header('Content-type: application/xml');
-                    echo Common_data::toXml($data);
-                    return;
-                }   
-                else
-                {
-                    die("action not found : $action for controller $controller_name");
-                }    
-            }
-        
-        }        
-        private static function getController($routes,$arResult, $step, &$controller_path,&$controller_name,&$action_name,&$classname,&$ritem)
-        {
-            $curid='';
-            $param='';
-            if ( !empty($routes[2+$step]) )
-            {
-                $act = strtolower(trim($routes[2+$step]));
-                $res = CollectionSet::isExistCollItemByName('Action',$act);
-                if ($res)
-                {
-                    if ( !empty($routes[3+$step]) )
+                    if ($this->context->getattr('ACTION') != 'EDIT')
                     {
-                        $validation = Common_data::check_uuid($routes[3+$step]);
-                        if ($validation) 
-                        {    
-                            $curid=trim($routes[3+$step]);
-                        }
-                    }
-                    $arResult['ACTION']= strtoupper($act);
-                    $action_name = 'action_'.$act;
-                }
-                else
-                {
-                    $validation = Common_data::check_uuid($routes[2+$step]);
-                    if ($validation) 
-                    {    
-                        $curid=trim($routes[2+$step]);
-                        if ( !empty($routes[3+$step]) )
-                        {    
-                            $param=trim($routes[3+$step]);
-                            $act = strtolower($param);
-                            $res = CollectionSet::isExistCollItemByName('Action',$act);
-                            if ($res)
+                        $coll = new CollectionItem($this->context->getattr('ITEMID'));
+                        if ($coll->getcollectionset()->getmditem()->getname()=='Comps')
+                        {
+                            $model_name = $coll->getname();
+                            $compname = $model_name;
+                            $model_file = $compname.'.php';
+                            $model_path = "app/components/".strtolower($coll->getcollectionset()->getname())."/".strtolower($compname)."/".$model_file;
+                            if(file_exists($model_path))
                             {
-                                $arResult['ACTION']= strtoupper($act);
-                                $action_name = 'action_'.$act;
+                                $tcontroller_name = 'Controller_'.$model_name;
+                                $tcontroller_path = "app/components/".strtolower($coll->getcollectionset()->getname())."/".strtolower($compname);
+                                if(file_exists($this->controller_path."/".$tcontroller_name.'.php'))
+                                {
+                                    $this->controller_name = $tcontroller_name;
+                                    $this->controller_path = $tcontroller_path;
+                                }
                             }
                         }    
-                    }    
+                    } 
+                }
+            },
+        'CONFIG' => function() {
+                $item = self::getContentByID();
+                if ($item['classname']=='EntitySet')
+                {
+                    $item['classname']='Mdentity';
                 }    
-            }	
-            $validation = Common_data::check_uuid($ritem);
-            if (!$validation) 
-            {
-                $classname = '';
-                $action_name = 'action_index';
-                $controller_name = 'Controller_404';    
-                $controller_file = strtolower($controller_name).'.php';
-                $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/controllers/".$controller_file;
-                $item = array();
-            }
-            else 
-            {   
-                $item = DataManager::getContentByID($ritem);
-                if ($arResult['MODE']=='CONFIG')
+                $this->classname = $item['classname'];
+                $this->controller_name = 'Controller_'.$item['classname'];    
+            },
+        "AUTH" => function() {
+                $this->controller_name = 'Controller_Auth';
+                    },
+        "DOWNLOAD" => function() {
+                $this->controller_name='Controller_Download';
+                    },
+        "API" => function() {
+                $this->controller_name = 'Controller_API';
+                },
+        "PRINT" => function() {
+                $item = self::getContentByID();
+                $this->classname = $item['classname'];
+                $ent = new Entity($this->context->getattr('ITEMID'));
+                $compname = $ent->getmdentity()->getname();
+                $model_name = 'Prn'.$compname;
+                $model_file = $model_name.'.php';
+                $model_path = "app/components/prnforms/".strtolower($compname)."/".$model_file;
+                if(file_exists($model_path))
                 {
-                    if ($item['classname']=='EntitySet')
+                    $tcontroller_name = 'Controller_'.$model_name;
+                    $tcontroller_path = "app/components/prnforms/".strtolower($compname)."/".$tcontroller_name.'.php';
+                    if(file_exists($tcontroller_path))
                     {
-                        $item['classname']='Mdentity';
-                    }    
-                }
-                $arResult['CURID']=$curid;
-                $arResult['ITEMID']=$ritem;
-                $arResult['PARAM']=$param;
-                if (!$item)
-                {
-                    $classname = '';
-                    $action_name = 'action_index';
-                    $controller_name = 'Controller_404';    
-                    $controller_file = strtolower($controller_name).'.php';
-                    $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/controllers/".$controller_file;
-                } 
-                else 
-                {
-                    $classname = $item['classname'];
-                    $controller_name = 'Controller_'.$item['classname'];    
-                    $controller_file = strtolower($controller_name).'.php';
-                    $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/controllers/".$controller_file;
-                    if ($item['classname']=='CollectionItem')
-                    {
-                        if ($arResult['ACTION']<>'EDIT')
-                        {
-                            $coll = new CollectionItem($ritem);
-                            if ($coll->getcollectionset()->getmditem()->getname()=='Comps')
-                            {
-                                $model_name = $coll->getname();
-                                $compname = $model_name;
-                                $model_file = $compname.'.php';
-                                $model_path = "app/components/".strtolower($coll->getcollectionset()->getname())."/".strtolower($compname)."/".$model_file;
-                                if(file_exists($model_path))
-                                {
-                                    if (strtolower($item['typename'])=='reps')
-                                    {    
-                                        $tcontroller_name = 'Controller_'.$model_name;
-                                        $tcontroller_path = "app/components/".strtolower($coll->getcollectionset()->getname())."/".strtolower($compname)."/".$tcontroller_name.'.php';
-                                        if(file_exists($controller_path))
-                                        {
-                                            $classname = $item['classname'];
-                                            $controller_path = $tcontroller_path;
-                                            $controller_name = $tcontroller_name;
-                                            include $model_path;
-                                            include $controller_path;
-                                        }
-                                    }
-                                    elseif (strtolower($item['typename'])=='utils')
-                                    {    
-                                        $tcontroller_name = 'Controller_'.$model_name;
-                                        $tcontroller_path = "app/components/".strtolower($coll->getcollectionset()->getname())."/".strtolower($compname)."/".$tcontroller_name.'.php';
-                                        if(file_exists($controller_path))
-                                        {
-                                            $classname = $item['classname'];
-                                            $controller_path = $tcontroller_path;
-                                            $controller_name = $tcontroller_name;
-                                            include $model_path;
-                                            include $controller_path;
-                                        }
-                                    }    
-
-                                }
-                                else 
-                                {
-                                    $classname = '';
-                                    $action_name = 'action_index';
-                                    $controller_name = 'Controller_404';    
-                                    $controller_file = strtolower($controller_name).'.php';
-                                    $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/controllers/".$controller_file;
-                                    error_log ("file not exist: ".$model_path, 0);
-                                }
-                            }    
-                        } 
-                    }
-                    else 
-                    {
-                        if ($curid!='')
-                        {    
-                            if ($item['classname']=='Entity')
-                            {
-                                $curitem = DataManager::getContentByID($curid);
-                                if ($curitem['classname']=='Mdproperty')
-                                {    
-                                    $arprop = Mdproperty::getProperty($curid);
-                                    if ($arprop['valmdtypename']=='Sets')
-                                    {
-                                        $arResult['ACTION'] = 'SET_'.$arResult['ACTION'];
-                                    }    
-                                }    
-                            }    
-                        }    
-                        else 
-                        {
-                            if ($arResult['MODE'] == 'PRINT')
-                            {
-                                $ent = new Entity($ritem);
-                                $compname = $ent->getmdentity()->getname();
-                                $model_name = 'Prn'.$compname;
-                                $model_file = $model_name.'.php';
-                                $model_path = "app/components/prnforms/".strtolower($compname)."/".$model_file;
-                                if(file_exists($model_path))
-                                {
-                                    $tcontroller_name = 'Controller_'.$model_name;
-                                    $tcontroller_path = "app/components/prnforms/".strtolower($compname)."/".$tcontroller_name.'.php';
-                                    if(file_exists($controller_path))
-                                    {
-                                        $classname = $item['classname'];
-                                        $controller_path = $tcontroller_path;
-                                        $controller_name = $tcontroller_name;
-                                        include $model_path;
-                                        include $controller_path;
-                                    }
-                                }
-                            }   
-                        }
+                        $this->controller_name = $tcontroller_name;
+                        $this->controller_path = "app/components/prnforms/".strtolower($compname);
                     }
                 }
-            }
-            return $arResult;    
-        }        
-
-
-        static function start()
-	{
-                
-            $controller_name = 'controller';
-            $action_name = 'action_index';
-
-            // контроллер и действие по умолчанию
-
-
-            $routes = explode('/', filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_SANITIZE_STRING));
+                },
+        "AJAX" => function() {
+               $this->controller_name='Controller_Ajax';
+            },
+        );
+        $this->classname = '';
+        $this->action_name = 'action_index';
+        $this->controller_name = 'Controller_404';
+        $this->controller_path = "/vendor/controllers";
+    }
+    public function start()
+    {
+        $routes = explode('/', filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_SANITIZE_STRING));
+        $this->context = new DcsContext;
+        $this->context->setcontext($routes);
+        $this->action_name = 'action_'. strtolower($this->context->getattr('ACTION'));
+        $arSubSystems = $this->context->getsubsystems();
+        if (($this->context->getattr('ITEMID') == '')&&(count($arSubSystems))) {
             $ritem = '';
-            if ( !empty($routes[1]) )
+            foreach ($arSubSystems as $row)
             {
-                $ritem = trim($routes[1]);
-            }	
-            $arResult = array();
-            $step=0;
-            $arResult['PREFIX']='';
-            $arResult['ACTION']='VIEW';
-            $arResult['PAGE']=1;
-            $arResult['CURID']='';
-            $arResult['TITLE']=TZ_COMPANY_SHORTNAME;
-            $arResult['ITEMID']='';
-            $arResult['MODE']='ENTERPRISE';
-            $arResult['PARAM']='';
-            if (strtolower(trim($ritem))=='api')
-            {
-                //Это вызов API 
-                $controller_name = 'Controller_API';
-                $controller_file = strtolower($controller_name).'.php';
-                $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/controllers/".$controller_file;
-                $arResult['ACTION']= strtoupper(trim($routes[2]));
-                $arResult['MODE']='API';
-                $classname='';
-                if ( !empty($routes[2]) )
-                {
-                    $action_name = 'action_'. strtolower(trim($routes[2]));
-                    if ( !empty($routes[3]) )
-                    {
-                        $arResult['PARAM'] = trim($routes[3]);
-                    }	
-                }	
-                Route::controller_run($controller_path,$controller_name,$action_name,$classname, $arResult);
-                return;
-            }    
-            $arSubSystems = DataManager::getSubSystems();
-            if (!User::isAuthorized())
-            {
-                $arResult['MODE']='AUTH';
-                $username = 'Anonymous';
-                $item = '';
-                $classname = '';
-                $action_name = 'action_index';    
-                $controller_name = 'Controller_Auth';
-                $controller_file = strtolower($controller_name).'.php';
-                $controller_path = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/controllers/".$controller_file;
-            }
-            else 
-            {
-                $username = User::getUserName($_SESSION['user_id']);
-                if (strtolower(trim($ritem))=='download')
-                {
-                    $arResult['MODE']='DOWNLOAD';
-                    $ritem = trim($routes[2]);
-                    $step=1;
-                }    
-                elseif (strtolower(trim($ritem))=='print')
-                {
-                    //Это вызов печатной формы
-                    $arResult['MODE']='PRINT';
-                    $ritem = trim($routes[2]);
-                    $step=1;
-                }
-                else 
-                {
-                    if (User::isAdmin())
-                    {    
-                        if (strtolower(trim($ritem))=='config')
-                        {
-                            $arResult['MODE']='CONFIG';
-                            $arResult['PREFIX']='/config';
-                            $arResult['ACTION']='EDIT';
-                            $step=1;
-                            $ritem='';
-                            if ( !empty($routes[1+$step]) )
-                            {
-                                $ritem = trim($routes[1+$step]);
-                            }	
-                            $arSubSystems = Mditem::getAllMDitems();
-                        }    
-                    }
-                    else 
-                    { 
-                        $cur_interface = User::getUserInterface();
-
-                        if ($cur_interface)    
-                        {
-                            $arSubSystems = DataManager::getInterfaceContents($cur_interface);
-                        }    
-                    }
-                }
-                if (!count($arSubSystems)) 
-                {
-                    die("main menu is empty");
-                }
-                if ($ritem=='')
-                {
-                   foreach ($arSubSystems as $row)
-                   {
-                       $ritem = $row['id'];
-                       break;
-                   }    
-                }  
-                $arResult = Route::getController($routes,$arResult, $step, $controller_path, $controller_name,$action_name,$classname,$ritem);
-            }
-            $arResult['MENU']=array();
-            foreach($arSubSystems as $is) 
-            {
-                $arResult['MENU'][] = array('ID' => $is['id'],
-                                            'NAME' => $is['name'],
-                                            'SYNONYM' => trim($is['synonym'])
-                                                );
-            }
-            $arResult['TITLE']=TZ_COMPANY_SHORTNAME.' '.$username;
-            Route::controller_run($controller_path,$controller_name,$action_name,$classname, $arResult);
+                $ritem = $row['id'];
+                break;
+            }   
+            $this->context->setattr('ITEMID',$ritem);
         }
-
-	function ErrorPage404()
-	{
+        $handlername = $this->modes[$this->context->getattr('MODE')];
+        $handlername();
+        $controllername = "Dcs\\Vendor\\Controllers\\".$this->controller_name;
+        if ($this->classname=='')
+        {
+            $controller = new $controllername;
+        } 
+        else 
+        {
+            $controller = new $controllername($this->context->getattr('ITEMID'));
+            //die(var_dump($controllername));
+            //$controller = new Controller_MdentitySet($this->context->getattr('ITEMID'));
+        }
+        $action = $this->action_name;
+        if(method_exists($controller, $action))
+        {
+            $controller->$action($this->context->getcontext());
+        }
+    }    
+    function ErrorPage404()
+    {
         $host = 'http://'.$_SERVER['HTTP_HOST'].'/';
         header('HTTP/1.1 404 Not Found');
 		header("Error: 404 Not Found");
 		header("Status: 404 Not Found");
 		header('Location:'.$host.'404');
     }
-    
+    public static function getContentByID($itemid) 
+    {
+        $sql = "SELECT 0 as rank,'EntitySet' as classname, md.name, md.id, md.synonym, ct.name as typename FROM \"MDTable\" as md  inner join \"CTable\" as ct inner join \"MDTable\" as mditem on ct.mdid=mditem.id on md.mditem=ct.id and mditem.name='MDitems' WHERE md.id=:itemid
+                UNION SELECT 1,'Entity', et.name, et.id, et.name, md.name FROM \"ETable\" as et INNER JOIN \"MDTable\" as md ON et.mdid = md.id WHERE et.id=:itemid
+                UNION SELECT 2,'MdentitySet', ct.name, ct.id, ct.synonym, md.name FROM \"CTable\" as ct INNER JOIN \"MDTable\" as md ON ct.mdid=md.id AND md.name='MDitems' WHERE ct.id=:itemid
+                UNION SELECT 3,'Mdproperty', mp.name, mp.id, mp.synonym, md.name  FROM \"MDProperties\" as mp INNER JOIN \"MDTable\" as md ON mp.mdid=md.id WHERE mp.id=:itemid
+                UNION SELECT 5,'CollectionItem', ct.name, ct.id, ct.synonym, md.name FROM \"CTable\" as ct INNER JOIN \"MDTable\" as md ON ct.mdid=md.id WHERE ct.id=:itemid
+                UNION SELECT 6,'Cproperty', cp.name, cp.id, cp.synonym, md.name FROM \"CProperties\" as cp INNER JOIN \"MDTable\" as md ON cp.mdid=md.id WHERE cp.id=:itemid 
+                UNION SELECT 7,'Register', md.name, md.id, md.synonym, ct.name FROM \"MDTable\" as md  inner join \"CTable\" as ct inner join \"MDTable\" as mditem on ct.mdid=mditem.id on md.mditem=ct.id and mditem.name='Regs' WHERE md.id=:itemid
+                UNION SELECT 8,'RegProperty', mp.name, mp.id, mp.synonym, md.name  FROM \"RegProperties\" as mp INNER JOIN \"MDTable\" as md ON mp.mdid=md.id WHERE mp.id=:itemid";
+
+        $artt = array();
+        $artt[] = DataManager::createtemptable($sql, 'tt0', array('itemid' => $itemid));
+        $sql = "SELECT min(rank) as rank, id FROM tt0 GROUP BY id";
+        $artt[] = DataManager::createtemptable($sql, 'tt1');
+        $sql = "SELECT tt0.classname, tt0.name, tt1.id, tt0.synonym, tt0.typename FROM tt0 inner join tt1 on tt0.rank=tt1.rank and tt0.id=tt1.id";
+        $sth = DataManager::dm_query($sql);
+        DataManager::droptemptable($artt);
+        return $sth->fetch(PDO::FETCH_ASSOC);
+    }
 }

@@ -1,9 +1,13 @@
 <?php
-namespace tzVendor;
+namespace dcs\app\components\reps\plannedjobs;
 
 use PDO;
 use PDOStatement;
-use tzVendor\Entity;
+use DateTime;
+use dcs\vendor\core\Entity;
+use dcs\vendor\core\Model;
+use dcs\vendor\core\CollectionItem;
+use dcs\vendor\core\DataManager;
 
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/tz_const.php");
 

@@ -7,8 +7,8 @@ session_start();
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/tz_const.php");
 require '../vendor/autoload.php';
 
-use tzVendor\Entity;
-use tzVendor\Common_data;
+use dcs\vendor\core\Entity;
+use dcs\vendor\core\Common_data;
 
 
 // Начало работы скрипта
@@ -49,7 +49,7 @@ if (Common_data::check_uuid($id))
 {    
     try 
     {
-        $ent = new \tzVendor\Entity($id);
+        $ent = new Entity($id);
     } catch (Exception $ex) {
         $res[]=array('code'=>'error','destName'=>$ex->getMessage());
         $ent = FALSE;

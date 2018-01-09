@@ -1,5 +1,5 @@
 <?php
-namespace tzVendor;
+namespace Dcs\Vendor\Core;
 
 class Controller {
 	

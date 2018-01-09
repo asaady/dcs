@@ -1,19 +1,14 @@
 <?php
-namespace tzVendor;
+namespace Dcs\Vendor\Core;
 use PDO;
+//use dcs\vendor\core\CollectionSet;
+//use dcs\vendor\core\DataManager;
+//use dcs\vendor\core\Mdentity;
+//use dcs\vendor\core\Property;
 
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/tz_const.php");
+require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 
-class Cproperty extends Model {
-    protected $collectionset;
-    protected $type;
-    protected $length;
-    protected $prec;
-    protected $rank;
-    protected $ranktoset;
-    protected $valmdid;
-    protected $valmdname;
-    
+class Cproperty extends Property implements iProperty {
     public function __construct($id) 
     {
         if ($id=='')
@@ -50,36 +45,7 @@ class Cproperty extends Model {
             $this->rank = 999;    
             $this->ranktoset = 0;    
         }
-        $this->collectionset = new CollectionSet($mdid);
         $this->version=time();
-    }
-    function getcollectionset()
-    {
-        return $this->collectionset;
-    }
-    function gettype() 
-    {
-      return $this->type;
-    }
-    function getvalmdid() 
-    {
-      return $this->valmdid;
-    }
-    function getlength() 
-    {
-      return $this->length;
-    }
-    function getprec() 
-    {
-      return $this->prec;
-    }
-    function getranktoset() 
-    {
-      return $this->ranktoset;
-    }
-    function getrank() 
-    {
-      return $this->rank;
     }
     function get_data($mode='') 
     {
@@ -87,7 +53,7 @@ class Cproperty extends Model {
         $valmdtype = '';
         $valmdtypename = '';
         $valmdname = '';
-        if ($this->valmdid!='')
+        if ($this->valmdid != '')
         {
             $valmdentity = new Mdentity($this->valmdid);
             $valmdid = $valmdentity->getid();
@@ -95,7 +61,7 @@ class Cproperty extends Model {
             $valmdtypename = $valmdentity->getmdtypename();
             $valmdname = $valmdentity->getname();
         }
-        if ($this->id=='')
+        if ($this->id == '')
         {    
             $navlist = array(
                         $this->collectionset->getmditem()->getid()=>$this->collectionset->getmditem()->getsynonym(),
@@ -125,18 +91,18 @@ class Cproperty extends Model {
                     'valmdname'=>$valmdname,
                     'valmdtypename'=>$valmdtypename,
                    'PLIST'=>array(
-                       array('id'=>'id','name'=>'ID','rank'=>0,'type'=>'str','valmdtype'=>TZ_TYPE_EMPTY),
-                       array('id'=>'name', 'name'=>'NAME','rank'=>1,'type'=>'str','valmdtype'=>TZ_TYPE_EMPTY),
-                       array('id'=>'synonym','name'=>'SYNONYM','rank'=>3,'type'=>'str','valmdtype'=>TZ_TYPE_EMPTY),
-                       array('id'=>'type','name'=>'TYPE','rank'=>4,'type'=>'str','valmdtype'=>TZ_TYPE_EMPTY),
-                       array('id'=>'length','name'=>'LENGTH','rank'=>5,'type'=>'str','valmdtype'=>TZ_TYPE_EMPTY),
-                       array('id'=>'prec','name'=>'PREC','rank'=>6,'type'=>'str','valmdtype'=>TZ_TYPE_EMPTY),
-                       array('id'=>'rank','name'=>'RANK','rank'=>7,'type'=>'str','valmdtype'=>TZ_TYPE_EMPTY),
-                       array('id'=>'ranktoset','name'=>'RANKTOSTRING','rank'=>9,'type'=>'str','valmdtype'=>TZ_TYPE_EMPTY),
-                       array('id'=>'valmdtype','name'=>'VALMDTYPE','rank'=>11,'type'=>'str','valmdtype'=>TZ_TYPE_EMPTY),
-                       array('id'=>'valmdid','name'=>'VALMDID','rank'=>13,'type'=>'mdid','valmdtype'=>TZ_TYPE_EMPTY),
-                       array('id'=>'valmdname','name'=>'VALMDNAME','rank'=>14,'type'=>'str','valmdtype'=>TZ_TYPE_EMPTY),
-                       array('id'=>'valmdtypename','name'=>'VALMDTYPENAME','rank'=>14,'type'=>'str','valmdtype'=>TZ_TYPE_EMPTY)
+                       array('id'=>'id','name'=>'ID','rank'=>0,'type'=>'str','valmdtype'=>DCS_TYPE_EMPTY),
+                       array('id'=>'name', 'name'=>'NAME','rank'=>1,'type'=>'str','valmdtype'=>DCS_TYPE_EMPTY),
+                       array('id'=>'synonym','name'=>'SYNONYM','rank'=>3,'type'=>'str','valmdtype'=>DCS_TYPE_EMPTY),
+                       array('id'=>'type','name'=>'TYPE','rank'=>4,'type'=>'str','valmdtype'=>DCS_TYPE_EMPTY),
+                       array('id'=>'length','name'=>'LENGTH','rank'=>5,'type'=>'str','valmdtype'=>DCS_TYPE_EMPTY),
+                       array('id'=>'prec','name'=>'PREC','rank'=>6,'type'=>'str','valmdtype'=>DCS_TYPE_EMPTY),
+                       array('id'=>'rank','name'=>'RANK','rank'=>7,'type'=>'str','valmdtype'=>DCS_TYPE_EMPTY),
+                       array('id'=>'ranktoset','name'=>'RANKTOSTRING','rank'=>9,'type'=>'str','valmdtype'=>DCS_TYPE_EMPTY),
+                       array('id'=>'valmdtype','name'=>'VALMDTYPE','rank'=>11,'type'=>'str','valmdtype'=>DCS_TYPE_EMPTY),
+                       array('id'=>'valmdid','name'=>'VALMDID','rank'=>13,'type'=>'mdid','valmdtype'=>DCS_TYPE_EMPTY),
+                       array('id'=>'valmdname','name'=>'VALMDNAME','rank'=>14,'type'=>'str','valmdtype'=>DCS_TYPE_EMPTY),
+                       array('id'=>'valmdtypename','name'=>'VALMDTYPENAME','rank'=>14,'type'=>'str','valmdtype'=>DCS_TYPE_EMPTY)
                    ),
                     'navlist'=>$navlist
               );
@@ -292,7 +258,7 @@ class Cproperty extends Model {
 	return $objs;
     }
         
-    public static function getCProperty($propid) 
+    private static function getCProperty($propid) 
     {
         $objs = array();
         $sql = DataManager::get_select_cproperties(" WHERE mp.id = :propid");
@@ -305,11 +271,6 @@ class Cproperty extends Model {
 		WHERE mp.mcid=:mcid and mp.id=:propid";	
 	$res = DataManager::dm_query($sql,array('mcid'=>$mcid,'propid'=>$propid));
 	return ((bool)$res->fetch(PDO::FETCH_ASSOC));
-    }
-    public static function createMDProperty($data) {
-	$sql = "INSERT INTO \"CProperties\" (name, synonym, mdid, length, prec, rank, ranktoset, valmdid, valmcid) VALUES (:name, :synonym, :mdid, :length, :prec, :rank, :ranktoset, :valmdid, :valmcid) RETURNING \"id\"";
-	$res = DataManager::dm_query($sql,$data);
-        return $res->fetch(PDO::FETCH_ASSOC);
     }
 }
 

@@ -1,5 +1,5 @@
 <?php
-echo "<ul id=\"tzTab\" class=\"nav nav-tabs\">";
+echo "<ul id=\"dcsTab\" class=\"nav nav-tabs\">";
     $dop=" class=\"active\"";
     if (($arResult['ACTION']=='SET_EDIT')||($arResult['ACTION']=='SET_VIEW'))
     {
@@ -8,10 +8,10 @@ echo "<ul id=\"tzTab\" class=\"nav nav-tabs\">";
     echo "<li$dop><a href=\"#entityhead\">Заголовок</a></li>";
     if ($arResult['ACTION']!=='CREATE')
     {    
-        for($i=0, $props=$data['PLIST'], $size=count($props); $i<$size; $i++)
+        for($i=0, $props = $data['PLIST'], $size = count($props); $i<$size; $i++)
         {
             $t=$props[$i];
-            if ($t['valmdtypename']!=='Sets')
+            if ($t['valmdtypename'] !== 'Sets')
             {
                 continue;
             }  
@@ -55,20 +55,20 @@ echo "<div class=\"tab-content\">";
                 if($t['rank']%2)
                 {
                     echo "<div class=\"row\">";
-                    tzVendor\View::outfield($t,'col-md-6',$arResult['ACTION']);
+                    \dcs\vendor\core\View::outfield($t,'col-md-6',$arResult['ACTION']);
                         if (($i+1) < $size)
                         {
                             if(($props[$i+1]['rank']%2)==0)
                             {
                                 $i++;
                                 $t=$props[$i];
-                                tzVendor\View::outfield($t,'col-md-6',$arResult['ACTION']);
+                                \dcs\vendor\core\View::outfield($t,'col-md-6',$arResult['ACTION']);
                             }
                         }
                     echo "</div>";
                 } else {
                     echo "<div class=\"row\">";
-                        tzVendor\View::outfield($t,'col-md-offset-6 col-md-6',$arResult['ACTION']);
+                        \dcs\vendor\core\View::outfield($t,'col-md-offset-6 col-md-6',$arResult['ACTION']);
                     echo "</div>";        
                 }
             }

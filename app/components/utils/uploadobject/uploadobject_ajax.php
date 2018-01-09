@@ -4,12 +4,16 @@ if (!empty($_COOKIE['sid'])) {
     session_id($_COOKIE['sid']);
 }
 session_start();
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/tz_const.php");
+require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 require filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING).'/vendor/autoload.php';
 
-use tzVendor\UploadObject;
-use tzVendor\InputDataManager;
-use tzVendor\Entity;
+use dcs\app\components\utils\uploadobject\UploadObject;
+use dcs\vendor\core\InputDataManager;
+use dcs\vendor\core\Entity;
+use dcs\vendor\core\EntitySet;
+use dcs\vendor\core\Mdentity;
+use dcs\vendor\core\CollectionSet;
+use dcs\vendor\core\Mdproperty;
 
 function loadData()
 {
@@ -26,19 +30,19 @@ function loadData()
             { 
                 if ($type=='id')
                 {
-                    $objs = tzVendor\EntitySet::getEntitiesByName($data['mdid']['id'],$name);
+                    $objs = EntitySet::getEntitiesByName($data['mdid']['id'],$name);
                 }    
                 elseif ($type=='cid') 
                 {
-                    $objs = tzVendor\CollectionSet::getCollByName($id,$name);
+                    $objs = CollectionSet::getCollByName($id,$name);
                 }
                 elseif ($type=='mdid') 
                 {
-                    $objs = tzVendor\Mdentity::getMDbyName($name);
+                    $objs = Mdentity::getMDbyName($name);
                 }
                 elseif ($type=='propid') 
                 {
-                    $objs = tzVendor\Mdproperty::getPropertyByName($name,$data['mdid']['id']);
+                    $objs = Mdproperty::getPropertyByName($name,$data['mdid']['id']);
                 }
             }    
             return $objs; 
@@ -53,11 +57,11 @@ function loadData()
             { 
                 if ($type=='mdid')
                 {
-                    $objs = \tzVendor\Mdentity::getMDbyName($name);
+                    $objs = Mdentity::getMDbyName($name);
                 }    
                 elseif ($type=='cid') 
                 {
-                    $objs = tzVendor\CollectionSet::getMDCollectionByName($name);
+                    $objs = CollectionSet::getMDCollectionByName($name);
                 }
             }
             return $objs; 
@@ -72,11 +76,11 @@ function loadData()
             { 
                 if ($type=='mdid')
                 {
-                    $objs = \tzVendor\Mdentity::getMDbyName($name);
+                    $objs = Mdentity::getMDbyName($name);
                 }    
                 elseif ($type=='cid') 
                 {
-                    $objs = tzVendor\CollectionSet::getMDCollectionByName($name);
+                    $objs = CollectionSet::getMDCollectionByName($name);
                 }
             }
             return $objs; 

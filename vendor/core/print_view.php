@@ -2,8 +2,8 @@
 <html lang="ru">
 <head>
     <meta charset="utf-8" >
-    <meta name="author" content=<?=TZ_COMPANY_NAME?>>
-    <meta name="description" content=<?=TZ_COMPANY_NAME?>>
+    <meta name="author" content=<?=DCS_COMPANY_NAME?>>
+    <meta name="description" content=<?=DCS_COMPANY_NAME?>>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" >
     <?php 
         echo "<title>$arResult[TITLE]</title>";

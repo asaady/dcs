@@ -1,6 +1,5 @@
 <?php
-
-namespace tzVendor;
+namespace Dcs\Vendor\Core;
 use PDO;
 
 class User
@@ -110,13 +109,14 @@ class User
 
     public function logout()
     {
+        setcookie("sid", "");
+        
         if (!empty($_SESSION["user_id"])) {
             unset($_SESSION["user_id"]);
         }
     }
 
-    public function saveSession($remember = false, $http_only = true, $days = 7)
-    {
+    public function saveSession($remember = false, $http_only = true, $days = 7) {
         $_SESSION["user_id"] = $this->user_id;
 
         if ($remember) {

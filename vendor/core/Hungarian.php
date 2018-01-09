@@ -1,10 +1,10 @@
 <?php
-namespace tzVendor;
-use tzVendor\Common_data;
+namespace dcs\vendor\core;
+use dcs\vendor\core\Common_data;
 
 define("MAX_FLOAT_VALUE",9999999.9999);
 
-class tzHung 
+class Hungarian 
 {
 
 	private $numRows;
@@ -428,9 +428,8 @@ class tzHung
                     // It's possible that we couldn't find a zero to prime, so we have to induce some zeros so we can find one to prime
                     if ($primedLocation[0] == -1) 
                     {
-                        break;
-                        //$this->minUncoveredRowsCols(); // O(n^2)
-                        //$primedLocation = $this->primeUncoveredZero(); // O(n^2)
+                        $this->minUncoveredRowsCols(); // O(n^2)
+                        $primedLocation = $this->primeUncoveredZero(); // O(n^2)
                     }
                     // is there a starred 0 in the primed zeros row?
                     $primedRow = $primedLocation[0];

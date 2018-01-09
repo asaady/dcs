@@ -1,5 +1,5 @@
 <?php
-namespace tzVendor;
+namespace dcs\vendor\core;
 
 class AjaxRequest
 {

@@ -1,10 +1,20 @@
 <?php
-namespace tzVendor;
+namespace Dcs\Vendor\Core;
+
 use PDO;
 use DateTime;
-use tzVendor\Filter;
+use Exception;
 
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/tz_const.php");
+//use dcs\vendor\core\Filter;
+//use dcs\vendor\core\Mdentity;
+//use dcs\vendor\core\MdpropertySet;
+//use dcs\vendor\core\PropsTemplate;
+//use dcs\vendor\core\DataManager;
+//use dcs\vendor\core\CollectionSet;
+//use dcs\vendor\core\Model;
+//use dcs\vendor\core\Mditem;
+
+require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 
 class EntitySet extends Model {
     protected $mditem;     
@@ -492,7 +502,7 @@ class EntitySet extends Model {
         return $sql;
     }
 
-    public static function getEntitiesByFilter($filter, $mode='', $edit_mode='',$limit=TZ_COUNT_REC_BY_PAGE, $page=1, $order='name') 
+    public static function getEntitiesByFilter($filter, $mode='', $edit_mode='',$limit=DCS_COUNT_REC_BY_PAGE, $page=1, $order='name') 
     {
     	$objs = array();
 	$objs['LDATA'] = array();
@@ -680,7 +690,7 @@ class EntitySet extends Model {
 	$objs['TOP_REC']=$offset+1;
 	if ($objs['CNT_REC']<$objs['TOP_REC'])
 	  $objs['TOP_REC']=$objs['CNT_REC'];
-	$objs['BOT_REC']=$offset+TZ_COUNT_REC_BY_PAGE;
+	$objs['BOT_REC']=$offset+DCS_COUNT_REC_BY_PAGE;
 	if ($objs['CNT_REC']<$objs['BOT_REC'])
 	  $objs['BOT_REC'] = $objs['CNT_REC'];
 	
@@ -997,11 +1007,11 @@ class EntitySet extends Model {
         }    
         elseif ($type=='cid') 
         {
-            $objs = tzVendor\CollectionSet::getCollByName($mdid,$name);
+            $objs = CollectionSet::getCollByName($mdid,$name);
         }
         elseif ($type=='mdid') 
         {
-            $objs = tzVendor\Mdentity::getMDbyName($name);
+            $objs = Mdentity::getMDbyName($name);
         }
         return $objs;
     }        

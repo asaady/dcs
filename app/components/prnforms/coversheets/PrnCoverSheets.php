@@ -1,10 +1,12 @@
 <?php
-namespace tzVendor;
+namespace dcs\app\components\prnforms\coversheets;
 
 use PDO;
 use PDOStatement;
 use DateTime;
-use tzVendor\Entity;
+use dcs\vendor\core\Entity;
+use dcs\vendor\core\Model;
+use dcs\vendor\core\DataManager;
 
 class PrnCoverSheets extends Model 
 {

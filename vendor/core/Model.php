@@ -1,15 +1,24 @@
 <?php
-namespace tzVendor;
+namespace Dcs\Vendor\Core;
 use Exception;
 
-class Model
+interface iModel 
+{
+    public function get_data($mode='');
+    public function getid();
+    public function getname();
+    public function getsynonym();
+    public function getversion();
+}
+
+class Model implements iModel
 {
     protected $id;
     protected $name;
     protected $synonym;
     protected $version;
     
-    function __construct($id='')
+    function __construct()
     {
     }
     // метод выборки данных

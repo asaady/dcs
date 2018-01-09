@@ -1,7 +1,7 @@
 <?php
-use tzVendor\Controller;
-use tzVendor\View;
-use tzVendor\ItemActions;
+use dcs\vendor\core\Controller;
+use dcs\vendor\core\View;
+use dcs\vendor\core\ItemActions;
 
 class Controller_ItemActions extends Controller
 {

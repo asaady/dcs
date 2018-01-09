@@ -1,8 +1,8 @@
 <?php
-use tzVendor\Entity;
-use tzVendor\Mdproperty;
-use tzVendor\View;
-use tzVendor\Controller;
+use dcs\vendor\core\Entity;
+use dcs\vendor\core\Mdproperty;
+use dcs\vendor\core\View;
+use dcs\vendor\core\Controller;
 
 class Controller_Entity extends Controller
 {

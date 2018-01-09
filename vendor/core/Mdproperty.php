@@ -1,27 +1,17 @@
 <?php
-namespace tzVendor;
+namespace Dcs\Vendor\Core;
 use PDO;
 
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/tz_const.php");
+require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 
-class Mdproperty extends Model {
-    protected $mdentity;
+class Mdproperty extends PropertySet implements iPropertySet {
     protected $propstemplate;
-    protected $type;
     protected $typeid;
-    protected $length;
-    protected $prec;
     protected $propid;
     protected $name_propid;
-    protected $rank;
-    protected $ranktostring;
-    protected $ranktoset;
     protected $isedate;
     protected $isenumber;
     protected $isdepend;
-    protected $valmdid;
-    protected $name_valmdid;
-    protected $valmdtypename;
     
     public function __construct($id) 
     {
@@ -97,18 +87,18 @@ class Mdproperty extends Model {
         return array('id'=>$this->id,      
                     'version'=>$this->version,
                     'PLIST'=>array( 
-                        array('id'=>'id','name'=>'id','synonym'=>'ID','rank'=>0,'type'=>'str','valmdid'=>TZ_EMPTY_ENTITY,'valmdtypename'=>TZ_TYPE_EMPTY,'class'=>'hidden'),
-                        array('id'=>'name','name'=>'name','synonym'=>'NAME','rank'=>1,'type'=>'str','valmdid'=>TZ_EMPTY_ENTITY,'valmdtypename'=>TZ_TYPE_EMPTY,'class'=>'active'),
-                        array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM','rank'=>3,'type'=>'str','valmdid'=>TZ_EMPTY_ENTITY,'valmdtypename'=>TZ_TYPE_EMPTY,'class'=>'active'),
-                        array('id'=>'propid','name'=>'propid','synonym'=>'PROPID','rank'=>2,'type'=>'cid','valmdid'=>$this->propid,'valmdtypename'=>TZ_TYPE_EMPTY,'class'=>'active'),
-                        array('id'=>'length','name'=>'length','synonym'=>'LENGTH','rank'=>5,'type'=>'str','valmdid'=>TZ_EMPTY_ENTITY,'valmdtypename'=>TZ_TYPE_EMPTY,'class'=>'active'),
-                        array('id'=>'prec','name'=>'prec','synonym'=>'PREC','rank'=>6,'type'=>'str','valmdid'=>TZ_EMPTY_ENTITY,'valmdtypename'=>TZ_TYPE_EMPTY,'class'=>'active'),
-                        array('id'=>'rank','name'=>'rank','synonym'=>'RANK','rank'=>7,'type'=>'str','valmdid'=>TZ_EMPTY_ENTITY,'valmdtypename'=>TZ_TYPE_EMPTY,'class'=>'active'),
-                        array('id'=>'ranktoset','name'=>'ranktoset','synonym'=>'RANKTOSET','rank'=>8,'type'=>'str','valmdid'=>TZ_EMPTY_ENTITY,'valmdtypename'=>TZ_TYPE_EMPTY,'class'=>'active'),
-                        array('id'=>'ranktostring','name'=>'ranktostring','synonym'=>'RANKTOSTRING','rank'=>9,'type'=>'str','valmdid'=>TZ_EMPTY_ENTITY,'valmdtypename'=>TZ_TYPE_EMPTY,'class'=>'active'),
-                        array('id'=>'isedate','name'=>'isedate','synonym'=>'ISEDATE','rank'=>13,'type'=>'bool','valmdid'=>TZ_EMPTY_ENTITY,'valmdtypename'=>TZ_TYPE_EMPTY,'class'=>'active'),
-                        array('id'=>'isenumber','name'=>'isenumber','synonym'=>'ISENUMBER','rank'=>14,'type'=>'bool','valmdid'=>TZ_EMPTY_ENTITY,'valmdtypename'=>TZ_TYPE_EMPTY,'class'=>'active'),
-                        array('id'=>'isdepend','name'=>'isdepend','synonym'=>'IS DEPENDENT','rank'=>15,'type'=>'bool','valmdid'=>TZ_EMPTY_ENTITY,'valmdtypename'=>TZ_TYPE_EMPTY,'class'=>'active')
+                        array('id'=>'id','name'=>'id','synonym'=>'ID','rank'=>0,'type'=>'str','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'hidden'),
+                        array('id'=>'name','name'=>'name','synonym'=>'NAME','rank'=>1,'type'=>'str','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active'),
+                        array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM','rank'=>3,'type'=>'str','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active'),
+                        array('id'=>'propid','name'=>'propid','synonym'=>'PROPID','rank'=>2,'type'=>'cid','valmdid'=>$this->propid,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active'),
+                        array('id'=>'length','name'=>'length','synonym'=>'LENGTH','rank'=>5,'type'=>'str','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active'),
+                        array('id'=>'prec','name'=>'prec','synonym'=>'PREC','rank'=>6,'type'=>'str','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active'),
+                        array('id'=>'rank','name'=>'rank','synonym'=>'RANK','rank'=>7,'type'=>'str','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active'),
+                        array('id'=>'ranktoset','name'=>'ranktoset','synonym'=>'RANKTOSET','rank'=>8,'type'=>'str','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active'),
+                        array('id'=>'ranktostring','name'=>'ranktostring','synonym'=>'RANKTOSTRING','rank'=>9,'type'=>'str','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active'),
+                        array('id'=>'isedate','name'=>'isedate','synonym'=>'ISEDATE','rank'=>13,'type'=>'bool','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active'),
+                        array('id'=>'isenumber','name'=>'isenumber','synonym'=>'ISENUMBER','rank'=>14,'type'=>'bool','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active'),
+                        array('id'=>'isdepend','name'=>'isdepend','synonym'=>'IS DEPENDENT','rank'=>15,'type'=>'bool','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active')
                     ),
                     'navlist'=>array(
                     $this->mdentity->getmditem()=>$this->mdentity->getmditemsynonym(),
@@ -121,18 +111,18 @@ class Mdproperty extends Model {
     function getplist() 
     {
         return array(
-            'id'=>array('id'=>'id','name'=>'id','synonym'=>'ID','rank'=>0,'type'=>'str','valmdtype'=>TZ_TYPE_EMPTY,'class'=>'hidden'),
-            'name'=>array('id'=>'name','name'=>'name','synonym'=>'NAME','rank'=>1,'type'=>'str','valmdtype'=>TZ_TYPE_EMPTY,'class'=>'active'),
-            'propid'=>array('id'=>'propid','name'=>'propid','synonym'=>'PROPID','rank'=>2,'type'=>'cid','valmdtype'=>TZ_TYPE_EMPTY,'class'=>'active'),
-            'synonym'=>array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM','rank'=>3,'type'=>'str','valmdtype'=>TZ_TYPE_EMPTY,'class'=>'active'),
-            'length'=>array('id'=>'length','name'=>'length','synonym'=>'LENGTH','rank'=>5,'type'=>'int','valmdtype'=>TZ_TYPE_EMPTY,'class'=>'active'),
-            'prec'=>array('id'=>'prec','name'=>'prec','synonym'=>'PREC','rank'=>6,'type'=>'int','valmdtype'=>TZ_TYPE_EMPTY,'class'=>'active'),
-            'rank'=>array('id'=>'rank','name'=>'rank','synonym'=>'RANK','rank'=>7,'type'=>'int','valmdtype'=>TZ_TYPE_EMPTY,'class'=>'active'),
-            'ranktoset'=>array('id'=>'ranktoset','name'=>'ranktoset','synonym'=>'RANKTOSET','rank'=>8,'type'=>'int','valmdtype'=>TZ_TYPE_EMPTY,'class'=>'active'),
-            'ranktostring'=>array('id'=>'ranktostring','name'=>'ranktostring','synonym'=>'RANKTOSTRING','rank'=>9,'type'=>'int','valmdtype'=>TZ_TYPE_EMPTY,'class'=>'active'),
-            'isedate'=>array('id'=>'isedate','name'=>'isedate','synonym'=>'ISEDATE','rank'=>13,'type'=>'bool','valmdtype'=>TZ_TYPE_EMPTY,'class'=>'active'),
-            'isenumber'=>array('id'=>'isenumber','name'=>'isenumber','synonym'=>'ISENUMBER','rank'=>14,'type'=>'bool','valmdtype'=>TZ_TYPE_EMPTY,'class'=>'active'),
-            'isdepend'=>array('id'=>'isdepend','name'=>'isdepend','synonym'=>'IS DEPENDENT','rank'=>15,'type'=>'bool','valmdtype'=>TZ_TYPE_EMPTY,'class'=>'active')
+            'id'=>array('id'=>'id','name'=>'id','synonym'=>'ID','rank'=>0,'type'=>'str','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'hidden'),
+            'name'=>array('id'=>'name','name'=>'name','synonym'=>'NAME','rank'=>1,'type'=>'str','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active'),
+            'propid'=>array('id'=>'propid','name'=>'propid','synonym'=>'PROPID','rank'=>2,'type'=>'cid','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active'),
+            'synonym'=>array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM','rank'=>3,'type'=>'str','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active'),
+            'length'=>array('id'=>'length','name'=>'length','synonym'=>'LENGTH','rank'=>5,'type'=>'int','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active'),
+            'prec'=>array('id'=>'prec','name'=>'prec','synonym'=>'PREC','rank'=>6,'type'=>'int','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active'),
+            'rank'=>array('id'=>'rank','name'=>'rank','synonym'=>'RANK','rank'=>7,'type'=>'int','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active'),
+            'ranktoset'=>array('id'=>'ranktoset','name'=>'ranktoset','synonym'=>'RANKTOSET','rank'=>8,'type'=>'int','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active'),
+            'ranktostring'=>array('id'=>'ranktostring','name'=>'ranktostring','synonym'=>'RANKTOSTRING','rank'=>9,'type'=>'int','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active'),
+            'isedate'=>array('id'=>'isedate','name'=>'isedate','synonym'=>'ISEDATE','rank'=>13,'type'=>'bool','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active'),
+            'isenumber'=>array('id'=>'isenumber','name'=>'isenumber','synonym'=>'ISENUMBER','rank'=>14,'type'=>'bool','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active'),
+            'isdepend'=>array('id'=>'isdepend','name'=>'isdepend','synonym'=>'IS DEPENDENT','rank'=>15,'type'=>'bool','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active')
                    );
     }
             
@@ -414,72 +404,14 @@ class Mdproperty extends Model {
 	$res = DataManager::dm_query($sql,$params);
         return $res->fetch(PDO::FETCH_ASSOC);
     }
-    
-    public static function getMustBePropsUse($type)
+    public function CreateMustBeProperty()
     {
-      	$sql = "SELECT ct_pt.name, ct_pt.synonym, pv_mditem.value as mditem, pv_pt.value as propid, pv_rank.value as rank, 
-                    COALESCE(pv_edate.value, false) as isedate, COALESCE(pv_enum.value, false) as isenumber, ct_tp.name as type, COALESCE(pv_len.value,0) as length, COALESCE(pv_prc.value,0) as prec FROM \"CTable\" as pu 
-	inner join \"MDTable\" as md
-	ON pu.mdid = md.id
-	and md.name='PropsUse'
-	inner join \"CPropValue_cid\" as pv_mditem
-		inner join \"CProperties\" as cp_mditem
-		ON pv_mditem.pid=cp_mditem.id
-		AND cp_mditem.name='mditem'
-	ON pu.id=pv_mditem.id
-        and pv_mditem.value = :mdtype
-	inner join \"CPropValue_cid\" as pv_pt
-		inner join \"CProperties\" as cp_pt
-		ON pv_pt.pid=cp_pt.id
-		AND cp_pt.name='propid'
-                inner join \"CTable\" as ct_pt
-                on pv_pt.value=ct_pt.id
-		inner join \"CPropValue_cid\" as pv_tp
-                    inner join \"CProperties\" as cp_tp
-                    ON pv_tp.pid=cp_tp.id
-                    AND cp_tp.name='type'
-                    inner join \"CTable\" as ct_tp
-                    on pv_tp.value = ct_tp.id
-		on pv_pt.value = pv_tp.id
-		left join \"CPropValue_int\" as pv_len
-                    inner join \"CProperties\" as cp_len
-                    ON pv_len.pid=cp_len.id
-                    AND cp_len.name='length'
-		on pv_pt.value = pv_len.id
-		left join \"CPropValue_int\" as pv_prc
-                    inner join \"CProperties\" as cp_prc
-                    ON pv_prc.pid=cp_prc.id
-                    AND cp_prc.name='prec'
-		on pv_pt.value = pv_prc.id
-        ON pu.id=pv_pt.id
-	inner join \"CPropValue_int\" as pv_rank
-		inner join \"CProperties\" as cp_rank
-		ON pv_rank.pid=cp_rank.id
-		AND cp_rank.name='rank'
-        ON pu.id=pv_rank.id
-	left join \"CPropValue_bool\" as pv_edate
-		inner join \"CProperties\" as cp_edate
-		ON pv_edate.pid=cp_edate.id
-		AND cp_edate.name='isedate'
-        ON pu.id=pv_edate.id
-	left join \"CPropValue_bool\" as pv_enum
-		inner join \"CProperties\" as cp_enum
-		ON pv_enum.pid=cp_enum.id
-		AND cp_enum.name='isenumber'
-        ON pu.id=pv_enum.id";
-	$res = DataManager::dm_query($sql,array('mdtype'=>$type));
-        return $res->fetchAll(PDO::FETCH_ASSOC);
-        
-    }
-            
-    public static function CreateMustBeProperty($type, $mdid)
-    {
-        $arMB = self::getMustBePropsUse($type);
+        $arMB = $this->getMustBePropsUse();
         if (count($arMB)) 
         {
             foreach($arMB as $mdprop) 
             {
-                if(self::IsExistTheProp($mdid,$mdprop['propid']))
+                if($this->isExistTheProp($mdprop['propid']))
                 {        
                     continue;
                 }

@@ -1,7 +1,7 @@
 <?php
-use tzVendor\Controller;
-use tzVendor\Mdproperty;
-use tzVendor\View;
+use dcs\vendor\core\Controller;
+use dcs\vendor\core\Mdproperty;
+use dcs\vendor\core\View;
 
 
 class Controller_Mdproperty extends Controller

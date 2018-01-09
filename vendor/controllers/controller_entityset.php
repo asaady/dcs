@@ -1,8 +1,8 @@
 <?php
-use tzVendor\Controller;
-use tzVendor\View;
-use tzVendor\EntitySet;
-use tzVendor\Entity;
+use dcs\vendor\core\Controller;
+use dcs\vendor\core\View;
+use dcs\vendor\core\EntitySet;
+use dcs\vendor\core\Entity;
 
 class Controller_EntitySet extends Controller
 {
@@ -31,7 +31,7 @@ class Controller_EntitySet extends Controller
 	{
             if (($this->model->getmditem()->getname()=='Cols')||($this->model->getmditem()->getname()=='Comps'))    
             {
-                $entity = new tzVendor\CollectionItem($this->model->getid());
+                $entity = new dcs\vendor\core\CollectionItem($this->model->getid());
 		$data = $entity->get_data($arResult['MODE']);
                 $arResult['ITEMID'] = $this->model->getid();
             }   

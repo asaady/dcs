@@ -2,25 +2,29 @@ function actionlist(data)
 {
     var $navtab = $('#actionlist');
     $navtab.find('li').remove();
+    var a_html = '';
     for(var $item in data)
     {    
+      var v_html = "<i class=\"material-icons\">"+data[$item]['icon']+"</i>";
       if (data[$item]['icon']=='')  
       {
-        $navtab.append("<li><a class=\"btn\" id=\""+data[$item]['name']+"\" >"+data[$item]['synonym']+"</a></li>");  
-      }else{
-        $navtab.append("<li><a class=\"btn\" id=\""+data[$item]['name']+"\" ><i class=\"material-icons\">"+data[$item]['icon']+"</i></a></li>"); 
-      }    
+        v_html = data[$item]['synonym'];
+      }
+      a_html = a_html+"<li><a class=\"btn\" id=\""+data[$item]['name']+"\">"+v_html+"</a></li>";
+    }
+    if (a_html !== '') {
+        $navtab.append(a_html); 
     }
 }
 function onchoice(data)
 {
-    var curinp = $("input.form-value");
+    var curinp = $("div#ivalue input.form-control");
     curinp.val(data['name']); 
     curinp.attr('it',data['id']); 
     console.log(data);
 }
 $('a').on('show.bs.tab', function (e) {
-    $('div.ivalue-block').hide();
+    $('div#ivalue').hide();
     var $action = $("input[name='action']").val(); 
     var $activeid = $(e.target).attr('href').substring(1);
     if ($activeid!='entityhead')
@@ -33,10 +37,9 @@ $('a').on('show.bs.tab', function (e) {
         {
             $("input[name='action']").val('SET_VIEW'); 
         }    
-        var x = $('div.ivalue-block');
+        var x = $('div#ivalue');
         
-        $(x).find('form').remove();
-        $(x).find('.form-value').remove();
+        $(x).empty();
         $(x).hide();
         $("input[name='curid']").val($activeid); 
         $("input[name='command']").val('load'); 
@@ -119,18 +122,15 @@ function onloadlist(data)
     var $mt = $("#modallist");
     var $mh = $("#modalhead");
     var len=0;
-    $mh.find("tr").remove();
-    $mh.find("th").remove();
-    $mt.find("tr").remove();
-    $mt.find("td").remove();
+    $mh.empty();
+    $mt.empty();
     
-    $mh.append("<tr>");
+    $mh.append("<tr></tr>");
     for(var cid in data['PSET'])
     {
         cls = data['PSET'][cid]['class'];
         $mh.find('tr').append("<th class=\""+cls+"\" id=\""+cid+"\">"+data['PSET'][cid]['synonym']+"</th>");    
     }
-    $mh.append("</tr>");
     if (Object.keys(data).length) 
     {
         if ('LDATA' in data)
@@ -161,10 +161,10 @@ function onloadlist(data)
         }    
     }
     $(".modal-title").text('Выбор из списка');
-    $('body').one('click', '#tzModalOK', function () {
-        $('#tzModal').modal('hide');
+    $('body').one('click', '#dcsModalOK', function () {
+        $('#dcsModal').modal('hide');
     });
-    $('#tzModal').modal('show');
+    $('#dcsModal').modal('show');
 }
 function onLoadValID(data)
 {
@@ -267,7 +267,7 @@ function onLoadGetData(data) {
     $("#"+curid+"~.types_list").slideToggle('fast');
 };
 $('body').keyup(function(eventObject) { 
-    if (eventObject.which==27) { 
+    if (eventObject.which == 27) { 
         $(".types_list").slideUp('fast');
     }
 });
@@ -323,7 +323,7 @@ $('input.form-control').keyup(function(eventObject) {
             }
             else
             {
-                if ($(this).val().length==0) 
+                if ($(this).val().length === 0) 
                 {
                     var curname = curinp.attr('name');
                     if((curname.indexOf('name_') + 1)>0)
@@ -339,7 +339,7 @@ $('input.form-control').keyup(function(eventObject) {
 }); 
 $('.row :input').dblclick(function () {
     var curinp = $(".row :input[st='info']");
-    if (curinp!=this)
+    if (curinp !== this)
     {
         $(curinp).attr('st','active');
         $(this).attr('st','info');
@@ -361,13 +361,13 @@ $('input.form-control[it=bool]').dblclick(function(e) {
 });
 $('body').on('dblclick','#entitylist tr',function () 
 {
-    var $action = $("input[name='action']").val();
-    var $mode = $("input[name='mode']").val();
-    if ($action==='VIEW')
+    var action = $("input[name='action']").val();
+    var mode = $("input[name='mode']").val();
+    if (action === 'VIEW')
     {    
         location.href=getprefix()+this.id+"/view";
     }
-    if ($mode==='CONFIG')
+    if (mode === 'CONFIG')
     {
         location.href=getprefix()+this.id+"/edit";
     }
@@ -385,7 +385,7 @@ $('body').on('dblclick','#modallist tr',function (e)
       data: $data,
         success: onchoice
     });  
-    $('#tzModal').modal('hide');
+    $('#dcsModal').modal('hide');
 });
     // Валидация файлов
 function validateFiles(options) {
@@ -445,8 +445,8 @@ function setvals(data)
 function submitModalForm(e)
 {
     e.preventDefault();
-    var x = $('div.ivalue-block');
-    var $ci = $(x).find('input');
+    var $x = $('div#ivalue');
+    var $ci = $x.find('input');
     var action = $("input[name='action']").val();
     var $pan = $('.tab-pane.fade.in.active');
     var $curcol = $pan.find('#tablehead th.info');
@@ -456,10 +456,10 @@ function submitModalForm(e)
     var cnm = $ci.val();
     var cid = $ci.attr('it');
     var typ = $ci.attr('type');
-    $(x).hide();
+    $x.hide();
     if (typ=='file')
     {
-        var $photos = $('#tzFileInput'),
+        var $photos = $('#dcsFileInput'),
             formdata = new FormData,
             validationErrors = validateFiles({
                 $files: $photos,
@@ -501,9 +501,9 @@ function submitModalForm(e)
 
 $('body').on('dblclick','#entitylist td',function () 
 {
-    var $action = $("input[name='action']").val();
-    var $mode = $("input[name='mode']").val();
-    if ($mode==='CONFIG')
+    var action = $("input[name='action']").val();
+    var mode = $("input[name='mode']").val();
+    if (mode === 'CONFIG')
     {
         return;
     }
@@ -516,79 +516,88 @@ $('body').on('dblclick','#entitylist td',function ()
     var vt = $(this).attr('vt');
     var dname = $(this).html();
     var arr_type = ['id','cid','mdid','propid'];
-    if (($action!=='SET_EDIT')&&($action!=='SET_VIEW'))
+    if ((action !== 'SET_EDIT')&&(action !== 'SET_VIEW'))
     {
         return;
     }
-    if ($action==='SET_VIEW')
+    if (action === 'SET_VIEW')
     {
-        if (vt!='file')
+        if (vt !== 'file')
         {
             return;
         }    
-        if (dname=='')
+        if (dname === '')
         {
             return;
         }    
         
     }    
     var tdwidth = $(this).width();
-    var x = $('div.ivalue-block');
-    $(x).find('form').remove();
-    $(x).find('.form-value').remove();
+    var $x = $('div#ivalue');
+    $x.empty();
     var bwidth = 0;
     var ov = dname;
     var itype='text';
+    var max_tdwidth = 200;
     if (vt=='date')
     {
         itype='datetime';
+        max_tdwidth = 100;
     }
     else if (vt=='int')
     {
         itype='number';
+        max_tdwidth = 100;
     }
     else if (vt=='float')
     {
         itype='number\" step=\"any';
+        max_tdwidth = 120;
     }
-
+    s_html = '';
     if (arr_type.indexOf(vt)>=0)
     {
         ov = it;
-        $(x).append("<form name=\"ivalue\"><input type=\""+itype+"\" class=\"form-value\" vt=\""+vt+"\" it=\""+it+"\" ov=\""+ov+"\" value=\""+dname+"\"><button id=\"list\" class=\"form-value\"><i class=\"material-icons\">list</i></a></button><button id=\"done\" class=\"form-value\"><i class=\"material-icons\">done</i></button></form>");
+        s_html = "<input type=\""+itype+"\" class=\"form-control\" vt=\""+vt+"\" it=\""+it+"\" ov=\""+ov+"\" value=\""+dname+"\"><span class=\"input-group-btn\" style=\"width:0;\"><button id=\"list\" class=\"form-value\"><i class=\"material-icons\">list</i></a></button><button id=\"done\" class=\"form-value\"><i class=\"material-icons\">done</i></button></span>";
         bwidth +=90; 
     }    
     else if (vt=='file')
     {
-        if ($action==='SET_VIEW')
+        if (action === 'SET_VIEW')
         {
-            $(x).append("<form name=\"ivalue\"><a href=\""+it+"\" download=\""+dname+"\">"+dname+"</a></form>");
+            s_html = "<a href=\""+it+"\" download=\""+dname+"\">"+dname+"</a>";
         }   
         else
         {    
-            if (dname=='')
+            if (dname === '')
             {    
-                $(x).append("<form name=\"ivalue\"><input id=\"tzFileInput\" type=\"file\" accept=\"image/*;capture=camera\" class=\"form-value\" vt=\""+vt+"\" it=\"\" ov=\""+ov+"\" value=\""+dname+"\"><button id=\"done\" class=\"form-value\"><i class=\"material-icons\">done</i></button></form>");
+                s_html = "<input id=\"dcsFileInput\" type=\"file\" accept=\"image/*;capture=camera\" class=\"form-value\" vt=\""+vt+"\" it=\"\" ov=\""+ov+"\" value=\""+dname+"\"><span class=\"input-group-btn\" style=\"width:0;\"><button id=\"done\" class=\"form-value\"><i class=\"material-icons\">done</i></button></span>";
             }    
             else
             {
-                $(x).append("<form name=\"ivalue\"><a href=\""+it+"\" download=\""+dname+"\">"+dname+"</a><button id=\"delete_ivalue\" class=\"form-value\"><i class=\"material-icons\">delete</i></button></form>");
+                s_html = "<a href=\""+it+"\" download=\""+dname+"\">"+dname+"</a><span class=\"input-group-btn\" style=\"width:0;\"><button id=\"delete_ivalue\" class=\"form-value\"><i class=\"material-icons\">delete</i></button></span>";
             }
         }    
     }    
     else
     {
-        $(x).append("<form name=\"ivalue\"><input type=\""+itype+"\" class=\"form-value\" vt=\""+vt+"\" it=\"\" ov=\""+ov+"\" value=\""+dname+"\"><button id=\"done\" class=\"form-value\"><i class=\"material-icons\">done</i></button></form>");       
+        s_html = "<input type=\""+itype+"\" class=\"form-control\" vt=\""+vt+"\" it=\"\" ov=\""+ov+"\" value=\""+dname+"\"><span class=\"input-group-btn\" style=\"width:0;\"><button id=\"done\" class=\"form-value\"><i class=\"material-icons\">done</i></button></span>";       
         bwidth +=50; 
     }
-    if (tdwidth<120)
+    $x.append(s_html);
+    if (tdwidth < max_tdwidth)
     {
-        tdwidth = 120;
+        tdwidth = max_tdwidth;
     }
-    $(x).width(tdwidth);
-    $(x).find('input').width(tdwidth-bwidth);
-    $(x).show();
-    $(x).offset({top:etd.offset().top+etd.height(),left:etd.offset().left-40});
+    $x.width(tdwidth);
+    $x.find('input').width(tdwidth-bwidth);
+    $x.show();
+    var cur_offset = etd.offset().left-40;
+    var max_width = $("body").width();
+    if ((cur_offset+tdwidth) > max_width) {
+        cur_offset = max_width - tdwidth-5;
+    }
+    $x.offset({top:etd.offset().top+etd.height(),left:cur_offset});
     $("body").one('click','button.form-value#done',submitModalForm);
 });   
 
@@ -616,7 +625,7 @@ $('body').on('click','button.form-value#delete_ivalue', function(e)
 {
     e.preventDefault();
     var action = $("input[name='action']").val();
-    var x = $('div.ivalue-block');
+    var x = $('div#ivalue');
     var $ci = $(x).find('input');
     var $curcol = $('th.info');
     var propid = $curcol.attr('id');
@@ -691,7 +700,7 @@ $('body').on('click','#entitylist td',function ()
     var curcol = this.id;
     $('th.info').attr("class","active");
     $('th#'+curcol).attr("class","info");
-    $('div.ivalue-block').hide();
+    $('div#ivalue').hide();
 });
 $('body').on('click','#modallist tr',function () 
 {
@@ -700,7 +709,7 @@ $('body').on('click','#modallist tr',function ()
 });
 
 
-$("#tzTab a").click(function(e){
+$("#dcsTab a").click(function(e){
   e.preventDefault();
   $(this).tab('show');
 });
@@ -716,7 +725,7 @@ $('body').on('click','a#create', function ()
     {
         if (action=='SET_EDIT')
         {
-            var curid = $("ul#tzTab").find("li.active a").attr('href').substring(1);
+            var curid = $("ul#dcsTab").find("li.active a").attr('href').substring(1);
             $("input[name='curid']").val(curid);    
             $data = $('.row :input').serializeArray();
             $.ajax(
@@ -737,7 +746,7 @@ $('body').on('click','a#create', function ()
         {
             var curid = $("input[name='curid']").val();    
             dop='';
-            if (curid!='')
+            if (curid !== '')
             {
                 dop +='/'+curid; 
             }   
@@ -747,10 +756,10 @@ $('body').on('click','a#create', function ()
 });
 $('body').on('click', '#edit', function () {
     var action = $("input[name='action']").val();    
-    if ((action=='EDIT')||(action=='SET_EDIT'))
+    if ((action === 'EDIT')||(action === 'SET_EDIT'))
     {    
         var id = $('tr.info').attr('id');
-        if (id!='') 
+        if (id !== '') 
         {
           location.href=getprefix()+id+"/edit";
         }  
@@ -760,11 +769,11 @@ $('body').on('click', '#edit', function () {
         var itemid = $("input[name='itemid']").val();    
         var curid = $("input[name='curid']").val();    
         url = getprefix()+itemid;
-        if (curid!='')
+        if (curid !== '')
         {
             url += "/"+curid;
         }    
-        location.href=url+"/edit";
+        location.href = url+"/edit";
     }    
 });
 $('body').on('click', '#view', function () {
@@ -780,7 +789,7 @@ function erase_success (result)
     var $itemid = $("input[name='itemid']").val(); 
     var $action = $("input[name='action']").val(); 
     var curid = $("input[name='curid']").val();    
-    $('#tzModal').modal('hide');
+    $('#dcsModal').modal('hide');
     dop='';
     if (curid!='')
     {
@@ -810,10 +819,8 @@ function before_delete_success(result)
     var $mt = $("#modallist");
     var $mh = $("#modalhead");
     var len=0;
-    $mh.find("tr").remove();
-    $mh.find("th").remove();
-    $mt.find("tr").remove();
-    $mt.find("td").remove();
+    $mh.empty();
+    $mt.empty();
     
     $mh.append("<tr><th>Объект</th><th>Наименование</th><th>Действие</th></tr>");
     
@@ -831,19 +838,19 @@ function before_delete_success(result)
     if (len)
     {    
         $(".modal-title").text('Подтвердите действие');
-        $('body').one('click', '#tzModalOK', erase);
+        $('body').one('click', '#dcsModalOK', erase);
     }    
     else 
     {
         $(".modal-title").text('Действие не выполнено.');
-        $('body').one('click', '#tzModalOK', function () {
-            $('#tzModal').modal('hide');
+        $('body').one('click', '#dcsModalOK', function () {
+            $('#dcsModal').modal('hide');
         });
     }    
-    $('#tzModal').modal('show');
+    $('#dcsModal').modal('show');
     console.log(result);
 }   
-$('#tzModal').on('shown.bs.modal', function () {
+$('#dcsModal').on('shown.bs.modal', function () {
     $(this).find('.modal-dialog').css({width:'70%',
                                height:'auto', 
                               'max-height':'100%'});
@@ -877,7 +884,7 @@ $('body').on('click', '#filter', function (e)
     var $fval  = $el_cur.html();
     var $fid   = $el_cur.attr("it");
     $("input[name='filter_id']").val(curcol); 
-    if ($fid!='')
+    if ($fid !== '')
     {
         $el_fval.val($fid); 
         curval = $fid;
@@ -887,7 +894,7 @@ $('body').on('click', '#filter', function (e)
         $el_fval.val($fval); 
         curval = $fval;
     }
-    if (curval!="") 
+    if (curval !== "") 
     {
         if ($filter_val!=curval) 
         {
@@ -900,7 +907,7 @@ $('body').on('click', '#filter', function (e)
     }
     else 
     {
-        if ($filter_val!="") 
+        if ($filter_val !== "") 
         {
             $el_fval.val(''); 
         }    
@@ -960,41 +967,47 @@ function show_history(result)
     var $mt = $("#modallist");
     var $mh = $("#modalhead");
     var len=0;
-    $mh.find("tr").remove();
-    $mh.find("th").remove();
-    $mt.find("tr").remove();
-    $mt.find("td").remove();
+    $mh.empty();
+    $mt.empty();
     
-    $mh.append("<tr>");
+    
+    var s_html = '';
     for(var j in result['PSET']) 
     {
         if(result['PSET'].hasOwnProperty(j))
         {
-            $mh.find('tr').append("<th class=\""+result['PSET'][j].class+"\">"+result['PSET'][j].synonym+"</th>");
+            s_html = s_html +"<th class=\""+result['PSET'][j].class+"\">"+result['PSET'][j].synonym+"</th>";
         }    
     }
-    $mh.append("</tr>");
+    if (s_html !== '') {
+        $mh.append("<tr>"+s_html+"</tr>");
+    }
+    
     if (Object.keys(result['LDATA']).length) 
     {
+        s_html = '';
         for(var i in result['LDATA']) 
         {    
-            $mt.append('<tr>');
+            $mt.append('<tr></tr>');
+            s_html = s_html + '<tr>';
             for(var j in result['PSET']) 
             {
                 if(result['PSET'].hasOwnProperty(j))
                 {
-                    $mt.append("<td class=\""+result['PSET'][j].class+"\">"+result['LDATA'][i][result['PSET'][j].name].name+"</td>");
-                    len++;
+                    s_html = s_html + "<td class=\""+result['PSET'][j].class+"\">"+result['LDATA'][i][result['PSET'][j].name].name+"</td>";
                 }    
             }
-            $mt.append('</tr>');
+            s_html = s_html + '</tr>';
         }    
+        if (s_html !== '') {
+            $mt.append(s_html);
+        }
     }
     $(".modal-title").text('История изменения реквизита: '+result['synonym']);
-    $('body').one('click', '#tzModalOK', function () {
-        $('#tzModal').modal('hide');
+    $('body').one('click', '#dcsModalOK', function () {
+        $('#dcsModal').modal('hide');
     });
-    $('#tzModal').modal('show');
+    $('#dcsModal').modal('show');
 }
 
 $('body').on('click', '#history', function (e)
@@ -1022,6 +1035,21 @@ $('body').on('click', '#history', function (e)
             });    
         }
     }    
+});
+
+$('body').on('click', '#submit', function (e)
+{
+    $data = $('.row :input').serializeArray();
+    $.ajax({
+      url: '/common/post_ajax.php',
+      type: 'post',
+      dataType: 'json',
+      data: $data,
+        success: function(result) {
+            location.href=result['redirect'];
+            console.log(result);
+        }
+    });    
 });
 
 $('body').on('click', '#print', function (e) 
@@ -1062,7 +1090,7 @@ function save()
 };
 function save_success (result)
 {
-    $('#tzModal').modal('hide');
+    $('#dcsModal').modal('hide');
     
     location.href=getprefix()+result['id']+'/edit';
     console.log(result);
@@ -1072,10 +1100,8 @@ function before_save_success(result)
     var $mt = $("#modallist");
     var $mh = $("#modalhead");
     var len=0;
-    $mh.find("tr").remove();
-    $mh.find("th").remove();
-    $mt.find("tr").remove();
-    $mt.find("td").remove();
+    $mh.empty();
+    $mt.empty();
     
     $mh.append("<tr><th>Реквизит</th><th>Значение было</th><th>Новое значение</th></tr>");
     if (Object.keys(result).length) 
@@ -1092,16 +1118,16 @@ function before_save_success(result)
     if (len)
     {    
         $(".modal-title").text('Saving the modified data');
-        $('body').one('click', '#tzModalOK', save);
+        $('body').one('click', '#dcsModalOK', save);
     }    
     else 
     {
         $(".modal-title").text('Saving data is not required');
-        $('body').one('click', '#tzModalOK', function () {
-            $('#tzModal').modal('hide');
+        $('body').one('click', '#dcsModalOK', function () {
+            $('#dcsModal').modal('hide');
         });
     }    
-    $('#tzModal').modal('show');
+    $('#dcsModal').modal('show');
 }   
 $('body').on('click','#save',function(e) {
     var action = $("input[name='action']").val();  
@@ -1118,23 +1144,23 @@ $('body').on('click','#save',function(e) {
 $(document).ready(function() 
 { 
     var curid = $("input[name='curid']").val(); 
+    var itemid = $("input[name='itemid']").val(); 
     var action = $("input[name='action']").val();
     $("input[name='command']").val('load'); 
     $data = $('.row :input').serializeArray();
     $.ajax({
-      url: '/common/post_ajax.php',
-      type: 'post',
+      url: '/ajax/'+itemid+'/'+curid+'/'+action,
+      type: 'get',
       dataType: 'json',
       data: $data,
       success: onLoadValID
       }
     );
     $("body").one('OnResize',function(){
-        var x = $('div.ivalue-block');
+        var x = $('div#ivalue');
         if (x!=undefined) 
         {    
-            $(x).find('form').remove();
-            $(x).find('.form-value').remove();
+            $(x).empty();
             $(x).hide();
         }
     });

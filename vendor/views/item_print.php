@@ -26,14 +26,14 @@ echo "<div class=\"tab-content\">";
             if($t['rank']%2)
             {
                 echo "<div class=\"row\">";
-                tzVendor\View::outfield($t,'col-md-6',$arResult['ACTION']);
+                \dcs\vendor\core\View::outfield($t,'col-md-6',$arResult['ACTION']);
                     if (($i+1) < $size)
                     {
                         if(($props[$i+1]['rank']%2)==0)
                         {
                             $i++;
                             $t=$props[$i];
-                            tzVendor\View::outfield($t,'col-md-6',$arResult['ACTION']);
+                            \dcs\vendor\core\View::outfield($t,'col-md-6',$arResult['ACTION']);
                         }
                     }
                 echo "</div>";
@@ -41,7 +41,7 @@ echo "<div class=\"tab-content\">";
             else 
             {
                 echo "<div class=\"row\">";
-                    tzVendor\View::outfield($t,'col-md-offset-6 col-md-6',$arResult['ACTION']);
+                    \dcs\vendor\core\View::outfield($t,'col-md-offset-6 col-md-6',$arResult['ACTION']);
                 echo "</div>";        
             }
         }

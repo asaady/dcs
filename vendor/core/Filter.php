@@ -1,6 +1,6 @@
 <?php
-namespace tzVendor;
-use tzVendor\Mdproperty;
+namespace Dcs\Vendor\Core;
+//use dcs\vendor\core\Mdproperty;
 
 class Filter
 {

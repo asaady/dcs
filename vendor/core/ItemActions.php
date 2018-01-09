@@ -1,6 +1,6 @@
 <?php
-namespace tzVendor;
-use tzVendor\DataManager;
+namespace Dcs\Vendor\Core;
+//use dcs\vendor\core\DataManager;
 use PDO;
 
 class ItemActions {

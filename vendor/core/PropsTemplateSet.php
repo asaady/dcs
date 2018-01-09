@@ -1,7 +1,7 @@
 <?php
-namespace tzVendor;
+namespace Dcs\Vendor\Core;
 
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/tz_const.php");
+require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 
 class PropTemplateSet {
     protected $id;     

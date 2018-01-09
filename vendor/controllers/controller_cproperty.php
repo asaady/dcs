@@ -1,7 +1,7 @@
 <?php
-use tzVendor\Controller;
-use tzVendor\Cproperty;
-use tzVendor\View;
+use dcs\vendor\core\Controller;
+use dcs\vendor\core\Cproperty;
+use dcs\vendor\core\View;
 
 
 class Controller_Cproperty extends Controller

@@ -41,7 +41,7 @@
     echo "</div>";
     //echo "<p class=\"img_text\">Количество запуска $data[start]</p>";
     
-    tzVendor\View::outContentToPrint($arResult, $data);
+    dcs\vendor\core\View::outContentToPrint($arResult, $data);
     echo "<div class=\"print_footer\">";
     echo "<div class=\"print_col50\">";
     echo "<p class=\"normal_text\">Нач.цеха (ст.мастер)  _________</p>";

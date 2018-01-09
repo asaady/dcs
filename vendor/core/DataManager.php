@@ -1,11 +1,10 @@
 <?php
-
-namespace tzVendor;
+namespace Dcs\Vendor\Core;
 
 use PDO;
 use PDOStatement;
 
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING) . "/app/tz_const.php");
+require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING) . "/app/dcs_const.php");
 
 class DataManager {
 
@@ -16,9 +15,12 @@ class DataManager {
             return $hDB;
         }
         try {
-            $hDB = new PDO("pgsql:host=localhost;port=5432;dbname=" . TZ_DBNAME . ";", TZ_DBUSER, TZ_DBPASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]); //,[PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+//            $hDB = new PDO("pgsql:host=".DCS_DBHOST.";port=5432;dbname=" . DCS_DBNAME . ";", DCS_DBUSER, DCS_DBPASS, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION)); //,[PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+            $connection_string = "pgsql:host=".DCS_DBHOST.";port=5432;dbname=" . DCS_DBNAME . ";";
+            //die(var_dump($connection_string));
+            $hDB = new PDO($connection_string, DCS_DBUSER, DCS_DBPASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
         } catch (PDOException $e) {
-            die($e->getMessage());
+            die("*********** Error = ".$e->getMessage());
         }
         return $hDB;
     }
@@ -160,24 +162,6 @@ class DataManager {
         return $sth->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public static function getContentByID($itemid) {
-        $sql = "SELECT 0 as rank,'EntitySet' as classname, md.name, md.id, md.synonym, ct.name as typename FROM \"MDTable\" as md  inner join \"CTable\" as ct inner join \"MDTable\" as mditem on ct.mdid=mditem.id on md.mditem=ct.id and mditem.name='MDitems' WHERE md.id=:itemid
-                UNION SELECT 1,'Entity', et.name, et.id, et.name, md.name FROM \"ETable\" as et INNER JOIN \"MDTable\" as md ON et.mdid = md.id WHERE et.id=:itemid
-                UNION SELECT 2,'MdentitySet', ct.name, ct.id, ct.synonym, md.name FROM \"CTable\" as ct INNER JOIN \"MDTable\" as md ON ct.mdid=md.id AND md.name='MDitems' WHERE ct.id=:itemid
-                UNION SELECT 3,'Mdproperty', mp.name, mp.id, mp.synonym, md.name  FROM \"MDProperties\" as mp INNER JOIN \"MDTable\" as md ON mp.mdid=md.id WHERE mp.id=:itemid
-                UNION SELECT 5,'CollectionItem', ct.name, ct.id, ct.synonym, md.name FROM \"CTable\" as ct INNER JOIN \"MDTable\" as md ON ct.mdid=md.id WHERE ct.id=:itemid
-                UNION SELECT 6,'Cproperty', cp.name, cp.id, cp.synonym, md.name FROM \"CProperties\" as cp INNER JOIN \"MDTable\" as md ON cp.mdid=md.id WHERE cp.id=:itemid";
-
-        $artt = array();
-        $artt[] = self::createtemptable($sql, 'tt0', array('itemid' => $itemid));
-        $sql = "SELECT min(rank) as rank, id FROM tt0 GROUP BY id";
-        $artt[] = self::createtemptable($sql, 'tt1');
-        $sql = "SELECT tt0.classname, tt0.name, tt1.id, tt0.synonym, tt0.typename FROM tt0 inner join tt1 on tt0.rank=tt1.rank and tt0.id=tt1.id";
-        $sth = self::dm_query($sql);
-        $res = array('classname' => '', 'id' => '', 'name' => '');
-        self::droptemptable($artt);
-        return $sth->fetch(PDO::FETCH_ASSOC);
-    }
 
     public static function IsExistDataProp($propid) {
         $sql = "SELECT 	t.id,t.userupdate,t.dateupdate, mp.synonym, mp.rank FROM \"IDTable\" AS t 
@@ -296,18 +280,27 @@ class DataManager {
 		ORDER BY rank";
         return $sql;
     }
-
-    public static function get_select_cproperties($strwhere) {
-        $sql = "SELECT mp.id, mp.name, mp.synonym, mp.type, mp.length, mp.prec, mp.mdid, mp.rank, mp.ranktoset, mp.valmdid, valmd.name AS valmdname,valmd.synonym AS valmdsynonym, mi.name as valmdtypename, valmd.mditem as valmditem FROM \"CProperties\" AS mp
-                    LEFT JOIN \"MDTable\" as valmd
-                        INNER JOIN \"CTable\" as mi
-                        ON valmd.mditem=mi.id
-                    ON mp.valmdid = valmd.id
+    public static function get_select_rproperties($strwhere) {
+        $sql = "SELECT mp.id, mp.propid, pr.name as name_prpid, mp.name, mp.synonym, pst.value as typeid, pt.name as type, mp.length, mp.prec, mp.mdid, mp.rank, mp.ranktoset, mp.isres, pmd.value as valmdid, valmd.name AS valmdname, valmd.synonym AS valmdsynonym, valmd.mditem as valmditem, mi.name as valmdtypename FROM \"RegProperties\" AS mp
+		  LEFT JOIN \"CTable\" as pr
+		    LEFT JOIN \"CPropValue_mdid\" as pmd
+        		INNER JOIN \"MDTable\" as valmd
+                            INNER JOIN \"CTable\" as mi
+                            ON valmd.mditem = mi.id
+                        ON pmd.value = valmd.id
+		    ON pr.id = pmd.id
+		    LEFT JOIN \"CPropValue_cid\" as pst
+                        INNER JOIN \"CProperties\" as cprs
+                        ON pst.pid = cprs.id
+                        AND cprs.name='type'
+                        INNER JOIN \"CTable\" as pt
+                        ON pst.value = pt.id
+		    ON pr.id = pst.id
+		  ON mp.propid = pr.id
 		$strwhere
 		ORDER BY rank";
         return $sql;
     }
-
     public static function get_select_cvalue($tt_id, $tt_pt) {
         $sql = "SELECT t.id as tid, t.userupdate, ts.dateupdate, ts.entityid, ts.propid, mp.type, mp.synonym AS pkey, mp.ranktostring, mp.isedate, mp.rank as rank
 		FROM \"IDTable\" AS t 
@@ -377,7 +370,7 @@ class DataManager {
         $sql = "SELECT parentmdid, childmdid, type FROM \"DepTemplate\" WHERE parentmdid=:id AND childmdid=:itemid";
         $sth = self::dm_query($sql, array('id' => $id, 'itemid' => $itemid));
         $row = $sth->fetch(PDO::FETCH_ASSOC);
-        $res = TZ_EMPTY;
+        $res = DCS_EMPTY;
         if (count($row)) {
             $res = $row['type'];
         }
@@ -395,7 +388,7 @@ class DataManager {
 
     public static function CreateDepTemplates($id, $itemid, $type) {
         $res = self::isExistDepTemplate($id, $itemid);
-        if ($res == TZ_EMPTY) {
+        if ($res == DCS_EMPTY) {
             self::AddDepTemplate($id, $itemid, $type);
         } else {
             if (!($res == $type)) {
@@ -645,7 +638,7 @@ class DataManager {
                 continue;
             if ($f['type'] == 'uuid') {
                 if ($data[$name] == '') {
-                    $data[$name] = TZ_EMPTY_ENTITY;
+                    $data[$name] = DCS_EMPTY_ENTITY;
                 }
             } elseif ($f['type'] == 'boolean') {
                 if ($data[$name] == 't') {
@@ -695,7 +688,7 @@ class DataManager {
                         continue;
                     if ($f['type'] == 'uuid') {
                         if ($data[$name] == '') {
-                            $data[$name] = TZ_EMPTY_ENTITY;
+                            $data[$name] = DCS_EMPTY_ENTITY;
                         }
                     } elseif ($f['type'] == 'boolean') {
                         if ($data[$name] == 't') {
@@ -713,7 +706,8 @@ class DataManager {
                 $arval = substr($arval, 1);
                 $sql = "INSERT INTO \"$arow[dbtable]\" ($fname) VALUES ($arval) RETURNING \"id\"";
                 $res = self::dm_query($sql);
-                $ares = array('status' => 'OK', 'id' => $res->fetch(PDO::FETCH_ASSOC)['id']);
+                $obj = $res->fetch(PDO::FETCH_ASSOC);
+                $ares = array('status' => 'OK', 'id' => $obj['id']);
             } else {
                 $ares = array('status' => 'ERROR', 'msg' => $err);
             }
@@ -774,21 +768,21 @@ class DataManager {
 
     public static function getDefaultValue($plist) {
         $objs = array();
-        $objs[TZ_EMPTY_ENTITY] = array();
+        $objs[DCS_EMPTY_ENTITY] = array();
         $settings = self::getSettings();
         foreach ($plist as $prop) {
             if ($prop['isedate']) {
-                $objs[TZ_EMPTY_ENTITY][$prop['id']] = array('name' => date("Y-m-d"), 'id' => '');
+                $objs[DCS_EMPTY_ENTITY][$prop['id']] = array('name' => date("Y-m-d"), 'id' => '');
             } else {
                 if ((strtolower($prop['name_propid']) == 'user') || (strtolower($prop['name_propid']) == 'head')) {
                     $user = CollectionSet::getCDetails($_SESSION['user_id']);
-                    $objs[TZ_EMPTY_ENTITY][$prop['id']] = array('name' => $user['synonym'], 'id' => $_SESSION['user_id']);
+                    $objs[DCS_EMPTY_ENTITY][$prop['id']] = array('name' => $user['synonym'], 'id' => $_SESSION['user_id']);
                 }
 // отказ от присваивания номера при создании формы в пользу присваивания номера при записи нового                
 //                elseif (strtolower ($prop['name_propid'])=='number')
 //                {
 //                    $number = self::getNumber($prop['id'])+1;
-//                    $objs[TZ_EMPTY_ENTITY][$prop['id']]= array('name'=>$number,'id'=>'');
+//                    $objs[DCS_EMPTY_ENTITY][$prop['id']]= array('name'=>$number,'id'=>'');
 //                }    
                 else {
                     $key = array_search($prop['propid'], array_column($settings, 'propid'));
@@ -805,7 +799,7 @@ class DataManager {
                             $valname = $settings[$key]['value'];
                             $valid = '';
                         }
-                        $objs[TZ_EMPTY_ENTITY][$prop['id']] = array('name' => $valname, 'id' => $valid);
+                        $objs[DCS_EMPTY_ENTITY][$prop['id']] = array('name' => $valname, 'id' => $valid);
                     }
                 }
             }
@@ -1157,6 +1151,7 @@ class DataManager {
                     on it.id=pv.id";
         $params = array();
         $params['itemid'] = $itemid;
+        
         $res = DataManager::dm_query($sql,$params);
         return $res->fetchAll(PDO::FETCH_ASSOC);
     }        

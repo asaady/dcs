@@ -1,10 +1,10 @@
     <div class="container">
 
-      <?php if (tzVendor\User::isAuthorized()): ?>
+      <?php if (dcs\vendor\core\User::isAuthorized()): ?>
     
       <h1>Your are already registered!</h1>
 
-      <form class="ajax" method="post" action="vendor/core/AuthorizationAjaxRequest.php">
+      <form class="ajax" method="post" action="/common/post_ajax.php">
           <input type="hidden" name="act" value="logout">
           <div class="form-actions">
               <button class="btn btn-large btn-primary" type="submit">Logout</button>
@@ -13,7 +13,7 @@
 
       <?php else: ?>
 
-      <form class="form-signin ajax" method="post" action="vendor/core/AuthorizationAjaxRequest.php">
+      <form class="form-signin ajax" method="post" action="/common/post_ajax.php">
         <div class="main-error alert alert-error hide"></div>
 
         <h2 class="form-signin-heading">Please sign up</h2>

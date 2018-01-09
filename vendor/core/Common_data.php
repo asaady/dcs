@@ -1,6 +1,6 @@
 <?php
-namespace tzVendor;
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/tz_const.php");
+namespace Dcs\Vendor\Core;
+require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 
 class Common_data {
     protected $arPROP_TYPE;
@@ -42,17 +42,17 @@ class Common_data {
     }
     public static function _log($div,$string)
     {
-        $log_file_name = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING).$div."/tz_log.txt";
+        $log_file_name = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING).$div."/dcs_log.txt";
         $now = date("Y-m-d H:i:s");
         $cnt = file_put_contents($log_file_name, "FROM: ". self::getRealIpAddr()." : ".$now." : ".$string."\r\n", FILE_APPEND);
     }
     public static function import_log($string)
     {
-        self::_log(TZ_UPLOAD_IMPORT_LOG, $string);
+        self::_log(DCS_UPLOAD_IMPORT_LOG, $string);
     }
     public static function upload_log($string)
     {
-        self::_log(TZ_UPLOAD_LOG, $string);
+        self::_log(DCS_UPLOAD_LOG, $string);
     }
     // Валидация файлов
     public static function validateFiles($options) {

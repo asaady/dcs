@@ -64,6 +64,7 @@
                 var $_this = $(this);
                 var result = script.ajaxform.validate($_this);
                 if (result === true) {
+                    alert(" selector forms = "+$_this.attr('method')+" action = "+$_this.attr('action'));
                     script.ajaxform.go($_this);
                 }
 
@@ -116,9 +117,9 @@
             var ajaxSettings = {
                 type: method,
                 url: action,
-                data: $form.serialize()
+                data: $('.dcs_object :input').serialize()
             };
-
+                
             var $formInputs = $form.find('input,textarea,select');
             $formInputs.attr('readonly', 'readonly');
 
@@ -147,7 +148,8 @@
                 }
                 script.ajaxform.validateByAjax($form, data);
             };
-
+            console.log(ajaxSettings);
+            alert("ku");
             $.ajax(ajaxSettings);
         },
 

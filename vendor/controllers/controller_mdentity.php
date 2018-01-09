@@ -1,11 +1,11 @@
 <?php
-use tzVendor\Mdproperty;
-use tzVendor\Cproperty;
-use tzVendor\Controller;
-use tzVendor\Mdentity;
-use tzVendor\View;
-use tzVendor\EntitySet;
-use tzVendor\Entity;
+use dcs\vendor\core\Mdproperty;
+use dcs\vendor\core\Cproperty;
+use dcs\vendor\core\Controller;
+use dcs\vendor\core\Mdentity;
+use dcs\vendor\core\View;
+use dcs\vendor\core\EntitySet;
+use dcs\vendor\core\Entity;
 
 class Controller_Mdentity extends Controller
 {
@@ -34,7 +34,7 @@ class Controller_Mdentity extends Controller
 	{
             if ($this->model->getmdtypename()=='Cols')
             {
-                $entity = new tzVendor\CollectionItem($this->model->getid());
+                $entity = new dcs\vendor\core\CollectionItem($this->model->getid());
                 $data = $entity->get_data($arResult['MODE']);
                 $arResult['ITEMID'] = $this->model->getid();
                 $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/views/item_view.php";
@@ -54,6 +54,11 @@ class Controller_Mdentity extends Controller
             if (($this->model->getmdtypename()=='Cols')||($this->model->getmdtypename()=='Comps'))
             {
                 $model = new Cproperty($arResult['ITEMID']);
+                $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/views/cproperty_view.php";
+            }   
+            elseif ($this->model->getmdtypename()=='Regs')
+            {
+                $model = new Rproperty($arResult['ITEMID']);
                 $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/views/cproperty_view.php";
             }   
             else

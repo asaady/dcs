@@ -1,6 +1,6 @@
 <?php
-use tzVendor\Controller;
-use tzVendor\Download;
+use dcs\vendor\core\Controller;
+use dcs\vendor\core\Download;
 
 
 class Controller_Download extends Controller

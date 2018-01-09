@@ -1,7 +1,7 @@
 <?php
-use tzVendor\Controller;
-use tzVendor\View;
-use tzVendor\UploadSet;
+use dcs\vendor\core\Controller;
+use dcs\vendor\core\View;
+use dcs\app\components\utils\uploadset\UploadSet;
 
 class Controller_UploadSet extends Controller
 {

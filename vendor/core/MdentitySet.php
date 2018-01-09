@@ -1,8 +1,8 @@
 <?php
-namespace tzVendor;
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/tz_const.php");
+namespace Dcs\Vendor\Core;
+require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 use PDO;
-use tzVendor\Md;
+//use dcs\vendor\core\Mditem;
 
 class MdentitySet extends Mditem {
     function get_data($mode='') 

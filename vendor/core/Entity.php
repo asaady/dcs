@@ -1,8 +1,13 @@
 <?php
-namespace tzVendor;
+namespace Dcs\Vendor\Core;
+
 use PDO;
 use DateTime;
 use Exception;
+//use dcs\vendor\core\Model;
+//use dcs\vendor\core\Mdentity;
+//use dcs\vendor\core\MdpropertySet;
+//use dcs\vendor\core\DataManager;
 
 class Entity extends Model {
     protected $mdentity;
@@ -79,7 +84,7 @@ class Entity extends Model {
 	    }
             else 
             {
-     	      $data[$v]['id']=TZ_EMPTY_ENTITY;
+     	      $data[$v]['id']=DCS_EMPTY_ENTITY;
 	      $data[$v]['name']='';
 	    }  
 	}
@@ -173,12 +178,12 @@ class Entity extends Model {
                 . "where childid = :itemid";
         $res = DataManager::dm_query($sql,array('itemid'=>$itemid));
         if(!$res) {
-            return TZ_EMPTY_ENTITY;
+            return DCS_EMPTY_ENTITY;
         }
         $row = $res->fetch(PDO::FETCH_ASSOC);
         if(!count($res)) 
         {
-            return TZ_EMPTY_ENTITY;
+            return DCS_EMPTY_ENTITY;
         }
         return $row['parentid'];
     }
@@ -193,7 +198,7 @@ class Entity extends Model {
         $row = $res->fetch(PDO::FETCH_ASSOC);
         if(!count($row)) 
         {
-            return TZ_EMPTY_ENTITY;
+            return DCS_EMPTY_ENTITY;
         }
         return $row['entityid'];
     }
@@ -214,12 +219,12 @@ class Entity extends Model {
                         $this->data[$v]['id'] = $data[$v]['id'];
                     } else {
                         $this->data[$v]['name'] = '';
-                        $this->data[$v]['id'] = TZ_EMPTY_ENTITY;
+                        $this->data[$v]['id'] = DCS_EMPTY_ENTITY;
                     }
                 }
 	    } else {
                 $this->data[$v]['name'] = '';
-                $this->data[$v]['id'] = TZ_EMPTY_ENTITY;
+                $this->data[$v]['id'] = DCS_EMPTY_ENTITY;
 	    }  
 	}
         $this->edate = $this->getpropdate();
@@ -378,11 +383,11 @@ class Entity extends Model {
                 }        
                 //проверим найденный реквизит на свойство isdepend - зависимый
                 $dep_prop = $this->getproperty($dep_pid);
-                $dep_mdentity = new Mdentity($dep_prop['valmdid']);
                 if ($dep_prop['isdepend']) {
+                    $dep_mdentity = new Mdentity($dep_prop['valmdid']);
                     //получим текущее значение зависимого реквизита
                     $curval = $this->data[$dep_pid]['id'];
-                    if (($curval != TZ_EMPTY_ENTITY)&&($curval != '')) {
+                    if (($curval != DCS_EMPTY_ENTITY)&&($curval != '')) {
                         $dep_ent = new Entity($curval);
                         $cur_val_dep_ent = '';
                         //текущее значение ведущего реквизита у найденного значения зависимого реквизита
@@ -405,7 +410,7 @@ class Entity extends Model {
                         }
                         if ($cur_val_dep_ent != $this->data[$pid]['id']) {
                             //значение не совпало - сбрасываем значение зависимого реквизита
-                            $res[$dep_pid] = array('value'=>TZ_EMPTY_ENTITY,'type'=>$dep_prop['type'], 'name'=>'');
+                            $res[$dep_pid] = array('value'=>DCS_EMPTY_ENTITY,'type'=>$dep_prop['type'], 'name'=>'');
                         }
                     }    
                     
@@ -415,12 +420,16 @@ class Entity extends Model {
                     $filter['curid'] = array('id'=>$this->id,'name'=>'');
                     if ($this->getmdentity()->getmdtypename() == 'Items') {
                         //это строка тч - в фильтр передадим объект владелец ТЧ
-                        $filter['docid'] = array('id'=>$data[$pid]['value'],'name'=>'');
+                        $ar_obj = DataManager::get_obj_by_item($this->id);
+                        if (count($ar_obj)>0) {
+                            $filter['docid'] = array('id'=>$ar_obj[0]['id'],'name'=>'');
+                        }
                     }
                     $filter['filter_id']= array('id'=>'','name'=>'');
                     $filter['filter_val']= array('id'=>'','name'=>'');
                     $filter['filter_min']= array('id'=>'','name'=>'');
                     $filter['filter_max']= array('id'=>'','name'=>'');
+//                    die(var_dump($data)." filter ". var_dump($filter));
                     $ar_dep_data = EntitySet::getEntitiesByFilter($filter,'ENTERPISE','VIEW');
                     if (count($ar_dep_data['LDATA']) > 0) {
                         foreach ($ar_dep_data['LDATA'] as $dep_entid => $obj) {
@@ -437,7 +446,7 @@ class Entity extends Model {
                         }
                     }
                     if (count($res) == 0) {
-                        $res[$dep_pid] = array('value'=>TZ_EMPTY_ENTITY,'type'=>$dep_prop['type'], 'name'=>'');                    
+                        $res[$dep_pid] = array('value'=>DCS_EMPTY_ENTITY,'type'=>$dep_prop['type'], 'name'=>'');                    
                     }
                 }
             }
@@ -478,8 +487,8 @@ class Entity extends Model {
             $type = $this->plist[$propid]['type'];
             if ($type == 'id') {
                 $n_name = '';
-                $n_id = TZ_EMPTY_ENTITY;
-                if (($propval['nvalid'] != TZ_EMPTY_ENTITY)&&($propval['nvalid'] != '')) {
+                $n_id = DCS_EMPTY_ENTITY;
+                if (($propval['nvalid'] != DCS_EMPTY_ENTITY)&&($propval['nvalid'] != '')) {
                     $p_ent = new Entity($propval['nvalid']);
                     $n_name = $p_ent->getname();
                     $n_id = $propval['nvalid'];
@@ -545,7 +554,7 @@ class Entity extends Model {
                 $t_val = $propval['nvalid'];
                 if ($t_val == '')
                 {
-                    $t_val = TZ_EMPTY_ENTITY;
+                    $t_val = DCS_EMPTY_ENTITY;
                 }    
             }    
 	    $sql = "INSERT INTO \"PropValue_$type\" (id, value) VALUES ( :id, :value)";
@@ -648,7 +657,7 @@ class Entity extends Model {
                 {
                     continue;
                 }    
-                if (($pvalid==TZ_EMPTY_ENTITY)&&($nvalid==''))
+                if (($pvalid==DCS_EMPTY_ENTITY)&&($nvalid==''))
                 {
                     continue;
                 }
@@ -722,7 +731,7 @@ class Entity extends Model {
             }
             if ($prop['type']=='id')
             {
-                if (($valid!=TZ_EMPTY_ENTITY)&&($valid!=''))  
+                if (($valid!=DCS_EMPTY_ENTITY)&&($valid!=''))  
                 {
                     $curmd=self::getEntityDetails($valid);
                     if (($curmd['mdtypename']=='Sets') || ($curmd['mdtypename']=='Items'))
@@ -748,7 +757,7 @@ class Entity extends Model {
             }
             elseif (($prop['type']=='cid')||($prop['type']=='mdid'))
             {
-                if (($valid!=TZ_EMPTY_ENTITY)&&($valid!=''))  
+                if (($valid!=DCS_EMPTY_ENTITY)&&($valid!=''))  
                 {
                     $valname = $valid;
                 }
@@ -893,8 +902,8 @@ class Entity extends Model {
                 {
                     if ($row['valmdid']==$ent->getmdentity()->getid())
                     {
-                        $objs['SDATA'][TZ_EMPTY_ENTITY][$row['id']]['id']=$curid;
-                        $objs['SDATA'][TZ_EMPTY_ENTITY][$row['id']]['name']=$ent->getname();
+                        $objs['SDATA'][DCS_EMPTY_ENTITY][$row['id']]['id']=$curid;
+                        $objs['SDATA'][DCS_EMPTY_ENTITY][$row['id']]['name']=$ent->getname();
                     }    
                 }    
             }    
@@ -988,7 +997,7 @@ class Entity extends Model {
                             }
                             else
                             {
-                                if (($row[$rowid]!='')&&($row[$rowid]!=TZ_EMPTY_ENTITY))
+                                if (($row[$rowid]!='')&&($row[$rowid]!=DCS_EMPTY_ENTITY))
                                 {
                                     if (!in_array($row[$rowid],$arr_e))
                                     {
@@ -1266,7 +1275,7 @@ class Entity extends Model {
     public static function CopyEntity($id,$user)
     {
         $arEntity = self::getEntityDetails($id);
-        $arnewid = self::saveNewEntity($arEntity['name'],$arEntity['mdid'], TZ_EMPTY_DATE);
+        $arnewid = self::saveNewEntity($arEntity['name'],$arEntity['mdid'], DCS_EMPTY_DATE);
         $arData = self::getEntityData($id);
         foreach($arData as $prop)
         {

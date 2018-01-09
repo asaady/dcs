@@ -1,199 +1,67 @@
 <?php
-namespace tzVendor;
-use PDO;
-use tzVendor\Mdentity;
+namespace Dcs\Vendor\Core;
 
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/tz_const.php");
+//use dcs\vendor\core\PropertySet;
+//use dcs\vendor\core\iPropertySet as iPropertySet;
 
-class MdpropertySet extends Model 
+require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
+
+class MdpropertySet extends PropertySet implements iPropertySet 
 {
-    protected $mdentity;     
-    
+    use Properties;
     public function __construct($mdid='') 
     {
 	if ($mdid=='') 
         {
             throw new Exception("class.MDPropertySet constructor: mdid is empty");
 	}
-        $this->id = $mdid; 
-        $this->mdentity = new Mdentity($mdid);
-        $this->name = $this->mdentity->getname()."propertyset"; 
-        $this->synonym = $this->mdentity->getsynonym()." (Список реквизитов)"; 
-        $this->version = time();
+            //конструктор базового класса
+         parent::__construct($mdid);
+         $this->tablename = "MDProperties";
     }
-    
-    function gettype() 
+    public function txtsql_getproperties($strwhere) 
     {
-        return $this->mdentity->gettype();
+        $sql = "SELECT mp.id, mp.propid, pr.name as name_propid, mp.name, mp.synonym, pst.value as typeid, pt.name as type, mp.length, mp.prec, mp.mdid, mp.rank, mp.ranktostring, mp.ranktoset, mp.isedate, mp.isenumber, mp.isdepend, pmd.value as valmdid, valmd.name AS valmdname, valmd.synonym AS valmdsynonym, valmd.mditem as valmditem, mi.name as valmdtypename FROM \"MDProperties\" AS mp
+		  LEFT JOIN \"CTable\" as pr
+		    LEFT JOIN \"CPropValue_mdid\" as pmd
+        		INNER JOIN \"MDTable\" as valmd
+                            INNER JOIN \"CTable\" as mi
+                            ON valmd.mditem = mi.id
+                        ON pmd.value = valmd.id
+		    ON pr.id = pmd.id
+		    LEFT JOIN \"CPropValue_cid\" as pst
+                        INNER JOIN \"CProperties\" as cprs
+                        ON pst.pid = cprs.id
+                        AND cprs.name='type'
+                        INNER JOIN \"CTable\" as pt
+                        ON pst.value = pt.id
+		    ON pr.id = pst.id
+		  ON mp.propid = pr.id
+		$strwhere
+		ORDER BY rank";
+        return $sql;
     }
-    function gettypename() 
+    public static function getplist() 
     {
-        return $this->mdentity->gettypename();
-    }
-    function gettypedescription() 
-    {
-        return $this->mdentity->gettypedescription();
-    }
-    
-    public static function getMDProperties($mdid, $mode, $strwhere, $byid=false) 
-    {
-        $mdentity = new Mdentity($mdid);
-        if (($mdentity->getmdtypename()=='Cols')||($mdentity->getmdtypename()=='Comps'))
-        {
-            $objs = self::CProperties($mdid,$mode,$strwhere,$byid);
-        }   
-        else 
-        {
-            $objs = self::MDProperties($mdid,$mode,$strwhere,$byid);
-        }
-        return $objs;
-    }
-    public static function MDProperties($mdid,$mode,$strwhere,$byid=false) 
-    {
-        $sql = DataManager::get_select_properties($strwhere);//" WHERE mp.mdid = :mdid AND mp.rank>0 AND mp.ranktoset>0 ");
-	$res = DataManager::dm_query($sql,array('mdid'=>$mdid));
-        $plist = $res->fetchAll(PDO::FETCH_ASSOC);
-        return self::getPropList($plist,$mode,$byid);
-    }
-    public static function CProperties($mdid, $mode,$strwhere,$byid=false) 
-    {
-        $sql = DataManager::get_select_cproperties($strwhere);	
-	$res = DataManager::dm_query($sql,array('mdid'=>$mdid));
-        $plist = $res->fetchAll(PDO::FETCH_ASSOC);
-        return self::getCPropList($plist,$mode,$byid);
-    }    
-    function get_data($mode='') 
-    {
-        $plist = array(
-          'id'=>array('name'=>'id','synonym'=>'ID','class'=>'active'),
-          'name'=>array('name'=>'name','synonym'=>'NAME','class'=>'active'),
-          'synonym'=>array('name'=>'synonym','synonym'=>'SYNONYM','class'=>'active')
-        );
         return array(
-          'id'=>$this->id,
-          'name'=>$this->name,
-          'synonym'=>$this->synonym,
-          'version'=>$this->version,
-          'PLIST' => $plist,   
-          'navlist' => array(
-              $this->id=>$this->synonym
-            )
-          );
+            'id'=>array('id'=>'id','name'=>'id','synonym'=>'ID','rank'=>0,'type'=>'str','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'readonly','field'=>1),
+            'name'=>array('id'=>'name','name'=>'name','synonym'=>'NAME','rank'=>1,'type'=>'str','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active','field'=>1),
+            'synonym'=>array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM','rank'=>3,'type'=>'str','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active','field'=>1),
+            'propid'=>array('id'=>'propid','name'=>'propid','synonym'=>'PROPID','rank'=>2,'type'=>'cid','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active','field'=>1),
+            'name_propid'=>array('id'=>'name_propid','name'=>'name_propid','synonym'=>'NAME_PROPID','rank'=>2,'type'=>'str','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'hidden','field'=>0),
+            'length'=>array('id'=>'length','name'=>'length','synonym'=>'LENGTH','rank'=>5,'type'=>'int','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active','field'=>1),
+            'prec'=>array('id'=>'prec','name'=>'prec','synonym'=>'PREC','rank'=>6,'type'=>'int','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active','field'=>1),
+            'rank'=>array('id'=>'rank','name'=>'rank','synonym'=>'RANK','rank'=>7,'type'=>'int','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active','field'=>1),
+            'ranktoset'=>array('id'=>'ranktoset','name'=>'ranktoset','synonym'=>'RANKTOSET','rank'=>8,'type'=>'int','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active','field'=>1),
+            'ranktostring'=>array('id'=>'ranktostring','name'=>'ranktostring','synonym'=>'RANKTOSTRING','rank'=>9,'type'=>'int','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active','field'=>1),
+            'isedate'=>array('id'=>'isedate','name'=>'isedate','synonym'=>'ISEDATE','rank'=>13,'type'=>'bool','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active','field'=>1),
+            'isenumber'=>array('id'=>'isenumber','name'=>'isenumber','synonym'=>'ISENUMBER','rank'=>14,'type'=>'bool','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active','field'=>1),
+            'isdepend'=>array('id'=>'isdepend','name'=>'isdepend','synonym'=>'IS DEPENDENT','rank'=>15,'type'=>'bool','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active','field'=>1),
+            'valmdtype' => array('id'=>'valmdtype','name'=>'VALMDTYPE','synonym'=>'VALMDTYPE','rank'=>17,'type'=>'str','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'readonly','field'=>0),
+            'valmdid' => array('id'=>'valmdid','name'=>'VALMDID','synonym'=>'VALMDID','rank'=>19,'type'=>'mdid','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'readonly','field'=>0),
+            'name_valmdid' => array('id'=>'name_valmdid','name'=>'NAME_VALMDID','synonym'=>'NAME_VALMDID','rank'=>20,'type'=>'str','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'hidden','field'=>0),
+            'valmdtypename' => array('id'=>'valmdtypename','name'=>'VALMDTYPENAME','synonym'=>'VALMDTYPENAME','rank'=>21,'type'=>'str','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'readonly','field'=>0),
+             );
     }
-    
-    public static function getCPropList($plist,$edit_mode,$byid=false)
-    {    
-        $objs = array();
-        if ($edit_mode == 'EDIT')
-        {    
-            $row = array('id'=>'id','name'=> 'id','synonym'=> 'ID','class'=>'readonly','valmdid'=>'','valmdtypename'=>'str','type'=>'str','rank'=>1);
-        }
-        else
-        {
-            $row = array('id'=>'id','name'=> 'id','synonym'=> 'ID','class'=>'hidden','valmdid'=>'','valmdtypename'=>'str','type'=>'str','rank'=>1);
-        }    
-        $rowname = array('id'=>'name','name'=>'name','synonym'=>'NAME','class'=>'active','valmdid'=>'','valmdtypename'=>'str','type'=>'str','rank'=>2);
-        $rowsyn = array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM','class'=>'active','valmdid'=>'','valmdtypename'=>'str','type'=>'str','rank'=>3);
-        if ($byid)
-        {    
-            $objs['id'] = $row;
-            $objs['name'] = $rowname;
-            $objs['synonym'] = $rowsyn;
-        }
-        else
-        {
-            $objs[] = $row;
-            $objs[] = $rowname;
-            $objs[] = $rowsyn;
-        }    
-        
-        foreach($plist as $row) 
-        {
-            $rid = $row['id'];
-            $row = array('id'=>$rid,'name'=> $row['name'],'synonym'=> $row['synonym'],'class'=>'active','valmdid'=>$row['valmdid'],'valmdtypename'=>$row['valmdtypename'],'type'=>$row['type'],'rank'=>$row['rank']);
-            if ($byid)
-            {    
-                $objs[$rid] = $row;
-            }
-            else 
-            {
-                $objs[] = $row;
-            }
-        }
-        return $objs;
-    }    
-    public static function getPropList($plist,$mode,$byid=false)
-    {    
-        $objs = array();
-        $class = 'hidden';
-        if ($mode==='CONFIG')
-        {    
-            $class = 'readonly';
-        }
-        $row = array('id'=>'id','name'=> 'id','synonym'=> 'ID','class'=>$class,'valmdid'=>'','valmdtypename'=>'str','type'=>'str','rank'=>1,'ranktostring'=>0,'isedate'=>false,'isenumber'=>false,'isdepend'=>false);
-        if ($byid)
-        {    
-            $objs['id'] = $row;
-        }
-        else
-        {
-            $objs[] = $row;
-        }    
-        foreach($plist as $row) 
-        {
-            $rid = $row['id'];
-            $class = 'active';
-            if (strtolower($row['name'])==='activity')
-            {
-                if (!User::isAdmin())
-                {    
-                    $class = 'hidden';
-                }    
-            }    
-            if ($row['isenumber'])
-            {
-                if (!User::isAdmin())
-                {    
-                    $class = 'readonly';
-                }    
-            }    
-            $prow =  array('id'=> $rid,
-                            'name'=> $row['name'],
-                            'synonym'=> $row['synonym'],
-                            'class'=>$class,
-                            'valmdid'=>$row['valmdid'],
-                            'valmdtypename'=>$row['valmdtypename'],
-                            'type'=>$row['type'],
-                            'isedate'=>$row['isedate'],
-                            'isenumber'=>$row['isenumber'],
-                            'isdepend'=>$row['isdepend'],
-                            'rank'=>$row['rank'],
-                            'name_propid'=>$row['name_propid'],
-                            'propid'=>$row['propid'],
-                            'ranktostring'=>$row['ranktostring']
-                            );
-            if ($byid)
-            {    
-                $objs[$rid] = $prow;
-            }
-            else
-            {
-                $objs[] = $prow;
-            }    
-        }
-        return $objs;
-    }    
-    public static function CProperties_Id($mdid, $mode,$strwhere) 
-    {
-        return self::CProperties($mdid, $mode,$strwhere,true); 
-    }
-    public static function getCPropList_id($plist,$mode)
-    {
-        return self::getCPropList($plist,$mode,true);
-    }        
-    public static function getPropList_id($plist,$mode)
-    {    
-        return self::getPropList($plist,$mode,true);
-    }    
 }
 

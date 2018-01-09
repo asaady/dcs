@@ -19,6 +19,7 @@ class Route {
     protected $controller_name = '';
     protected $controller_file = '';
     protected $controller_path = '';
+    protected $controller_namespace = '';
     protected $modes;
     protected $context;
     
@@ -99,6 +100,7 @@ class Route {
         $this->action_name = 'action_index';
         $this->controller_name = 'Controller_404';
         $this->controller_path = "/vendor/controllers";
+        $this->controller_namespace = "Dcs\\Vendor\\Controllers\\";
     }
     public function start()
     {
@@ -118,7 +120,7 @@ class Route {
         }
         $handlername = $this->modes[$this->context->getattr('MODE')];
         $handlername();
-        $controllername = "Dcs\\Vendor\\Controllers\\".$this->controller_name;
+        $controllername = $this->controller_namespace.$this->controller_name;
         if ($this->classname=='')
         {
             $controller = new $controllername;

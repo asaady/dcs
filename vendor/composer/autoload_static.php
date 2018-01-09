@@ -9,8 +9,9 @@ class ComposerStaticInit70ff5a14963b3be2d353e74573085465
     public static $prefixLengthsPsr4 = array (
         'D' => 
         array (
-            'Dcs\\Vendor\\Core\\' => 16,
-            'Dcs\\Vendor\\Controllers\\' => 23,
+            'Dcs\\Vendor\\Core\\Views\\' => 22,
+            'Dcs\\Vendor\\Core\\Models\\' => 23,
+            'Dcs\\Vendor\\Core\\Controllers\\' => 28,
             'Dcs\\App\\Components\\Utils\\Uploadset\\' => 35,
             'Dcs\\App\\Components\\Utils\\Uploadobject\\' => 38,
             'Dcs\\App\\Components\\Trigs\\' => 25,
@@ -21,13 +22,17 @@ class ComposerStaticInit70ff5a14963b3be2d353e74573085465
     );
 
     public static $prefixDirsPsr4 = array (
-        'Dcs\\Vendor\\Core\\' => 
+        'Dcs\\Vendor\\Core\\Views\\' => 
         array (
-            0 => __DIR__ . '/..' . '/core',
+            0 => __DIR__ . '/..' . '/core/views',
         ),
-        'Dcs\\Vendor\\Controllers\\' => 
+        'Dcs\\Vendor\\Core\\Models\\' => 
         array (
-            0 => __DIR__ . '/..' . '/controllers',
+            0 => __DIR__ . '/..' . '/core/models',
+        ),
+        'Dcs\\Vendor\\Core\\Controllers\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/core/controllers',
         ),
         'Dcs\\App\\Components\\Utils\\Uploadset\\' => 
         array (
@@ -56,44 +61,54 @@ class ComposerStaticInit70ff5a14963b3be2d353e74573085465
     );
 
     public static $classMap = array (
-        'Dcs\\Vendor\\Controllers\\Controller_MdentitySet' => __DIR__ . '/..' . '/controllers/Controller_MdentitySet.php',
-        'Dcs\\Vendor\\Core\\ActionSet' => __DIR__ . '/..' . '/core/ActionSet.php',
-        'Dcs\\Vendor\\Core\\CPropertySet' => __DIR__ . '/..' . '/core/CPropertySet.php',
-        'Dcs\\Vendor\\Core\\CollectionItem' => __DIR__ . '/..' . '/core/CollectionItem.php',
-        'Dcs\\Vendor\\Core\\CollectionSet' => __DIR__ . '/..' . '/core/CollectionSet.php',
-        'Dcs\\Vendor\\Core\\Common_data' => __DIR__ . '/..' . '/core/Common_data.php',
-        'Dcs\\Vendor\\Core\\Controller' => __DIR__ . '/..' . '/core/Controller.php',
-        'Dcs\\Vendor\\Core\\Cproperty' => __DIR__ . '/..' . '/core/Cproperty.php',
-        'Dcs\\Vendor\\Core\\DataManager' => __DIR__ . '/..' . '/core/DataManager.php',
-        'Dcs\\Vendor\\Core\\DcsContext' => __DIR__ . '/..' . '/core/DcsContext.php',
-        'Dcs\\Vendor\\Core\\DcsHung' => __DIR__ . '/..' . '/core/DcsHung.php',
-        'Dcs\\Vendor\\Core\\Download' => __DIR__ . '/..' . '/core/Download.php',
-        'Dcs\\Vendor\\Core\\Entity' => __DIR__ . '/..' . '/core/Entity.php',
-        'Dcs\\Vendor\\Core\\EntitySet' => __DIR__ . '/..' . '/core/EntitySet.php',
-        'Dcs\\Vendor\\Core\\Filter' => __DIR__ . '/..' . '/core/Filter.php',
-        'Dcs\\Vendor\\Core\\InputDataManager' => __DIR__ . '/..' . '/core/InputDataManager.php',
-        'Dcs\\Vendor\\Core\\ItemActions' => __DIR__ . '/..' . '/core/ItemActions.php',
-        'Dcs\\Vendor\\Core\\Mdentity' => __DIR__ . '/..' . '/core/Mdentity.php',
-        'Dcs\\Vendor\\Core\\MdentitySet' => __DIR__ . '/..' . '/core/MdentitySet.php',
-        'Dcs\\Vendor\\Core\\Mditem' => __DIR__ . '/..' . '/core/Mditem.php',
-        'Dcs\\Vendor\\Core\\MditemSet' => __DIR__ . '/..' . '/core/MditemSet.php',
-        'Dcs\\Vendor\\Core\\Mdproperty' => __DIR__ . '/..' . '/core/Mdproperty.php',
-        'Dcs\\Vendor\\Core\\MdpropertySet' => __DIR__ . '/..' . '/core/MdpropertySet.php',
-        'Dcs\\Vendor\\Core\\Model' => __DIR__ . '/..' . '/core/Model.php',
-        'Dcs\\Vendor\\Core\\PropTemplateSet' => __DIR__ . '/..' . '/core/PropsTemplateSet.php',
-        'Dcs\\Vendor\\Core\\Properties' => __DIR__ . '/..' . '/core/PropertySet.php',
-        'Dcs\\Vendor\\Core\\Property' => __DIR__ . '/..' . '/core/Property.php',
-        'Dcs\\Vendor\\Core\\PropertySet' => __DIR__ . '/..' . '/core/PropertySet.php',
-        'Dcs\\Vendor\\Core\\PropsTemplate' => __DIR__ . '/..' . '/core/PropsTemplate.php',
-        'Dcs\\Vendor\\Core\\Register' => __DIR__ . '/..' . '/core/Register.php',
-        'Dcs\\Vendor\\Core\\Route' => __DIR__ . '/..' . '/core/Route.php',
-        'Dcs\\Vendor\\Core\\Rproperty' => __DIR__ . '/..' . '/core/Rproperty.php',
-        'Dcs\\Vendor\\Core\\RpropertySet' => __DIR__ . '/..' . '/core/RpropertySet.php',
-        'Dcs\\Vendor\\Core\\User' => __DIR__ . '/..' . '/core/User.php',
-        'Dcs\\Vendor\\Core\\View' => __DIR__ . '/..' . '/core/View.php',
-        'Dcs\\Vendor\\Core\\iModel' => __DIR__ . '/..' . '/core/Model.php',
-        'Dcs\\Vendor\\Core\\iProperty' => __DIR__ . '/..' . '/core/Property.php',
-        'Dcs\\Vendor\\Core\\iPropertySet' => __DIR__ . '/..' . '/core/PropertySet.php',
+        'Dcs\\App\\Api\\ApiAcceptOtk' => __DIR__ . '/../..' . '/app/api/ApiAcceptOtk.php',
+        'Dcs\\Vendor\\Core\\Controllers\\Controller' => __DIR__ . '/..' . '/core/controllers/Controller.php',
+        'Dcs\\Vendor\\Core\\Controllers\\Controller_API' => __DIR__ . '/..' . '/core/controllers/Controller_Api.php',
+        'Dcs\\Vendor\\Core\\Controllers\\Controller_Ajax' => __DIR__ . '/..' . '/core/controllers/Controller_Ajax.php',
+        'Dcs\\Vendor\\Core\\Controllers\\Controller_Auth' => __DIR__ . '/..' . '/core/controllers/Controller_Auth.php',
+        'Dcs\\Vendor\\Core\\Controllers\\Controller_CollectionItem' => __DIR__ . '/..' . '/core/controllers/Controller_Collectionitem.php',
+        'Dcs\\Vendor\\Core\\Controllers\\Controller_Cproperty' => __DIR__ . '/..' . '/core/controllers/Controller_Cproperty.php',
+        'Dcs\\Vendor\\Core\\Controllers\\Controller_Download' => __DIR__ . '/..' . '/core/controllers/Controller_Download.php',
+        'Dcs\\Vendor\\Core\\Controllers\\Controller_Entity' => __DIR__ . '/..' . '/core/controllers/Controller_Entity.php',
+        'Dcs\\Vendor\\Core\\Controllers\\Controller_EntitySet' => __DIR__ . '/..' . '/core/controllers/controller_entityset.php',
+        'Dcs\\Vendor\\Core\\Controllers\\Controller_MdentitySet' => __DIR__ . '/..' . '/core/controllers/Controller_MdentitySet.php',
+        'Dcs\\Vendor\\Core\\Models\\ActionSet' => __DIR__ . '/..' . '/core/models/ActionSet.php',
+        'Dcs\\Vendor\\Core\\Models\\CPropertySet' => __DIR__ . '/..' . '/core/models/CPropertySet.php',
+        'Dcs\\Vendor\\Core\\Models\\CollectionItem' => __DIR__ . '/..' . '/core/models/CollectionItem.php',
+        'Dcs\\Vendor\\Core\\Models\\CollectionSet' => __DIR__ . '/..' . '/core/models/CollectionSet.php',
+        'Dcs\\Vendor\\Core\\Models\\Common_data' => __DIR__ . '/..' . '/core/models/Common_data.php',
+        'Dcs\\Vendor\\Core\\Models\\Cproperty' => __DIR__ . '/..' . '/core/models/Cproperty.php',
+        'Dcs\\Vendor\\Core\\Models\\DataManager' => __DIR__ . '/..' . '/core/models/DataManager.php',
+        'Dcs\\Vendor\\Core\\Models\\DcsContext' => __DIR__ . '/..' . '/core/models/DcsContext.php',
+        'Dcs\\Vendor\\Core\\Models\\DcsHung' => __DIR__ . '/..' . '/core/models/DcsHung.php',
+        'Dcs\\Vendor\\Core\\Models\\Download' => __DIR__ . '/..' . '/core/models/Download.php',
+        'Dcs\\Vendor\\Core\\Models\\Entity' => __DIR__ . '/..' . '/core/models/Entity.php',
+        'Dcs\\Vendor\\Core\\Models\\EntitySet' => __DIR__ . '/..' . '/core/models/EntitySet.php',
+        'Dcs\\Vendor\\Core\\Models\\Filter' => __DIR__ . '/..' . '/core/models/Filter.php',
+        'Dcs\\Vendor\\Core\\Models\\Hungarian' => __DIR__ . '/..' . '/core/models/Hungarian.php',
+        'Dcs\\Vendor\\Core\\Models\\InputDataManager' => __DIR__ . '/..' . '/core/models/InputDataManager.php',
+        'Dcs\\Vendor\\Core\\Models\\ItemActions' => __DIR__ . '/..' . '/core/models/ItemActions.php',
+        'Dcs\\Vendor\\Core\\Models\\Mdentity' => __DIR__ . '/..' . '/core/models/Mdentity.php',
+        'Dcs\\Vendor\\Core\\Models\\MdentitySet' => __DIR__ . '/..' . '/core/models/MdentitySet.php',
+        'Dcs\\Vendor\\Core\\Models\\Mditem' => __DIR__ . '/..' . '/core/models/Mditem.php',
+        'Dcs\\Vendor\\Core\\Models\\MditemSet' => __DIR__ . '/..' . '/core/models/MditemSet.php',
+        'Dcs\\Vendor\\Core\\Models\\Mdproperty' => __DIR__ . '/..' . '/core/models/Mdproperty.php',
+        'Dcs\\Vendor\\Core\\Models\\MdpropertySet' => __DIR__ . '/..' . '/core/models/MdpropertySet.php',
+        'Dcs\\Vendor\\Core\\Models\\Model' => __DIR__ . '/..' . '/core/models/Model.php',
+        'Dcs\\Vendor\\Core\\Models\\PropTemplateSet' => __DIR__ . '/..' . '/core/models/PropsTemplateSet.php',
+        'Dcs\\Vendor\\Core\\Models\\Properties' => __DIR__ . '/..' . '/core/models/PropertySet.php',
+        'Dcs\\Vendor\\Core\\Models\\Property' => __DIR__ . '/..' . '/core/models/Property.php',
+        'Dcs\\Vendor\\Core\\Models\\PropertySet' => __DIR__ . '/..' . '/core/models/PropertySet.php',
+        'Dcs\\Vendor\\Core\\Models\\PropsTemplate' => __DIR__ . '/..' . '/core/models/PropsTemplate.php',
+        'Dcs\\Vendor\\Core\\Models\\Register' => __DIR__ . '/..' . '/core/models/Register.php',
+        'Dcs\\Vendor\\Core\\Models\\Route' => __DIR__ . '/..' . '/core/models/Route.php',
+        'Dcs\\Vendor\\Core\\Models\\Rproperty' => __DIR__ . '/..' . '/core/models/Rproperty.php',
+        'Dcs\\Vendor\\Core\\Models\\RpropertySet' => __DIR__ . '/..' . '/core/models/RpropertySet.php',
+        'Dcs\\Vendor\\Core\\Models\\User' => __DIR__ . '/..' . '/core/models/User.php',
+        'Dcs\\Vendor\\Core\\Models\\iModel' => __DIR__ . '/..' . '/core/models/Model.php',
+        'Dcs\\Vendor\\Core\\Models\\iProperty' => __DIR__ . '/..' . '/core/models/Property.php',
+        'Dcs\\Vendor\\Core\\Models\\iPropertySet' => __DIR__ . '/..' . '/core/models/PropertySet.php',
+        'Dcs\\Vendor\\Core\\Views\\View' => __DIR__ . '/..' . '/core/views/View.php',
     );
 
     public static function getInitializer(ClassLoader $loader)

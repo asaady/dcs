@@ -12,11 +12,14 @@
     "require": {},
     "autoload": {
         "psr-4": {
-            "Dcs\\Vendor\\Core\\": [
-                "vendor/core/"
+            "Dcs\\Vendor\\Core\\Models\\": [
+                "vendor/core/models/"
             ],
-            "Dcs\\Vendor\\Controllers\\": [
-                "vendor/controllers/"
+            "Dcs\\Vendor\\Core\\Controllers\\": [
+                "vendor/core/controllers/"
+            ],
+            "Dcs\\Vendor\\Core\\Views\\": [
+                "vendor/core/views/"
             ],
             "Dcs\\App\\Components\\Reps\\": [
                 "app/components/reps/"

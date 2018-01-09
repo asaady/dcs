@@ -1,10 +1,10 @@
 <?php
-namespace dcs\app\api;
+namespace Dcs\App\Api;
 use PDO;
-use dcs\vendor\core\Common_data;
-use dcs\vendor\core\DataManager;
-use dcs\vendor\core\MdpropertySet;
-use dcs\vendor\core\Entity;
+use Dcs\Vendor\Core\Models\Common_data;
+use Dcs\Vendor\Core\Models\DataManager;
+use Dcs\Vendor\Core\Models\MdpropertySet;
+use Dcs\Vendor\Core\Models\Entity;
 
 class ApiAcceptOtk
 {

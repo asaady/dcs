@@ -1148,8 +1148,11 @@ $(document).ready(function()
     var action = $("input[name='action']").val();
     $("input[name='command']").val('load'); 
     $data = $('.row :input').serializeArray();
+    if (curid !== '') {
+        curid = curid + '/';
+    }
     $.ajax({
-      url: '/ajax/'+itemid+'/'+curid+'/'+action,
+      url: '/ajax/'+itemid+'/'+curid+action,
       type: 'get',
       dataType: 'json',
       data: $data,

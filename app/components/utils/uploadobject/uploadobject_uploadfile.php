@@ -5,18 +5,19 @@ if (!empty($_COOKIE['sid'])) {
 }
 session_start();
 
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/tz_const.php");
+require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 require filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING).'/vendor/autoload.php';
 
-use tzVendor\Common_data;
-use tzVendor\UploadObject;
+use dcs\vendor\core\Common_data;
+use dcs\app\components\utils\uploadobject\UploadObject;
+use dcs\vendor\core\Entity;
 
 
 // Начало работы скрипта
 
 $csv = $_FILES['csv'];
 
-$destPath = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING). TZ_UPLOAD_IMPORT_DIR;
+$destPath = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING). DCS_UPLOAD_IMPORT_DIR;
 Common_data::import_log("--------------------------------------\r\n".'start import to: '.$destPath);
 
 // Валидация
@@ -42,7 +43,7 @@ if (Common_data::check_uuid($id))
     Common_data::import_log('OK validate id=: '.$id);
     try 
     {
-        $ent = new \tzVendor\Entity($id);
+        $ent = new Entity($id);
     } catch (Exception $ex) {
         $res[]=array('code'=>'error','destName'=>$ex->getMessage());
         $ent = FALSE;

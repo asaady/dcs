@@ -4,15 +4,18 @@ if (!empty($_COOKIE['sid'])) {
     session_id($_COOKIE['sid']);
 }
 session_start();
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/tz_const.php");
+require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 require '../vendor/autoload.php';
 
-use tzVendor\InputDataManager;
-use tzVendor\Common_data;
-use tzVendor\Entity;
-use tzVendor\EntitySet;
-use tzVendor\DataManager;
-use tzVendor\PropsTemplate;
+use dcs\vendor\core\InputDataManager;
+use dcs\vendor\core\Common_data;
+use dcs\vendor\core\Entity;
+use dcs\vendor\core\EntitySet;
+use dcs\vendor\core\DataManager;
+use dcs\vendor\core\MdpropertySet;
+use dcs\vendor\core\CollectionSet;
+use dcs\vendor\core\Mdentity;
+use dcs\vendor\core\Mdproperty;
 
 function getData()
 {
@@ -29,19 +32,19 @@ function getData()
             { 
                 if ($type=='id')
                 {
-                    $objs = tzVendor\EntitySet::getEntitiesByName($id,$name);
+                    $objs = EntitySet::getEntitiesByName($id,$name);
                 }    
                 elseif ($type=='cid') 
                 {
-                    $objs = tzVendor\CollectionSet::getCollByName($id,$name);
+                    $objs = CollectionSet::getCollByName($id,$name);
                 }
                 elseif ($type=='mdid') 
                 {
-                    $objs = tzVendor\Mdentity::getMDbyName($name);
+                    $objs = Mdentity::getMDbyName($name);
                 }
                 elseif ($type=='propid') 
                 {
-                    $objs = tzVendor\Mdproperty::getPropertyByName($name,$idm);
+                    $objs = Mdproperty::getPropertyByName($name,$idm);
                 }
             }    
             return $objs; 
@@ -53,7 +56,7 @@ function getData()
             $name = $data['name']['name'];
             if ($name!=="")
             { 
-                $objs = tzVendor\Mdproperty::getPropertyByName($name,$idm);
+                $objs = Mdproperty::getPropertyByName($name,$idm);
             }    
             return $objs; 
         },  
@@ -67,11 +70,11 @@ function getData()
             { 
                 if ($type=='mdid')
                 {
-                    $objs = \tzVendor\Mdentity::getMDbyName($name);
+                    $objs = Mdentity::getMDbyName($name);
                 }    
                 elseif ($type=='cid') 
                 {
-                    $objs = tzVendor\CollectionSet::getMDCollectionByName($name);
+                    $objs = CollectionSet::getMDCollectionByName($name);
                 }
             }
             return $objs; 
@@ -86,11 +89,11 @@ function getData()
             { 
                 if ($type=='mdid')
                 {
-                    $objs = \tzVendor\Mdentity::getMDbyName($name);
+                    $objs = Mdentity::getMDbyName($name);
                 }    
                 elseif ($type=='cid') 
                 {
-                    $objs = tzVendor\CollectionSet::getMDCollectionByName($name);
+                    $objs = CollectionSet::getMDCollectionByName($name);
                 }
             }
             return $objs; 
@@ -98,18 +101,29 @@ function getData()
     'FIELD_SAVE'=> function($idm)
         {
             $getdata = $idm->getdata();
-            $data=array();
+            $curid = '';
             $validation = Common_data::check_uuid($getdata['name']['name']);
             if (!$validation) 
             {
-                $data[$getdata['propid']['id']]=array('name'=>$getdata['name']['name'],'id'=>$getdata['id']['id']);
+                $validation = Common_data::check_uuid($getdata['id']['id']);
+                if ($validation) 
+                {
+                    $curid = $getdata['id']['id'];
+                }
             }
             else 
             {
-                $data[$getdata['propid']['id']]=array('name'=>'','id'=>$getdata['name']['name']);
+                $curid = $getdata['name']['name'];
             }
-            $ent = new Entity($idm->getitemid());
-            return $ent->update($data);
+            $res = FALSE;
+            if ($curid !== '')
+            {
+                $data=array();
+                $data[$getdata['propid']['id']]=array('name'=>'','id'=>$curid);
+                $ent = new Entity($idm->getitemid());
+                $res = $ent->update($data);
+            }    
+            return $res;
         },
     'GET_ACTIONLIST'=> function($idm)
         {
@@ -154,7 +168,7 @@ function getData()
                         return $objs;
                     }
                     $ar_md = Entity::getEntityDetails($itemid);
-                    $ar_prop = \tzVendor\MdpropertySet::getMDProperties($ar_md['mdid'], $mode, " WHERE mp.mdid = :mdid ");
+                    $ar_prop = MdpropertySet::getMDProperties($ar_md['mdid'], $mode, " WHERE mp.mdid = :mdid ");
                     
                     foreach ($ar_prop as $prop)
                     {

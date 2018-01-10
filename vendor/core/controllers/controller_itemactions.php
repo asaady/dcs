@@ -1,0 +1,22 @@
+<?php
+use dcs\vendor\core\Controller;
+use dcs\vendor\core\View;
+use dcs\vendor\core\ItemActions;
+
+class Controller_ItemActions extends Controller
+{
+
+	function __construct($id)
+	{
+		$this->model = new ItemActions($id);
+		$this->view = new View();
+	}
+	
+	function action_index($arResult)
+	{
+		$data = $this->model->get_data();
+                $arResult['jscript']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/js/entity_view.js";
+                $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/views/itemactions_view.php";
+		$this->view->generate($arResult, 'template_view.php', $data);
+	}
+}

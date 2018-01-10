@@ -4,18 +4,19 @@ if (!empty($_COOKIE['sid'])) {
     session_id($_COOKIE['sid']);
 }
 session_start();
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/tz_const.php");
+require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 require '../vendor/autoload.php';
-use tzVendor\Entity;
-use tzVendor\EntitySet;
-use tzVendor\DataManager;
-use tzVendor\InputDataManager;
-use tzVendor\CollectionSet;
-use tzVendor\CollectionItem;
-use tzVendor\Mdproperty;
-use tzVendor\MdentitySet;
-use tzVendor\Mdentity;
-use tzVendor\Cproperty;
+use dcs\vendor\core\Entity;
+use dcs\vendor\core\EntitySet;
+use dcs\vendor\core\DataManager;
+use dcs\vendor\core\InputDataManager;
+use dcs\vendor\core\CollectionSet;
+use dcs\vendor\core\CollectionItem;
+use dcs\vendor\core\Mdproperty;
+use dcs\vendor\core\MdentitySet;
+use dcs\vendor\core\Mdentity;
+use dcs\vendor\core\Cproperty;
+use dcs\vendor\core\User;
 
 function loadData()
 {
@@ -359,38 +360,72 @@ function loadData()
     }
     );
     $arData = array();
-    if ($idm->getitemid()!='')
+    if ($idm->getmode() == 'AUTH')
     {
-        $item_obj = array('classname'=>'','id'=>'','name'=>'');
-        $cur_obj = array('classname'=>'','id'=>'','name'=>'');
-        $mode = $idm->getmode();
-        $item_obj = DataManager::getContentByID($idm->getitemid());
-        $handlername=$item_obj['classname'];
-        if ($idm->getcurid()!='')
+        if ($idm->getcommand()=='logout') {
+            $user = new User();
+            $user->logout();
+            $arData = array('status'=>'OK', 'redirect'=>".");
+        } else {
+            $data = $idm->getdata();
+            if ($data['act']['name'] == 'login')
+            {
+                setcookie("sid", "");
+                if (empty($data['username']['name'])) {
+                    $arData = array('status'=>'ERROR', 'msg'=>"Введите имя пользователя");
+                } elseif (empty($data['password']['name'])) {
+                    $arData = array('status'=>'ERROR', 'msg'=>"Введите паоль");
+                } else {
+                    $remember = false;
+                    if (array_key_exists('remember-me', $data)) {
+                        $remember = (bool)$data['remember-me']['name'];
+                    }
+                    $user = new User();
+                    $auth_result = $user->authorize($data['username']['name'], $data['password']['name'], $remember);
+                    if (!$auth_result) {
+                        $arData = array('status'=>'ERROR', 'msg'=>"Invalid username or password");
+                    } else {
+                        $arData = array('status'=>'OK', 'redirect'=>".");
+                    }
+                }    
+            } else {
+                $arData = array('status'=>'ERROR', 'msg'=>"Invalid command ".$data['act']['name']);
+            }
+        }    
+    } else {
+        if ($idm->getitemid()!='')
         {
-            if ($idm->getcurid()!=$idm->getitemid())
-            {    
-                $cur_obj = DataManager::getContentByID($idm->getcurid());
-                $handlername .='_'.$cur_obj['classname'];
-            }    
-        }   
-        $action = $idm->getaction();
-        $command = $idm->getcommand();
-        $handlername .='_'.strtoupper($action).'_'.strtoupper($command);
-        if ($mode=='CONFIG')
-        {
-            $handlername = str_replace('EntitySet','Mdentity',$handlername);
-        }   
-        if (isset($load_handler[$handlername]))
-        {
-            $arData = $load_handler[$handlername]($idm);
+            $item_obj = array('classname'=>'','id'=>'','name'=>'');
+            $cur_obj = array('classname'=>'','id'=>'','name'=>'');
+            $mode = $idm->getmode();
+            $item_obj = DataManager::getContentByID($idm->getitemid());
+            $handlername=$item_obj['classname'];
+            if ($idm->getcurid()!='')
+            {
+                if ($idm->getcurid()!=$idm->getitemid())
+                {    
+                    $cur_obj = DataManager::getContentByID($idm->getcurid());
+                    $handlername .='_'.$cur_obj['classname'];
+                }    
+            }   
+            $action = $idm->getaction();
+            $command = $idm->getcommand();
+            $handlername .='_'.strtoupper($action).'_'.strtoupper($command);
+            if ($mode=='CONFIG')
+            {
+                $handlername = str_replace('EntitySet','Mdentity',$handlername);
+            }   
+            if (isset($load_handler[$handlername]))
+            {
+                $arData = $load_handler[$handlername]($idm);
+            }
+            else
+            {
+                $arData = array('status'=>'ERROR', 'msg'=>"нет обработчика для $handlername");
+            }
+            $arData['handlername']=$handlername;
         }
-        else
-        {
-            $arData = array('status'=>'ERROR', 'msg'=>"нет обработчика для $handlername");
-        }
-        $arData['handlername']=$handlername;
-    }    
+    }   
     echo json_encode($arData);
 }
 

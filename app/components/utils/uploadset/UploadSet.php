@@ -1,11 +1,15 @@
 <?php
-namespace tzVendor;
+namespace dcs\app\components\utils\uploadset;
 
 use PDO;
 use PDOStatement;
-use tzVendor\Entity;
+use dcs\vendor\core\Entity;
+use dcs\vendor\core\CollectionItem;
+use dcs\vendor\core\Mdproperty;
+use dcs\vendor\core\DataManager;
+use dcs\vendor\core\Common_data;
 
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/tz_const.php");
+require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 
 class UploadSet extends Model 
 {

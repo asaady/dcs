@@ -1,9 +1,13 @@
 <?php
-namespace tzVendor;
+namespace dcs\app\components\reps\coversheets;
 
 use PDO;
 use PDOStatement;
-use tzVendor\Entity;
+use dcs\vendor\core\Entity;
+use dcs\vendor\core\EntitySet;
+use dcs\vendor\core\Model;
+use dcs\vendor\core\CollectionItem;
+use dcs\vendor\core\DataManager;
 
 class CoverSheets extends Model 
 {
@@ -62,7 +66,7 @@ class CoverSheets extends Model
         $title = "Отчет ". $this->name;
         $plist = array(
                 array('id'=>'parameter','name'=>'parameter','synonym'=>'Подразделение','rank'=>1,'type'=>'id','valmdid'=>'50643d39-aec2-485e-9c30-bf29b04db75c','valmdtypename'=>'Refs','class'=>'active'),
-                array('id'=>'mindate','name'=>'mindate','synonym'=>'Cопр.листы с','rank'=>2,'type'=>'date','valmdid'=>TZ_TYPE_EMPTY,'valmdtypename'=>'','class'=>'active')
+                array('id'=>'mindate','name'=>'mindate','synonym'=>'Cопр.листы с','rank'=>2,'type'=>'date','valmdid'=>DCS_TYPE_EMPTY,'valmdtypename'=>'','class'=>'active')
         );
         $pset=array(
             'trouteid'=>array('id'=>'trouteid','name'=>'trouteid','synonym'=>'Техмаршрут','type'=>'id', 'class'=>'active'),
@@ -85,7 +89,7 @@ class CoverSheets extends Model
                     $title = "Сопроводительные листы по тех.маршруту ".$this->name;
                     $plist = array(
                             array('id'=>'parameter','name'=>'parameter','synonym'=>'Тех.маршрут','rank'=>1,'type'=>'id','valmdid'=>'def88585-c509-4200-8980-19ae0e164bd7','valmdtypename'=>'Refs','class'=>'active'),
-                            array('id'=>'mindate','name'=>'mindate','synonym'=>'Cопр.листы с','rank'=>2,'type'=>'date','valmdid'=>TZ_TYPE_EMPTY,'valmdtypename'=>'','class'=>'active')
+                            array('id'=>'mindate','name'=>'mindate','synonym'=>'Cопр.листы с','rank'=>2,'type'=>'date','valmdid'=>DCS_TYPE_EMPTY,'valmdtypename'=>'','class'=>'active')
                     );
                     $pset=array(
                         'csid'=>array('id'=>'csid','name'=>'csid','synonym'=>'Сопр.лист','type'=>'id', 'class'=>'active'),
@@ -102,7 +106,7 @@ class CoverSheets extends Model
                     $title = "Сопроводительный лист ".$this->name;
                     $plist = array(
                             array('id'=>'parameter','name'=>'parameter','synonym'=>'Сопров.лист','rank'=>1,'type'=>'id','valmdid'=>'be0d47b9-2972-496c-a11b-0f3d38874aab','valmdtypename'=>'Refs','class'=>'active'),
-                            array('id'=>'mindate','name'=>'mindate','synonym'=>'Cопр.листы с','rank'=>2,'type'=>'date','valmdid'=>TZ_TYPE_EMPTY,'valmdtypename'=>'','class'=>'hidden')
+                            array('id'=>'mindate','name'=>'mindate','synonym'=>'Cопр.листы с','rank'=>2,'type'=>'date','valmdid'=>DCS_TYPE_EMPTY,'valmdtypename'=>'','class'=>'hidden')
                     );
                     $pset=array(
                         'routepoint'=>array('id'=>'routepoint','name'=>'routepoint','synonym'=>'Точка маршрута','type'=>'id', 'class'=>'active'),
@@ -151,7 +155,7 @@ class CoverSheets extends Model
         $ar_tt[] = DataManager::createtemptable($sql, 'tt_el0',$params);
         $objs['PLIST'] = array(
                 'parameter'=>array('id'=>'parameter','name'=>'parameter','synonym'=>'Сопр.лист','rank'=>1,'type'=>'id','valmdid'=>'be0d47b9-2972-496c-a11b-0f3d38874aab','valmdtypename'=>'Refs','class'=>'active'),
-                'mindate'=>array('id'=>'mindate','name'=>'mindate','synonym'=>'Cопр.листы с','rank'=>2,'type'=>'date','valmdid'=>TZ_TYPE_EMPTY,'valmdtypename'=>'','class'=>'hidden')
+                'mindate'=>array('id'=>'mindate','name'=>'mindate','synonym'=>'Cопр.листы с','rank'=>2,'type'=>'date','valmdid'=>DCS_TYPE_EMPTY,'valmdtypename'=>'','class'=>'hidden')
                 );
 
         //нашли техмаршрут сопроводительного листа
@@ -391,7 +395,7 @@ class CoverSheets extends Model
         }
         $objs['PLIST'] = array(
                 'parameter'=>array('id'=>'parameter','name'=>'parameter','synonym'=>'Тех.маршрут','rank'=>1,'type'=>'id','valmdid'=>'def88585-c509-4200-8980-19ae0e164bd7','valmdtypename'=>'Refs','class'=>'active'),
-                'mindate'=>array('id'=>'mindate','name'=>'mindate','synonym'=>'Cопр.листы с','rank'=>2,'type'=>'date','valmdid'=>TZ_TYPE_EMPTY,'valmdtypename'=>'','class'=>'active')
+                'mindate'=>array('id'=>'mindate','name'=>'mindate','synonym'=>'Cопр.листы с','rank'=>2,'type'=>'date','valmdid'=>DCS_TYPE_EMPTY,'valmdtypename'=>'','class'=>'active')
                 );
 
         //выбрали сопроводительные листы у которых техмаршрут соответствует выбранным ранее
@@ -590,7 +594,7 @@ class CoverSheets extends Model
         
         $objs['PLIST'] = array(
                 'parameter'=>array('id'=>'parameter','name'=>'parameter','synonym'=>'Подразделение','rank'=>1,'type'=>'id','valmdid'=>'50643d39-aec2-485e-9c30-bf29b04db75c','valmdtypename'=>'Refs','class'=>'active'),
-                'mindate'=>array('id'=>'mindate','name'=>'mindate','synonym'=>'Cопр.листы с','rank'=>2,'type'=>'date','valmdid'=>TZ_TYPE_EMPTY,'valmdtypename'=>'','class'=>'active')
+                'mindate'=>array('id'=>'mindate','name'=>'mindate','synonym'=>'Cопр.листы с','rank'=>2,'type'=>'date','valmdid'=>DCS_TYPE_EMPTY,'valmdtypename'=>'','class'=>'active')
                 );
         $objs['PSET']=array(
             'trouteid'=>array('id'=>'trouteid','name'=>'trouteid','synonym'=>'Техмаршрут','type'=>'id', 'class'=>'active'),

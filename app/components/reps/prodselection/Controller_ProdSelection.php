@@ -1,7 +1,7 @@
 <?php
-use tzVendor\Controller;
-use tzVendor\View;
-use tzVendor\ProdSelection;
+use dcs\vendor\core\Controller;
+use dcs\vendor\core\View;
+use dcs\app\components\reps\prodselection\ProdSelection;
 
 class Controller_ProdSelection extends Controller
 {

@@ -1,7 +1,7 @@
 <?php
-use tzVendor\Controller;
-use tzVendor\View;
-use tzVendor\UploadObject;
+use dcs\vendor\core\Controller;
+use dcs\vendor\core\View;
+use dcs\app\components\utils\uploadobject\UploadObject;
 
 class Controller_UploadObject extends Controller
 {

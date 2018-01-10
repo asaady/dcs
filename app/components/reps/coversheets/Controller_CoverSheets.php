@@ -1,7 +1,7 @@
 <?php
-use tzVendor\Controller;
-use tzVendor\View;
-use tzVendor\CoverSheets;
+use dcs\vendor\core\Controller;
+use dcs\vendor\core\View;
+use dcs\app\components\reps\coversheets\CoverSheets;
 
 class Controller_CoverSheets extends Controller
 {

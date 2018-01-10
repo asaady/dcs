@@ -1,7 +1,7 @@
 <?php
-use tzVendor\Controller;
-use tzVendor\View;
-use tzVendor\PrnCoverSheets;
+use Dcs\Vendor\Core\Controllers\Controller;
+use Dcs\Vendor\Core\Views\View;
+use Dcs\App\Components\Prnforms\Coversheets\PrnCoverSheets;
 
 class Controller_PrnCoverSheets extends Controller
 {

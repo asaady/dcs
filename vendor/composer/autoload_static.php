@@ -7,25 +7,108 @@ namespace Composer\Autoload;
 class ComposerStaticInit70ff5a14963b3be2d353e74573085465
 {
     public static $prefixLengthsPsr4 = array (
-        't' => 
+        'D' => 
         array (
-            'tzVendor\\' => 9,
+            'Dcs\\Vendor\\Core\\Views\\' => 22,
+            'Dcs\\Vendor\\Core\\Models\\' => 23,
+            'Dcs\\Vendor\\Core\\Controllers\\' => 28,
+            'Dcs\\App\\Components\\Utils\\Uploadset\\' => 35,
+            'Dcs\\App\\Components\\Utils\\Uploadobject\\' => 38,
+            'Dcs\\App\\Components\\Trigs\\' => 25,
+            'Dcs\\App\\Components\\Reps\\' => 24,
+            'Dcs\\App\\Components\\Prnforms\\Coversheets\\' => 40,
+            'Dcs\\App\\Api\\' => 12,
         ),
     );
 
     public static $prefixDirsPsr4 = array (
-        'tzVendor\\' => 
+        'Dcs\\Vendor\\Core\\Views\\' => 
         array (
-            0 => __DIR__ . '/..' . '/core',
-            1 => __DIR__ . '/../..' . '/app/components/reps/coversheets',
-            2 => __DIR__ . '/../..' . '/app/components/reps/plannedjobs',
-            3 => __DIR__ . '/../..' . '/app/components/reps/prodselection',
-            4 => __DIR__ . '/../..' . '/app/components/prnforms/coversheets',
-            5 => __DIR__ . '/../..' . '/app/components/utils/uploadset',
-            6 => __DIR__ . '/../..' . '/app/components/utils/uploadobject',
-            7 => __DIR__ . '/../..' . '/app/components/trigs',
-            8 => __DIR__ . '/../..' . '/app/api',
+            0 => __DIR__ . '/..' . '/core/views',
         ),
+        'Dcs\\Vendor\\Core\\Models\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/core/models',
+        ),
+        'Dcs\\Vendor\\Core\\Controllers\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/core/controllers',
+        ),
+        'Dcs\\App\\Components\\Utils\\Uploadset\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/app/components/utils/uploadset',
+        ),
+        'Dcs\\App\\Components\\Utils\\Uploadobject\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/app/components/utils/uploadobject',
+        ),
+        'Dcs\\App\\Components\\Trigs\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/app/components/trigs',
+        ),
+        'Dcs\\App\\Components\\Reps\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/app/components/reps',
+        ),
+        'Dcs\\App\\Components\\Prnforms\\Coversheets\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/app/components/prnforms/coversheets',
+        ),
+        'Dcs\\App\\Api\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/app/api',
+        ),
+    );
+
+    public static $classMap = array (
+        'Dcs\\App\\Api\\ApiAcceptOtk' => __DIR__ . '/../..' . '/app/api/ApiAcceptOtk.php',
+        'Dcs\\Vendor\\Core\\Controllers\\Controller' => __DIR__ . '/..' . '/core/controllers/Controller.php',
+        'Dcs\\Vendor\\Core\\Controllers\\Controller_API' => __DIR__ . '/..' . '/core/controllers/Controller_Api.php',
+        'Dcs\\Vendor\\Core\\Controllers\\Controller_Ajax' => __DIR__ . '/..' . '/core/controllers/Controller_Ajax.php',
+        'Dcs\\Vendor\\Core\\Controllers\\Controller_Auth' => __DIR__ . '/..' . '/core/controllers/Controller_Auth.php',
+        'Dcs\\Vendor\\Core\\Controllers\\Controller_CollectionItem' => __DIR__ . '/..' . '/core/controllers/Controller_Collectionitem.php',
+        'Dcs\\Vendor\\Core\\Controllers\\Controller_Cproperty' => __DIR__ . '/..' . '/core/controllers/Controller_Cproperty.php',
+        'Dcs\\Vendor\\Core\\Controllers\\Controller_Download' => __DIR__ . '/..' . '/core/controllers/Controller_Download.php',
+        'Dcs\\Vendor\\Core\\Controllers\\Controller_Entity' => __DIR__ . '/..' . '/core/controllers/Controller_Entity.php',
+        'Dcs\\Vendor\\Core\\Controllers\\Controller_EntitySet' => __DIR__ . '/..' . '/core/controllers/controller_entityset.php',
+        'Dcs\\Vendor\\Core\\Controllers\\Controller_MdentitySet' => __DIR__ . '/..' . '/core/controllers/Controller_MdentitySet.php',
+        'Dcs\\Vendor\\Core\\Models\\ActionSet' => __DIR__ . '/..' . '/core/models/ActionSet.php',
+        'Dcs\\Vendor\\Core\\Models\\CPropertySet' => __DIR__ . '/..' . '/core/models/CPropertySet.php',
+        'Dcs\\Vendor\\Core\\Models\\CollectionItem' => __DIR__ . '/..' . '/core/models/CollectionItem.php',
+        'Dcs\\Vendor\\Core\\Models\\CollectionSet' => __DIR__ . '/..' . '/core/models/CollectionSet.php',
+        'Dcs\\Vendor\\Core\\Models\\Common_data' => __DIR__ . '/..' . '/core/models/Common_data.php',
+        'Dcs\\Vendor\\Core\\Models\\Cproperty' => __DIR__ . '/..' . '/core/models/Cproperty.php',
+        'Dcs\\Vendor\\Core\\Models\\DataManager' => __DIR__ . '/..' . '/core/models/DataManager.php',
+        'Dcs\\Vendor\\Core\\Models\\DcsContext' => __DIR__ . '/..' . '/core/models/DcsContext.php',
+        'Dcs\\Vendor\\Core\\Models\\DcsHung' => __DIR__ . '/..' . '/core/models/DcsHung.php',
+        'Dcs\\Vendor\\Core\\Models\\Download' => __DIR__ . '/..' . '/core/models/Download.php',
+        'Dcs\\Vendor\\Core\\Models\\Entity' => __DIR__ . '/..' . '/core/models/Entity.php',
+        'Dcs\\Vendor\\Core\\Models\\EntitySet' => __DIR__ . '/..' . '/core/models/EntitySet.php',
+        'Dcs\\Vendor\\Core\\Models\\Filter' => __DIR__ . '/..' . '/core/models/Filter.php',
+        'Dcs\\Vendor\\Core\\Models\\Hungarian' => __DIR__ . '/..' . '/core/models/Hungarian.php',
+        'Dcs\\Vendor\\Core\\Models\\InputDataManager' => __DIR__ . '/..' . '/core/models/InputDataManager.php',
+        'Dcs\\Vendor\\Core\\Models\\ItemActions' => __DIR__ . '/..' . '/core/models/ItemActions.php',
+        'Dcs\\Vendor\\Core\\Models\\Mdentity' => __DIR__ . '/..' . '/core/models/Mdentity.php',
+        'Dcs\\Vendor\\Core\\Models\\MdentitySet' => __DIR__ . '/..' . '/core/models/MdentitySet.php',
+        'Dcs\\Vendor\\Core\\Models\\Mditem' => __DIR__ . '/..' . '/core/models/Mditem.php',
+        'Dcs\\Vendor\\Core\\Models\\MditemSet' => __DIR__ . '/..' . '/core/models/MditemSet.php',
+        'Dcs\\Vendor\\Core\\Models\\Mdproperty' => __DIR__ . '/..' . '/core/models/Mdproperty.php',
+        'Dcs\\Vendor\\Core\\Models\\MdpropertySet' => __DIR__ . '/..' . '/core/models/MdpropertySet.php',
+        'Dcs\\Vendor\\Core\\Models\\Model' => __DIR__ . '/..' . '/core/models/Model.php',
+        'Dcs\\Vendor\\Core\\Models\\PropTemplateSet' => __DIR__ . '/..' . '/core/models/PropsTemplateSet.php',
+        'Dcs\\Vendor\\Core\\Models\\Properties' => __DIR__ . '/..' . '/core/models/PropertySet.php',
+        'Dcs\\Vendor\\Core\\Models\\Property' => __DIR__ . '/..' . '/core/models/Property.php',
+        'Dcs\\Vendor\\Core\\Models\\PropertySet' => __DIR__ . '/..' . '/core/models/PropertySet.php',
+        'Dcs\\Vendor\\Core\\Models\\PropsTemplate' => __DIR__ . '/..' . '/core/models/PropsTemplate.php',
+        'Dcs\\Vendor\\Core\\Models\\Register' => __DIR__ . '/..' . '/core/models/Register.php',
+        'Dcs\\Vendor\\Core\\Models\\Route' => __DIR__ . '/..' . '/core/models/Route.php',
+        'Dcs\\Vendor\\Core\\Models\\Rproperty' => __DIR__ . '/..' . '/core/models/Rproperty.php',
+        'Dcs\\Vendor\\Core\\Models\\RpropertySet' => __DIR__ . '/..' . '/core/models/RpropertySet.php',
+        'Dcs\\Vendor\\Core\\Models\\User' => __DIR__ . '/..' . '/core/models/User.php',
+        'Dcs\\Vendor\\Core\\Models\\iModel' => __DIR__ . '/..' . '/core/models/Model.php',
+        'Dcs\\Vendor\\Core\\Models\\iProperty' => __DIR__ . '/..' . '/core/models/Property.php',
+        'Dcs\\Vendor\\Core\\Models\\iPropertySet' => __DIR__ . '/..' . '/core/models/PropertySet.php',
+        'Dcs\\Vendor\\Core\\Views\\View' => __DIR__ . '/..' . '/core/views/View.php',
     );
 
     public static function getInitializer(ClassLoader $loader)
@@ -33,6 +116,7 @@ class ComposerStaticInit70ff5a14963b3be2d353e74573085465
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInit70ff5a14963b3be2d353e74573085465::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInit70ff5a14963b3be2d353e74573085465::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit70ff5a14963b3be2d353e74573085465::$classMap;
 
         }, null, ClassLoader::class);
     }

@@ -1,6 +1,8 @@
 <?php
 namespace Dcs\Vendor\Core\Models;
+
 use PDO;
+use Exception;
 
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 

@@ -1,6 +1,7 @@
 <?php
 namespace Dcs\Vendor\Core\Models;
 
+use Exception;
 //use dcs\vendor\core\PropertySet;
 //use dcs\vendor\core\iPropertySet as iPropertySet;
 

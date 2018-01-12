@@ -17,9 +17,8 @@ class Controller_MdentitySet extends Controller
 	function action_index($context)
 	{
 		$data = $this->model->get_data($context['MODE']);
-                
-                $context['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/core/views/entityset_view.php";
-		$this->view->generate($context, "template_view.php", $data);
+                $this->view->setcontext($context);
+		$this->view->generate($context, $data);
 	}
 	function action_view($context)
 	{
@@ -33,8 +32,8 @@ class Controller_MdentitySet extends Controller
 	{
             $mdentity = new Mdentity($this->model->getid());
             $data = $mdentity->get_data($context['MODE']);
-            $context['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/core/views/mdentity_view.php";
-            $this->view->generate($context, 'template_view.php', $data);
+            $context['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING).$this->view->get_views_path()."/mdentity_view.php";
+            $this->view->generate($context, $data);
 	}
 }
 

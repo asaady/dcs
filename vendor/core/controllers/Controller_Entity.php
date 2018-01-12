@@ -13,34 +13,35 @@ class Controller_Entity extends Controller
 		$this->view = new View();
 	}
 	
-	function action_index($arResult)
+	function action_index($context)
 	{
-            $data = $this->model->get_data($arResult['MODE']);
-            if ($arResult['MODE'] == 'PRINT') 
+            $data = $this->model->get_data($context['MODE']);
+            if ($context['MODE'] == 'PRINT') 
             {
-                $arResult['content'] = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/views/item_print.php";
-                $arResult['jscript'] = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/js/core_app.js";
-		$this->view->generate($arResult, 'print_view.php', $data);
+                $context['content'] = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING).$this->view->get_views_path()."/item_print.php";
+                $context['jscript'] = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/public/js/core_app.js";
+                $this->view->set_template_view(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/core/views/print_view.php");
+		$this->view->generate($context, $data);
             }
             else
             {    
                 if ($this->model->getmdentity()->getmdtypename()=='Vals')
                 {
-                    $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/public/main.html";
+                    $context['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/public/main.html";
                 }
                 else 
                 {
-                    $arResult['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/views/item_view.php";
+                    $context['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING).$this->view->get_views_path()."/item_view.php";
                 }    
-		$this->view->generate($arResult, 'template_view.php', $data);
+		$this->view->generate($context, $data);
             }    
 	}
-        function action_view($arResult)
+        function action_view($context)
         {
-            $this->action_index($arResult);
+            $this->action_index($context);
         }
-        function action_edit($arResult)
+        function action_edit($context)
         {
-            $this->action_index($arResult);
+            $this->action_index($context);
         }
 }

@@ -40,7 +40,8 @@ class CollectionSet extends Model {
     }
     function get_data($mode='') 
     {
-        $plist = MdpropertySet::getMDProperties($this->id,$mode," WHERE mp.mdid = :mdid AND mp.rank>0 AND mp.ranktoset>0 ",true);
+        $cprop = new CPropertySet($this->id);
+        $plist = $cprop->getProperties(" WHERE mp.mdid = :mdid AND mp.rank>0 AND mp.ranktoset>0 ",true);
         if ($this->id=='')
         {
             $navlist = array($this->mditem->getid()=>$this->mditem->getsynonym(),'new'=>'Новый');
@@ -122,7 +123,11 @@ class CollectionSet extends Model {
     }
     public static function getCollectionItemByID($itemid) 
     {
-        $sql = "SELECT 'CollectionItem' as classname, ct.name, ct.id, ct.synonym, mc.id as setid, mc.name as setname, mc.synonym as setsynonym FROM \"CTable\" as ct INNER JOIN \"MDTable\" as mc ON ct.mdid = mc.id WHERE ct.id=:itemid";
+        $sql = "SELECT 'CollectionItem' as classname, ct.name, ct.id, ct.synonym, "
+                . "mc.id as headid, mc.name as name_head, mc.synonym as synonym_head "
+                . "FROM \"CTable\" as ct "
+                . "INNER JOIN \"MDTable\" as mc "
+                . "ON ct.mdid = mc.id WHERE ct.id=:itemid";
         $sth = DataManager::dm_query($sql,array('itemid'=>$itemid));        
         return $sth->fetch(PDO::FETCH_ASSOC);
     }
@@ -220,7 +225,7 @@ class CollectionSet extends Model {
 	$objs['PSET'] = array();
         $arMD = Mdentity::getMD($filter['itemid']['id']);
         $mdid = $arMD['id'];
-        $objs['actionlist'] = DataManager::getActionList($mdid,$mode,$edit_mode);
+        $objs['actionlist'] = Route::getActionList($mdid,$mode,$edit_mode);
         $objs['MD'] =  array(
                               'mdid'	=> $mdid,
                               'mditem'	=> $arMD['mditem'],
@@ -339,7 +344,8 @@ class CollectionSet extends Model {
                 }    
             }
         }
-        $objs['PSET'] = MdpropertySet::getCPropList($plist,$edit_mode,true);
+        $cprop = new CPropertySet($mdid);
+        $objs['PSET'] = $cprop->getProperties(" WHERE mp.mdid = :mdid AND mp.rank>0 AND mp.ranktoset>0 ",true);
         
    	$sql = "SELECT count(*) as countrec FROM tt_et";
 	$res = DataManager::dm_query($sql);	

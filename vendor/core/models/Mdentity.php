@@ -1,68 +1,38 @@
 <?php
 namespace Dcs\Vendor\Core\Models;
+
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
+
 use PDO;
 
-class Mdentity extends Model 
+class Mdentity extends Head implements I_Head, I_Item 
 {
-    protected $mdentityset;
-    protected $version;
-    function __construct($id) 
-    {
-        $arData = self::getMD($id);
-        
-        if ($arData) 
-        {
-            $this->id = $id;
-            $this->name = $arData['name'];    
-            $this->synonym = $arData['synonym'];    
-            $mditem = $arData['mditem'];        
-        }
-        else 
-        {    
-            $this->id = '';
-            $this->name = '';    
-            $this->synonym = '';    
-            $mditem = $id;        
-	}
-        $this->version=time();
-        $this->mdentityset = new MdentitySet($mditem);
-        
-/*
- */
-         
- }
+    use T_Head;
     
-    function get_data($mode='') 
+    public function __construct($id='') {
+	if ($id=='') {
+            throw new Exception("empty id");
+	}
+        $this->id = $id; 
+        $this->version = time();
+        $this->getMD();
+    }
+    public function get_item() 
     {
-        if ($this->id)
-        {
-            $navlist = array($this->mdentityset->getid()=>$this->mdentityset->getsynonym(),$this->id=>$this->synonym);
-        }
-        else
-        {
-            $navlist = array($this->mdentityset->getid()=>$this->mdentityset->getsynonym(),'new'=>'Новый');
-        }    
-        
-        $plist= self::getMDprop();
-        return array('id'=>$this->id,      
-                'name'=>$this->name,
-                'synonym'=>$this->synonym,
-                'version'=>$this->version,
-                'PSET' => $plist,   
-                'navlist'=>$navlist
-              );
-
+        return new Property($this->id);
     }
     function getarProps($mode='') 
     {
+        $mdprop = new MdpropertySet($this->mdentityset->getid());
+        $objs['PSET'] = $mdprop->getProperties(" WHERE mp.mdid = :mdid AND mp.ranktoset>0 ",true);
+        
         if ($this->id)
         {    
-            return MdpropertySet::getMDProperties($this->id,$mode," WHERE mp.mdid = :mdid ",true);
+            return $mdprop->getProperties(" WHERE mp.mdid = :mdid ",true);
         }
         else
         {
-            return MdpropertySet::getMustBePropsUse($this->mdentityset->getid());
+            return $mdprop->getMustBePropsUse();
         }    
     }
     public static function getMDprop()
@@ -131,77 +101,6 @@ class Mdentity extends Model
         }
         return $objs;
     }
-    function gettype() 
-    {
-      return $this->mdentityset->getname();
-    }
-    function getmditem() 
-    {
-      return $this->mdentityset->getid();
-    }
-    function getmditemsynonym() 
-    {
-      return $this->mdentityset->getsynonym();
-    }
-    function getmdtypename() 
-    {
-      return $this->mdentityset->getname();
-    }
-    function getmdtypedescription() 
-    {
-      return $this->mdentityset->getsynonym();
-    }
-    function getisc() 
-    {
-      return $this->mdentityset->getisc();
-    }
-    function setid($val) 
-    {
-        if ($this->id=='')
-        {    
-            $this->id=$val;
-        }  
-        else
-        {    
-            throw new Exception('You may not alter the value of the ID field!');
-        }    
-    }
-    function setname($name) 
-    {
-	$this->name=$name;
-    }
-    function setsynonym($val) 
-    {
-	$this->synonym=$val;
-    }
-    function settype($val) 
-    {
-	$this->type=$val;
-    }
-    function setmditem($val) 
-    {
-	$this->setmditem=$val;
-    }
-    function setmdtypename($val) 
-    {
-	$this->mdtypename=$val;
-    }
-    function setmdtypedescription($val) 
-    {
-	$this->mdtypedescription=$val;
-    }
-    public static function getMD($mdid) 
-    {
-	$sql = "SELECT mdt.id, mdt.name, mdt.synonym, mdt.mditem, mdi.name as mdtypename, mdi.synonym as mdtypedescription, mdt.comptype as id_comptype, mdc.name as name_comptype FROM \"MDTable\" AS mdt "
-                . "INNER JOIN \"CTable\" AS mdi "
-                . "ON mdt.mditem=mdi.id "
-                . "INNER JOIN \"CTable\" AS mdc "
-                . "ON mdt.comptype=mdc.id "
-                . "WHERE mdt.id= :mdid";
-        $sth = DataManager::dm_query($sql,array('mdid'=>$mdid));        
-	return $sth->fetch(PDO::FETCH_ASSOC);
-    }
-    
     function update($data) 
     {
         $sql = '';
@@ -333,12 +232,6 @@ class Mdentity extends Model
             }
         }
 	return $objs;
-    }
-    function create($data) 
-    {
-        $entity = new Entity($this->id);
-        $entity->set_data($data);
-        return $entity->createNew();
     }
     function before_save($data) 
     {

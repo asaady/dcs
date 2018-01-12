@@ -15,6 +15,7 @@ use PDO;
 class Route {
     protected $routes;
     protected $classname = '';
+    protected $classtype = '';
     protected $action_name = '';
     protected $controller_name = '';
     protected $controller_file = '';
@@ -28,7 +29,8 @@ class Route {
         'ENTERPRISE' => function() {
                 $item = self::getContentByID($this->context->getattr('ITEMID'));
                 $this->classname = $item['classname'];
-                $this->controller_name = 'Controller_'.$item['classname'];    
+                $this->classtype = $item['classtype'];
+                $this->controller_name = 'Controller_'.$item['classtype'];    
                 if ($this->classname == 'CollectionItem')
                 {
                     if ($this->context->getattr('ACTION') != 'EDIT')
@@ -55,13 +57,14 @@ class Route {
                 }
             },
         'CONFIG' => function() {
-                $item = self::getContentByID();
-                if ($item['classname']=='EntitySet')
-                {
-                    $item['classname']='Mdentity';
-                }    
+                $item = self::getContentByID($this->context->getattr('ITEMID'));
                 $this->classname = $item['classname'];
-                $this->controller_name = 'Controller_'.$item['classname'];    
+                $this->classtype = $item['classtype'];
+                if ($item['classname'] == 'EntitySet')
+                {
+                    $this->classname = 'Mdentity';
+                }    
+                $this->controller_name = 'Controller_'.$this->classname;    
             },
         "AUTH" => function() {
                 $this->controller_name = 'Controller_Auth';
@@ -75,6 +78,7 @@ class Route {
         "PRINT" => function() {
                 $item = self::getContentByID();
                 $this->classname = $item['classname'];
+                $this->classtype = $item['classtype'];
                 $ent = new Entity($this->context->getattr('ITEMID'));
                 $compname = $ent->getmdentity()->getname();
                 $model_name = 'Prn'.$compname;
@@ -92,11 +96,15 @@ class Route {
                 }
                 },
         "AJAX" => function() {
+               $item = self::getContentByID($this->context->getattr('ITEMID'));     
                $this->controller_name='Controller_Ajax';
                $this->action_name = "action_load";
+               $this->classname = $item['classname'];
+               $this->classtype = $item['classtype'];
             },
         );
         $this->classname = '';
+        $this->classtype = '';
         $this->action_name = 'action_index';
         $this->controller_name = 'Controller_404';
         $this->controller_path = "/vendor/core/controllers";
@@ -121,7 +129,9 @@ class Route {
         }
         $handlername = $this->modes[$this->context->getattr('MODE')];
         $handlername();
-        $controller_namespace = "Dcs".str_replace("/","\\",ucwords($this->controller_path,"/"))."\\";
+        $this->context->setattr('CLASSNAME', $this->classname);
+        $this->context->setattr('CLASSTYPE', $this->classtype);
+        $controller_namespace = "\\Dcs".str_replace("/","\\",ucwords($this->controller_path,"/"))."\\";
         $controllername = $controller_namespace.$this->controller_name;
         if ($this->classname=='')
         {
@@ -129,7 +139,7 @@ class Route {
         } 
         else 
         {
-            $controller = new $controllername($this->context->getattr('ITEMID'));
+            $controller = new $controllername($this->context->getcontext());
             //die(var_dump($controllername));
             //$controller = new Controller_MdentitySet($this->context->getattr('ITEMID'));
         }
@@ -149,22 +159,31 @@ class Route {
     }
     public static function getContentByID($itemid) 
     {
-        $sql = "SELECT 0 as rank,'EntitySet' as classname, md.name, md.id, md.synonym, ct.name as typename FROM \"MDTable\" as md  inner join \"CTable\" as ct inner join \"MDTable\" as mditem on ct.mdid=mditem.id on md.mditem=ct.id and mditem.name='MDitems' WHERE md.id=:itemid
-                UNION SELECT 1,'Entity', et.name, et.id, et.name, md.name FROM \"ETable\" as et INNER JOIN \"MDTable\" as md ON et.mdid = md.id WHERE et.id=:itemid
-                UNION SELECT 2,'MdentitySet', ct.name, ct.id, ct.synonym, md.name FROM \"CTable\" as ct INNER JOIN \"MDTable\" as md ON ct.mdid=md.id AND md.name='MDitems' WHERE ct.id=:itemid
-                UNION SELECT 3,'Mdproperty', mp.name, mp.id, mp.synonym, md.name  FROM \"MDProperties\" as mp INNER JOIN \"MDTable\" as md ON mp.mdid=md.id WHERE mp.id=:itemid
-                UNION SELECT 5,'CollectionItem', ct.name, ct.id, ct.synonym, md.name FROM \"CTable\" as ct INNER JOIN \"MDTable\" as md ON ct.mdid=md.id WHERE ct.id=:itemid
-                UNION SELECT 6,'Cproperty', cp.name, cp.id, cp.synonym, md.name FROM \"CProperties\" as cp INNER JOIN \"MDTable\" as md ON cp.mdid=md.id WHERE cp.id=:itemid 
-                UNION SELECT 7,'Register', md.name, md.id, md.synonym, ct.name FROM \"MDTable\" as md  inner join \"CTable\" as ct inner join \"MDTable\" as mditem on ct.mdid=mditem.id on md.mditem=ct.id and mditem.name='Regs' WHERE md.id=:itemid
-                UNION SELECT 8,'RegProperty', mp.name, mp.id, mp.synonym, md.name  FROM \"RegProperties\" as mp INNER JOIN \"MDTable\" as md ON mp.mdid=md.id WHERE mp.id=:itemid";
+        $sql = "SELECT 0 as rank,'EntitySet' as classname, 'Head' as classtype, md.name, md.id, md.synonym, ct.name as typename FROM \"MDTable\" as md  inner join \"CTable\" as ct inner join \"MDTable\" as mditem on ct.mdid=mditem.id on md.mditem=ct.id and mditem.name='MDitems' WHERE md.id=:itemid
+                UNION SELECT 1,'Entity', 'Item', et.name, et.id, et.name, md.name FROM \"ETable\" as et INNER JOIN \"MDTable\" as md ON et.mdid = md.id WHERE et.id=:itemid
+                UNION SELECT 2,'MdentitySet', 'Head', ct.name, ct.id, ct.synonym, md.name FROM \"CTable\" as ct INNER JOIN \"MDTable\" as md ON ct.mdid=md.id AND md.name='MDitems' WHERE ct.id=:itemid
+                UNION SELECT 3,'Mdproperty', 'Item', mp.name, mp.id, mp.synonym, md.name  FROM \"MDProperties\" as mp INNER JOIN \"MDTable\" as md ON mp.mdid=md.id WHERE mp.id=:itemid
+                UNION SELECT 5,'CollectionItem', 'Item', ct.name, ct.id, ct.synonym, md.name FROM \"CTable\" as ct INNER JOIN \"MDTable\" as md ON ct.mdid=md.id WHERE ct.id=:itemid
+                UNION SELECT 6,'Cproperty', 'Item', cp.name, cp.id, cp.synonym, md.name FROM \"CProperties\" as cp INNER JOIN \"MDTable\" as md ON cp.mdid=md.id WHERE cp.id=:itemid 
+                UNION SELECT 7,'Register', 'Head', md.name, md.id, md.synonym, ct.name FROM \"MDTable\" as md  inner join \"CTable\" as ct inner join \"MDTable\" as mditem on ct.mdid=mditem.id on md.mditem=ct.id and mditem.name='Regs' WHERE md.id=:itemid
+                UNION SELECT 8,'RegProperty', 'Item', mp.name, mp.id, mp.synonym, md.name  FROM \"RegProperties\" as mp INNER JOIN \"MDTable\" as md ON mp.mdid=md.id WHERE mp.id=:itemid";
 
         $artt = array();
         $artt[] = DataManager::createtemptable($sql, 'tt0', array('itemid' => $itemid));
         $sql = "SELECT min(rank) as rank, id FROM tt0 GROUP BY id";
         $artt[] = DataManager::createtemptable($sql, 'tt1');
-        $sql = "SELECT tt0.classname, tt0.name, tt1.id, tt0.synonym, tt0.typename FROM tt0 inner join tt1 on tt0.rank=tt1.rank and tt0.id=tt1.id";
+        $sql = "SELECT tt0.classname, tt0.classtype, tt0.name, tt1.id, tt0.synonym, tt0.typename FROM tt0 inner join tt1 on tt0.rank=tt1.rank and tt0.id=tt1.id";
         $sth = DataManager::dm_query($sql);
         DataManager::droptemptable($artt);
         return $sth->fetch(PDO::FETCH_ASSOC);
+    }
+    public static function getActionList($id, $mode, $edit_mode = '') {
+        $toset = false;
+        $item = self::getContentByID($id);
+        $classname = $item['classname'];
+        if ($item['typename'] == 'Comps') {
+            $classname = 'Component';
+        }
+        return DataManager::getActionsbyItem($classname, $mode, $edit_mode);
     }
 }

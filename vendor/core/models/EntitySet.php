@@ -5,282 +5,16 @@ use PDO;
 use DateTime;
 use Exception;
 
-//use dcs\vendor\core\Filter;
-//use dcs\vendor\core\Mdentity;
-//use dcs\vendor\core\MdpropertySet;
-//use dcs\vendor\core\PropsTemplate;
-//use dcs\vendor\core\DataManager;
-//use dcs\vendor\core\CollectionSet;
-//use dcs\vendor\core\Model;
-//use dcs\vendor\core\Mditem;
-
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
-
-class EntitySet extends Model {
-    protected $mditem;     
+class EntitySet extends Head implements I_Head 
+{
+    use T_Head;
     
-    
-    public function __construct($id='') {
-	if ($id=='') {
-            throw new Exception("empty id entityset");
-	}
-        $arPar = Mdentity::getMD($id);
-        $this->id = $id; 
-        $this->name = $arPar['name']; 
-        $this->synonym = $arPar['synonym']; 
-        $this->mditem = new Mditem($arPar['mditem']); 
-        $this->version = time();
-    }
-    function getmditem()
+    public function get_item() 
     {
-        return $this->mditem;
-    }
-    function get_data($mode='') 
-    {
-        return array(
-          'id'=>$this->id,
-          'name'=>$this->name,
-          'synonym'=>$this->synonym,
-          'version'=>$this->version,
-          'mdtype'=>$this->mditem->getname(),
-          'mditem'=>$this->mditem->getid(),
-          'mditemsynonym'=>$this->mditem->getsynonym(),
-          'PSET' => MdpropertySet::getMDProperties($this->id,$mode," WHERE mp.mdid = :mdid AND mp.ranktoset>0 ",true),
-          'navlist' => array(
-              $this->mditem->getid() => $this->mditem->getsynonym(),
-              $this->id => $this->synonym
-            )
-        );
-    }
-    function create($data) 
-    {
-        $entity = new Entity($this->id);
-        $entity->set_data($data);
-        return $entity->createNew();
-    }
-    
-    function createtemptable_all($tt_entities,$mdid)
-    {
-	$artemptable = array();
-        
-        $sql = DataManager::get_select_properties(" WHERE mp.mdid=:mdid AND mp.rank>0 ");
-        $artemptable[1]= DataManager::createtemptable($sql,'tt_pt',array('mdid'=>$mdid));   
-        
-        $sql=DataManager::get_select_maxupdate($tt_entities,'tt_pt');
-        $artemptable[2] = DataManager::createtemptable($sql,'tt_id');   
-        
-        
-        $sql=DataManager::get_select_lastupdate('tt_id','tt_pt');
-        $artemptable[3] = DataManager::createtemptable($sql,'tt_tv');   
-        
-        return $artemptable;
-    }
-    
-    public static function createTempTableEntitiesToStr($entities,$count_req) 
-    {
-        // делаем строку разделенных запятыми уидов в одинарных кавычках заключенная в круглые скобки
-        $str_entities = "('".implode("','", $entities)."')"; 
-        // соберем список ссылок в представлении (ranktostring>0) 
-	$artemptable=array();
-        $sql = DataManager::get_select_entities($str_entities,true);
-        $artemptable[0] = DataManager::createtemptable($sql,'tt_t0');   
-        
-        $sql = DataManager::get_select_unique_mdid('tt_t0');
-        $artemptable[1] = DataManager::createtemptable($sql,'tt_t1');   
-        
-        $sql = DataManager::get_select_properties(" WHERE mp.mdid in (SELECT mdid FROM tt_t1) AND mp.ranktostring>0 ");
-        $artemptable[2] = DataManager::createtemptable($sql,'tt_t2');   
-        
-        $sql=DataManager::get_select_maxupdate('tt_t0','tt_t2');
-        $artemptable[3] = DataManager::createtemptable($sql,'tt_t3');   
-        
-        $sql=DataManager::get_select_lastupdateForReq($count_req,'tt_t3','tt_t0');
-        $artemptable[4] = DataManager::createtemptable($sql,'tt_t4');  
-        
-        return $artemptable;    
+        return new Entity($this->id);
     }
 
-    public static function get_EntitiesFromList($entities,$ttname) 
-    {
-        $str_entities = "('".implode("','", $entities)."')";
-        $sql = DataManager::get_select_entities($str_entities);
-        return DataManager::createtemptable($sql,$ttname);
-    }
-    public static function get_findEntitiesByProp($ttname, $mdid, $propid, $ptype, $access_prop, $filter ,$limit) 
-    {
-//      $filter: array 
-//      id = property id (MDProperties)
-//      val = filter value
-//      val_min = min filter value (optional)    
-//      val_max = max filter value (optional)    
-        $params = array();
-        $rec_limit = $limit*2;
-        $prop_templ_id = '';
-        $strwhere = '';
-        $arprop = array();
-        $mdentity = new Mdentity($mdid);
-        if ($propid!='')
-        {
-            if ($ptype<>'text')
-            {
-                $prop_templ_id = $arprop['propid'];
-                $strwhere = DataManager::getstrwhere($filter,$ptype,'pv.value',$params);
-            }
-        }
-        if ($strwhere!='')
-        {
-            $strjoin = "it.entityid";
-            $sql = "SELECT DISTINCT it.entityid as id FROM \"PropValue_$ptype\" as pv INNER JOIN \"IDTable\" as it ON pv.id=it.id AND it.propid=:propid"; 
-            $params['propid']=$propid;
-        }
-        else
-        {
-            $key_edate = array_search(true, array_column($mdentity->getarProps(), 'isedate','id'));
-            if ($key_edate!==FALSE)
-            {
-                //если есть реквизит с установленным флагом isedate сортируем по этому реквизиту по убыванию
-                $strjoin = "et.id";
-                $sql = "SELECT et.id, COALESCE(pv.value,'epoch'::timestamp) as value FROM \"ETable\" as et LEFT JOIN \"IDTable\" as it  INNER JOIN \"PropValue_date\" as pv ON pv.id=it.id AND it.propid=:propid ON et.id=it.entityid "; 
-                $strwhere = " et.mdid=:mdid";
-                $params['propid'] = $key_edate;
-                $params['mdid'] = $mdid;
-            }        
-            else 
-            {
-                $strwhere = " et.mdid=:mdid";
-                $strjoin = "et.id";
-                $sql = "SELECT et.id FROM \"ETable\" as et"; 
-                $params['mdid'] = $mdid;
-            }
-        }   
-        $sql_rls = '';
-        if (count($access_prop))
-        {
-            $arr_prop = array_unique(array_column($access_prop,'propid'));
-            foreach ($arr_prop as $prop)
-            {
-                if ($prop==$prop_templ_id)
-                {
-                    continue;
-                }    
-                $isprop = array_search($prop, array_column($mdentity->getarProps(), 'propid','id'));
-                if ($isprop===FALSE)
-                {
-                    //в текущем объекте нет реквизита с таким значением $prop
-                    continue;
-                }    
-                $str_val='';
-                $propname='';
-                $prop_id= '';
-                foreach ($access_prop as $ap)
-                {
-                    if ($prop<>$ap['propid'])
-                    {
-                        continue;
-                    }    
-                    $rls_type = $ap['type'];
-                    if (($ap['rd']===true)||($ap['wr']===true))
-                    {
-                        $str_val .= ",'"."$ap[value]"."'";
-                    }    
-                    $propname=$ap['propname'];
-                    $prop_id=$ap['propid'];                    
-                }    
-                if ($str_val=='')
-                {
-                    return '';
-                }    
-                $str_val = "(".substr($str_val,1).")";
-                $props_templ = new PropsTemplate($prop);
-                if ($props_templ->getvalmdentity()->getid()==$mdid)    
-                {
-                    $sql_rls .= " INNER JOIN \"ETable\" as et_$propname ON et_$propname.id=$strjoin AND et_$propname.id IN $str_val";
-                }    
-                else
-                {    
-                    if (!in_array($ap['propid'], $params))
-                    {        
-                        $sql_rls .= " INNER JOIN \"IDTable\" as it_$propname inner join \"MDProperties\" as mp_$propname on it_$propname.propid=mp_$propname.id AND mp_$propname.propid=:$propname inner join \"PropValue_$rls_type\" as pv_$propname ON pv_$propname.id=it_$propname.id AND pv_$propname.value in $str_val ON it_$propname.entityid=$strjoin";
-                        $params[$propname]=$prop_id;
-                    }    
-                }    
-            }    
-        }   
-        if ($sql_rls<>'')
-        {
-            $sql .= $sql_rls;
-        }    
-        if ($strwhere<>'')
-        {
-            $sql .= " WHERE $strwhere";
-        }    
-        $sql .= " LIMIT $rec_limit";
-        
-        return DataManager::createtemptable($sql,$ttname,$params);
-    }    
-    
-    public static function get_access_prop()
-    {
-        $userid=$_SESSION['user_id'];
-        $sql = "select pv_group.value as user_group, pv_prop.value as propid, ct_prop.name as propname, pt.name as type, pv_val.value as value, pv_rd.value as rd, pv_wr.value as wr from \"CTable\" as ct
-                    inner join \"MDTable\" as mt
-                    on ct.mdid = mt.id
-                    and mt.name='access_rights'
-                    inner join \"CPropValue_cid\" as pv_group
-                        inner join \"CProperties\" as cp_group
-                        on pv_group.pid=cp_group.id
-                        and cp_group.name='user_group'
-                        inner join \"CTable\" as ct_gr
-                            inner join \"MDTable\" as mt_gr
-                            on ct_gr.mdid = mt_gr.id
-                            and mt_gr.name='usergroup'
-                            inner join \"CPropValue_cid\" as pv_grp
-                                    inner join \"CProperties\" as cp_grp
-                                    on pv_grp.pid=cp_grp.id
-                                    and cp_grp.name='group'
-                            on ct_gr.id=pv_grp.id
-                            inner join \"CPropValue_cid\" as pv_usr
-                                    inner join \"CProperties\" as cp_usr
-                                    on pv_usr.pid=cp_usr.id
-                                    and cp_usr.name='user'
-                            on ct_gr.id=pv_usr.id
-                            and pv_usr.value = :userid
-                        on pv_group.value = pv_grp.value
-                    on ct.id=pv_group.id
-                    left join \"CPropValue_cid\" as pv_prop
-                            inner join \"CProperties\" as cp_prop
-                            on pv_prop.pid=cp_prop.id
-                            and cp_prop.name='prop_template'
-                            inner join \"CPropValue_cid\" as pst
-                                INNER JOIN \"CProperties\" as cprs
-                                ON pst.pid = cprs.id
-                                AND cprs.name='type'
-                                INNER JOIN \"CTable\" as pt
-                                ON pst.value = pt.id
-                            on pv_prop.value = pst.id
-                            inner join \"CTable\" as ct_prop
-                            on pv_prop.value = ct_prop.id
-                    on ct.id=pv_prop.id
-                    left join \"CPropValue_str\" as pv_val
-                            inner join \"CProperties\" as cp_val
-                            on pv_val.pid=cp_val.id
-                            and cp_val.name='value'
-                    on ct.id=pv_val.id
-                    left join \"CPropValue_bool\" as pv_rd
-                            inner join \"CProperties\" as cp_rd
-                            on pv_rd.pid=cp_rd.id
-                            and cp_rd.name='read'
-                    on ct.id=pv_rd.id
-                    left join \"CPropValue_bool\" as pv_wr
-                            inner join \"CProperties\" as cp_wr
-                            on pv_wr.pid=cp_wr.id
-                            and cp_wr.name='write'
-                    on ct.id=pv_wr.id";
-	$res = DataManager::dm_query($sql, array('userid'=>$userid));	
-        return $res->fetchAll(PDO::FETCH_ASSOC);
-    }
-    
-    static function fill_ent_name($arr_e,$arr_id,&$ldata)
+    public static function fill_ent_name($arr_e,$arr_id,&$ldata)
     {
         $arr_entities = self::getAllEntitiesToStr($arr_e);
         foreach($arr_id as $rid=>$prow)
@@ -374,35 +108,7 @@ class EntitySet extends Model {
         }   
         return $tt_et;
     }
-    static function arr_rls($propid, $access_prop,$edit_mode)
-    {
-        $rls = array();
-        foreach ($access_prop as $prop)
-        {
-            if ($prop['propid'] == $propid)
-            {
-                if (($edit_mode === 'EDIT')||
-                    ($edit_mode === 'SET_EDIT')||
-                    ($edit_mode === 'CREATE')||
-                    ($edit_mode === 'CREATE_PROPERTY')) {
-                    if ($prop['wr'] === true)
-                    {    
-                        $rls[] = $prop['value'];
-                    }    
-                }    
-                else 
-                {
-                    if (($prop['rd'] === true)||($prop['wr'] === true))
-                    {    
-                        $rls[] = $prop['value'];
-                    }    
-                }
-            }    
-        }    
-        return $rls;
-    }
-
-    static function sqltext_entitylist($mdid,$plist,$filter,$arr_prop,$access_prop,$edit_mode,&$params)
+    static function sqltext_entitylist($mdid,$plist,$filter,$arr_prop,$access_prop,$action,&$params)
     {
         $str0_req='SELECT et.id';
         $str_req='';
@@ -467,7 +173,7 @@ class EntitySet extends Model {
             {
                 if (in_array($row['propid'], $arr_prop))
                 {
-                    $rls = self::arr_rls($row['propid'], $access_prop, $edit_mode);
+                    $rls = self::arr_rls($row['propid'], $access_prop, $action);
                     if (!count($rls))
                     {    
                         //rls есть а доступных значений реквизита нет - значит доступ к списку запрещен
@@ -502,34 +208,24 @@ class EntitySet extends Model {
         return $sql;
     }
 
-    public static function getEntitiesByFilter($filter, $mode='', $edit_mode='',$limit=DCS_COUNT_REC_BY_PAGE, $page=1, $order='name') 
+    public function getItemsByFilter($context, $filter) 
     {
+        $mode = $context['MODE'];
+        $action = $context['ACTION'];
+        $limit = $context['LIMIT'];
+        $page = $context['PAGE'];
     	$objs = array();
 	$objs['LDATA'] = array();
 	$objs['PSET'] = array();
-        $objs['actionlist'] = DataManager::getActionsbyItem('EntitySet',$mode,$edit_mode);
-        
-        $curid = $filter['curid']['id']; //это уид объекта для которого запрошена выборка
+        $objs['actionlist'] = DataManager::getActionsbyItem('EntitySet',$mode,$action);
         $propid = $filter['filter_id']['id']; //это уид реквизита отбора для выборки
         $docid = (array_key_exists('docid', $filter) ? $filter['docid']['id'] : '');  
+        $curid = (array_key_exists('curid', $filter) ? $filter['curid']['id'] : '');  
         $ptype = '';
-        $mdid = '';
+        $mdid = $this->id;
         $ent_filter = array();
-        if ($propid!='')
-        {
+        if ($propid != '') {
             $ent_filter[$propid] = new Filter($propid,$filter['filter_val']['id']);
-            $mdid = $ent_filter[$propid]->getmdid();
-        }
-        else
-        {
-            if ($filter['itemid']['id']!='')
-            {
-                $mdid = $filter['itemid']['id'];
-            }
-            else 
-            {
-                return $objs;
-            }
         }
 	$offset=(int)($page-1)*$limit;
         $access_prop = array();
@@ -559,7 +255,6 @@ class EntitySet extends Model {
                 }    
             }    
         }
-        $tpropid = $arprop['propid']; // ид шаблона реквизита который выбираем
         $mdentity = new Mdentity($mdid); //метаданные объекта который выбираем
         if ($mdentity->getmdtypename()=='Items') //запрошены строки ТЧ?
         {
@@ -607,7 +302,7 @@ class EntitySet extends Model {
         }    
         
         $params = array();
-        $sql = self::sqltext_entitylist($mdid,$plist,$ent_filter,$arr_prop,$access_prop,$edit_mode,$params);
+        $sql = self::sqltext_entitylist($mdid,$plist,$ent_filter,$arr_prop,$access_prop,$action,$params);
         if ($sql=='')
         {
             $objs['RES']='access denied';
@@ -619,9 +314,7 @@ class EntitySet extends Model {
         $arr_e = array();
         $arr_name = array();
         while($row = $res->fetch(PDO::FETCH_ASSOC)) {
-            $objs['LDATA'][$row['id']]=array();
-            $objs['LDATA'][$row['id']]['id'] = array('id'=>$row['id'],'name'=>'');
-            $objs['LDATA'][$row['id']]['class'] ='active';               
+            $objs['LDATA'][$row['id']]= array('id'=>$row['id'],'name'=>'','class' => 'active');
             $arr_name[$row['id']] = array();
             foreach($plist as $row_plist) 
             {
@@ -681,7 +374,8 @@ class EntitySet extends Model {
             }    
         }
         $objs['LNAME'] = $arr_name;
-        $objs['PSET'] = MdpropertySet::getMDProperties($mdid,$mode," WHERE mp.mdid = :mdid AND mp.ranktoset>0 ",true);
+        $mdprop = new MdpropertySet($mdid);
+        $objs['PSET'] = $mdprop->getProperties(" WHERE mp.mdid = :mdid AND mp.ranktoset>0 ",true);
         $sql = "SELECT count(*) as countrec FROM tt_tv";
 	$res = DataManager::dm_query($sql);	
 	$objs['CNT_REC']=0;
@@ -1015,6 +709,5 @@ class EntitySet extends Model {
         }
         return $objs;
     }        
-    
 }
 

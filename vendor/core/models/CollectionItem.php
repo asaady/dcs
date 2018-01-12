@@ -5,9 +5,7 @@ require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)
 use PDO;
 //use dcs\vendor\core\CollectionSet;
 
-class CollectionItem extends Model {
-    protected $collectionset;
-    
+class CollectionItem extends Item {
     function __construct($id) {
         if ($id==''){
             die("class.CollectionItem constructor: id is empty");
@@ -18,42 +16,35 @@ class CollectionItem extends Model {
             $this->id = $arData['id'];
             $this->name = $arData['name'];    
             $this->synonym = $arData['synonym'];    
-            $setid = $arData['setid'];    
+            $headid = $arData['headid'];    
 	}else {
             //передан id реальной коллекции
             $this->id = '';
             $this->name = '';    
             $this->synonym = '';    
-            $setid = $id;    
+            $headid = $id;    
 	}
-        $this->collectionset = new CollectionSet($setid);
+        $this->head = new CollectionSet($headid);
         $this->version=time();
- }
-    
-    function get_data($mode='') {
-        
-        $plist = MdpropertySet::getMDProperties($this->collectionset->getid(),$mode," WHERE mp.mdid = :mdid ");
-        if ($this->id=='')
-        {    
-            $navlist = array($this->collectionset->getmditem()->getid()=>$this->collectionset->getmditem()->getsynonym(),
-                       $this->collectionset->getid()=>$this->collectionset->getsynonym(),
-                       $this->id=>'Новый'
-                   );
-        }
-        else
-        {
-            $navlist = array($this->collectionset->getmditem()->getid()=>$this->collectionset->getmditem()->getsynonym(),
-                       $this->collectionset->getid()=>$this->collectionset->getsynonym(),
-                       $this->id=>$this->synonym
-                   );
+    }
+    function get_data($mode='') 
+    {
+        $cprop = new CPropertySet($this->head->getid());
+        $plist = $cprop->getProperties(" WHERE mp.mdid = :mdid ",FALSE);
+        $navlist = array($this->head->getmditem()->getid()=>$this->collectionset->getmditem()->getsynonym(),
+                   $this->head->getid()=>$this->collectionset->getsynonym());
+        if ($this->id == '') {    
+            $navlist['new'] = 'Новый';
+        } else {
+            $navlist[$this->id] = $this->synonym;
         }    
       
-      return array('id'=>$this->id,      
+        return array('id'=>$this->id,      
                    'name'=>$this->name,
                    'synonym'=>$this->synonym,
                    'version'=>$this->version,
                    'PLIST' => $plist,
-                   'setdata'=>array(),
+                   'LDATA'=>array(),
                    'navlist'=>$navlist
               );
 

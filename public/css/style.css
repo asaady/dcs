@@ -108,7 +108,7 @@ background: #D9EDF7;
   font-weight: 400;
   src: local('Material Icons'),
       local('MaterialIcons-Regular'),
-      url(/fonts/material-icons.woff2) format('woff2');
+      url(/public/fonts/material-icons.woff2) format('woff2');
 }
 
 .material-icons {

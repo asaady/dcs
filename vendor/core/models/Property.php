@@ -1,23 +1,7 @@
 <?php
 namespace Dcs\Vendor\Core\Models;
 
-//use Dcs\Vendor\Core\Model\Model;
-//use Dcs\Vendor\Core\Model\iModel as iModel;
-//
-interface iProperty extends iModel
-{
-    public function getvalmdid();
-    public function getvalmdname();
-    public function getvalmdtypename();
-    public function gettype(); 
-    public function getlength();
-    public function getprec();
-    public function getranktoset();
-    public function getranktostring();
-    public function getrank();
-}
-
-class Property extends Model implements iProperty 
+class Property extends Model
 {
     protected $type;
     protected $length;

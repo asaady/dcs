@@ -18,8 +18,8 @@ class Controller_EntitySet extends Controller
 	function action_index($context)
 	{
 		$data = $this->model->get_data($context['MODE']);
-                $context['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/views/entityset_view.php";
-		$this->view->generate($context, "template_view.php", $data);
+                $context['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING).$this->view->get_views_path()."/entityset_view.php";
+		$this->view->generate($context, $data);
 	}
 	function action_view($context)
         {
@@ -43,8 +43,8 @@ class Controller_EntitySet extends Controller
 		$data = $entity->get_data($context['MODE']);
                 $context['ITEMID'] = $this->model->getid();
             }    
-            $context['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/views/item_view.php";
-            $this->view->generate($context, "template_view.php", $data);
+            $context['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING).$this->view->get_views_path()."/item_view.php";
+            $this->view->generate($context, $data);
 	}
 }
 

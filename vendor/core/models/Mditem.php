@@ -1,5 +1,6 @@
 <?php
 namespace Dcs\Vendor\Core\Models;
+
 use Exception;
 use PDO;
 
@@ -23,11 +24,6 @@ class Mditem extends Model {
           'name'=>$this->name,
           'synonym'=>$this->synonym,
           'version'=>$this->version,
-          'ardata'=>array(
-              'id'=>$this->id,
-              'name'=>$this->name,
-              'synonym'=>$this->synonym,
-          ),
           'plist' => array(
                         'id'=>'ID',
                         'name'=>'NAME',

@@ -71,16 +71,6 @@ class DataManager {
         return $sth->fetch(PDO::FETCH_ASSOC);
     }
 
-    public static function getActionList($id, $mode, $edit_mode = '') {
-        $toset = false;
-        $item = self::getContentByID($id);
-        $classname = $item['classname'];
-        if ($item['typename'] == 'Comps') {
-            $classname = 'Component';
-        }
-        return self::getActionsbyItem($classname, $mode, $edit_mode);
-    }
-
     public static function getActionsbyItem($classname, $mode = '', $edit_mode = '') {
         $sql = "SELECT ia.id, ct_icon.name, ct_icon.synonym, pv_icon.value as icon FROM \"CTable\" as ia 
 	inner join \"MDTable\" as md
@@ -1205,4 +1195,92 @@ class DataManager {
         }
         return $ar_obj;
     }    
+    public static function get_access_prop()
+    {
+        $userid=$_SESSION['user_id'];
+        $sql = "select pv_group.value as user_group, pv_prop.value as propid, ct_prop.name as propname, pt.name as type, pv_val.value as value, pv_rd.value as rd, pv_wr.value as wr from \"CTable\" as ct
+                    inner join \"MDTable\" as mt
+                    on ct.mdid = mt.id
+                    and mt.name='access_rights'
+                    inner join \"CPropValue_cid\" as pv_group
+                        inner join \"CProperties\" as cp_group
+                        on pv_group.pid=cp_group.id
+                        and cp_group.name='user_group'
+                        inner join \"CTable\" as ct_gr
+                            inner join \"MDTable\" as mt_gr
+                            on ct_gr.mdid = mt_gr.id
+                            and mt_gr.name='usergroup'
+                            inner join \"CPropValue_cid\" as pv_grp
+                                    inner join \"CProperties\" as cp_grp
+                                    on pv_grp.pid=cp_grp.id
+                                    and cp_grp.name='group'
+                            on ct_gr.id=pv_grp.id
+                            inner join \"CPropValue_cid\" as pv_usr
+                                    inner join \"CProperties\" as cp_usr
+                                    on pv_usr.pid=cp_usr.id
+                                    and cp_usr.name='user'
+                            on ct_gr.id=pv_usr.id
+                            and pv_usr.value = :userid
+                        on pv_group.value = pv_grp.value
+                    on ct.id=pv_group.id
+                    left join \"CPropValue_cid\" as pv_prop
+                            inner join \"CProperties\" as cp_prop
+                            on pv_prop.pid=cp_prop.id
+                            and cp_prop.name='prop_template'
+                            inner join \"CPropValue_cid\" as pst
+                                INNER JOIN \"CProperties\" as cprs
+                                ON pst.pid = cprs.id
+                                AND cprs.name='type'
+                                INNER JOIN \"CTable\" as pt
+                                ON pst.value = pt.id
+                            on pv_prop.value = pst.id
+                            inner join \"CTable\" as ct_prop
+                            on pv_prop.value = ct_prop.id
+                    on ct.id=pv_prop.id
+                    left join \"CPropValue_str\" as pv_val
+                            inner join \"CProperties\" as cp_val
+                            on pv_val.pid=cp_val.id
+                            and cp_val.name='value'
+                    on ct.id=pv_val.id
+                    left join \"CPropValue_bool\" as pv_rd
+                            inner join \"CProperties\" as cp_rd
+                            on pv_rd.pid=cp_rd.id
+                            and cp_rd.name='read'
+                    on ct.id=pv_rd.id
+                    left join \"CPropValue_bool\" as pv_wr
+                            inner join \"CProperties\" as cp_wr
+                            on pv_wr.pid=cp_wr.id
+                            and cp_wr.name='write'
+                    on ct.id=pv_wr.id";
+	$res = self::dm_query($sql, array('userid'=>$userid));	
+        return $res->fetchAll(PDO::FETCH_ASSOC);
+    }
+    public static function arr_rls($propid, $access_prop,$edit_mode)
+    {
+        $rls = array();
+        foreach ($access_prop as $prop)
+        {
+            if ($prop['propid'] == $propid)
+            {
+                if (($edit_mode === 'EDIT')||
+                    ($edit_mode === 'SET_EDIT')||
+                    ($edit_mode === 'CREATE')||
+                    ($edit_mode === 'CREATE_PROPERTY')) {
+                    if ($prop['wr'] === true)
+                    {    
+                        $rls[] = $prop['value'];
+                    }    
+                }    
+                else 
+                {
+                    if (($prop['rd'] === true)||($prop['wr'] === true))
+                    {    
+                        $rls[] = $prop['value'];
+                    }    
+                }
+            }    
+        }    
+        return $rls;
+    }
+
 }

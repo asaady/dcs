@@ -3,9 +3,18 @@ namespace Dcs\Vendor\Core\Controllers;
 
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 
+use Dcs\Vendor\Core\Models\DataManager;
+use Dcs\Vendor\Core\Models\EntitySet;
+use Dcs\Vendor\Core\Models\CollectionSet;
+use Dcs\Vendor\Core\Models\Entity;
+use Dcs\Vendor\Core\Models\Mdentity;
+use Dcs\Vendor\Core\Models\CollectionItem;
+use Dcs\Vendor\Core\Models\Mdproperty;
+use Dcs\Vendor\Core\Models\MdentitySet;
+
 class Controller_Ajax extends Controller
 {
-    function action_load()
+    function action_load($context)
     {
         $load_handler = array(
         'EntitySet_VIEW_LOAD'=> function($idm){
@@ -155,7 +164,7 @@ class Controller_Ajax extends Controller
                 //Это запрос на табличную часть сущности
                 $entity = new Entity($idm->getitemid());
                 $setid = $entity->getattrid($idm->getcurid());
-                if (($setid == TZ_EMPTY_ENTITY)||($setid == ''))
+                if (($setid == DCS_EMPTY_ENTITY)||($setid == ''))
                 {
                     $prop = Mdproperty::getProperty($idm->getcurid());
                     $setid = $prop['valmdid'];
@@ -175,7 +184,7 @@ class Controller_Ajax extends Controller
                 //Это создание строки табличной части сущности
                 $entity = new Entity($idm->getitemid());
                 $setid = $entity->getattrid($idm->getcurid());
-                if (($setid==TZ_EMPTY_ENTITY)||($setid==''))
+                if (($setid==DCS_EMPTY_ENTITY)||($setid==''))
                 {
                     //если табличной части пока нет создадим ее
                     $set = new Entity($mdprop->getpropstemplate()->getvalmdentity()->getid());
@@ -204,7 +213,7 @@ class Controller_Ajax extends Controller
                 //Это запрос на табличную часть сущности
                 $entity = new Entity($idm->getitemid());
                 $setid = $entity->getattrid($idm->getcurid());
-                if ($setid==TZ_EMPTY_ENTITY)
+                if ($setid==DCS_EMPTY_ENTITY)
                 {
                     $arData = array();
                     $arData['ITEMID']=$idm->getcurid();
@@ -262,11 +271,11 @@ class Controller_Ajax extends Controller
         },        
         'MdentitySet_VIEW_LOAD'=>function($idm){
             $mds = new MdentitySet($idm->getitemid());
-            return $mds->getMdentity($idm->getmode(),$idm->getaction());
+            return $mds->getItemsByFilter($idm->getdata(),$idm->getmode(),$idm->getaction());
         },
         'MdentitySet_EDIT_LOAD'=>function($idm){
             $mds = new MdentitySet($idm->getitemid());
-            return $mds->getMdentity($idm->getmode(),$idm->getaction());
+            return $mds->getItemsByFilter($idm->getdata(),$idm->getmode(),$idm->getaction());
         },
         'MdentitySet_CREATE_LOAD'=>function($idm){
             $md = new Mdentity($idm->getitemid());
@@ -346,7 +355,8 @@ class Controller_Ajax extends Controller
         }
         );
         $arData = array();
-        if ($idm->getmode() == 'AUTH')
+        $idm = new \Dcs\Vendor\Core\Models\InputDataManager();
+        if ($context['MODE'] == 'AUTH')
         {
             if ($idm->getcommand()=='logout') {
                 $user = new User();
@@ -379,36 +389,38 @@ class Controller_Ajax extends Controller
                 }
             }    
         } else {
-            if ($idm->getitemid()!='')
+            if ($context['ITEMID'] != '')
             {
                 $item_obj = array('classname'=>'','id'=>'','name'=>'');
                 $cur_obj = array('classname'=>'','id'=>'','name'=>'');
                 $mode = $idm->getmode();
-                $item_obj = DataManager::getContentByID($idm->getitemid());
-                $handlername=$item_obj['classname'];
-                if ($idm->getcurid()!='')
-                {
-                    if ($idm->getcurid()!=$idm->getitemid())
-                    {    
-                        $cur_obj = DataManager::getContentByID($idm->getcurid());
-                        $handlername .='_'.$cur_obj['classname'];
-                    }    
-                }   
+                $handlername="\\Dcs\\Vendor\\Core\\Controllers\\Controller_".$context['CLASSTYPE'];
+//                if ($idm->getcurid() != '')
+//                {
+//                    if ($idm->getcurid() != $idm->getitemid())
+//                    {    
+//                        $cur_obj = \Dcs\Vendor\Core\Models\Route::getContentByID($idm->getcurid());
+//                        $handlername .='_'.$cur_obj['classname'];
+//                    }    
+//                }   
                 $action = $idm->getaction();
                 $command = $idm->getcommand();
-                $handlername .='_'.strtoupper($action).'_'.strtoupper($command);
-                if ($mode=='CONFIG')
-                {
-                    $handlername = str_replace('EntitySet','Mdentity',$handlername);
-                }   
-                if (isset($load_handler[$handlername]))
-                {
-                    $arData = $load_handler[$handlername]($idm);
-                }
-                else
-                {
-                    $arData = array('status'=>'ERROR', 'msg'=>"нет обработчика для $handlername");
-                }
+                //$handlername .= '_'.strtoupper($action).'_'.strtoupper($command);
+//                if ($mode == 'CONFIG')
+//                {
+//                    $handlername = str_replace('EntitySet','Mdentity',$handlername);
+//                }   
+//                if (isset($load_handler[$handlername]))
+//                {
+//                    $arData = $load_handler[$handlername]($idm);
+//                }
+//                else
+//                {
+//                    $arData = array('status'=>'ERROR', 'msg'=>"нет обработчика для $handlername");
+//                }
+                $ent = new $handlername($context);
+                //die(var_dump($ent));
+                $arData = $ent->action_load($context,$idm->getdata());
                 $arData['handlername']=$handlername;
             }
         }   

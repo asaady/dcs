@@ -25,28 +25,29 @@ function onchoice(data)
 }
 $('a').on('show.bs.tab', function (e) {
     $('div#ivalue').hide();
-    var $action = $("input[name='action']").val(); 
-    var $activeid = $(e.target).attr('href').substring(1);
-    if ($activeid!='entityhead')
+    var action = $("input[name='action']").val(); 
+    var itemid = $("input[name='itemid']").val(); 
+    var activeid = $(e.target).attr('href').substring(1);
+    if (activeid != 'entityhead')
     {   
-        if ($action=='EDIT')
+        if (action=='EDIT')
         {
             $("input[name='action']").val('SET_EDIT'); 
         }    
-        else if ($action=='VIEW')
+        else if (action=='VIEW')
         {
             $("input[name='action']").val('SET_VIEW'); 
         }    
-        var x = $('div#ivalue');
+        var $x = $('div#ivalue');
         
-        $(x).empty();
-        $(x).hide();
-        $("input[name='curid']").val($activeid); 
+        $x.empty();
+        $x.hide();
+        $("input[name='curid']").val(activeid); 
         $("input[name='command']").val('load'); 
         $data = $('.row :input').serializeArray();
         $.ajax(
         {
-            url: '/common/post_ajax.php',
+            url: '/ajax/'+itemid+'/'+activeid+'/'+action,
             type: 'post',
             dataType: 'json',
             data: $data,
@@ -61,18 +62,19 @@ $('a').on('show.bs.tab', function (e) {
     else
     {
         $("input[name='curid']").val(''); 
-        if ($action=='SET_EDIT')
+        if (action=='SET_EDIT')
         {
-            $("input[name='action']").val('EDIT'); 
+            action = 'EDIT';
         }    
-        else if ($action=='SET_VIEW')
+        else if (action=='SET_VIEW')
         {
-            $("input[name='action']").val('VIEW'); 
+            action = 'VIEW'; 
         }    
+        $("input[name='action']").val(action); 
         $("input[name='command']").val('load'); 
         $data = $('.row :input').serializeArray();
         $.ajax({
-          url: '/common/post_ajax.php',
+          url: '/ajax/'+itemid+'/'+action,
           type: 'post',
           dataType: 'json',
           data: $data,
@@ -121,23 +123,24 @@ function onloadlist(data)
 {
     var $mt = $("#modallist");
     var $mh = $("#modalhead");
-    var len=0;
     $mh.empty();
     $mt.empty();
     
-    $mh.append("<tr></tr>");
+    
+    shtml = '<tr>';
     for(var cid in data['PSET'])
     {
         cls = data['PSET'][cid]['class'];
-        $mh.find('tr').append("<th class=\""+cls+"\" id=\""+cid+"\">"+data['PSET'][cid]['synonym']+"</th>");    
+        shtml = shtml + "<th class=\""+cls+"\" id=\""+cid+"\">"+data['PSET'][cid]['synonym']+"</th>";    
     }
+    shtml = shtml + '</tr>';
     if (Object.keys(data).length) 
     {
         if ('LDATA' in data)
         {    
             for(var id in data['LDATA'])
             {
-                $mt.append("<tr class=\"active\" st=\""+data['LDATA'][id].class+"\" id=\""+id+"\">");
+                shtml = shtml + "<tr class=\"active\" st=\""+data['LDATA'][id].class+"\" id=\""+id+"\">";
                 for(var cid in data['PSET'])
                 {
                     cls = data['PSET'][cid]['class'];
@@ -149,17 +152,18 @@ function onloadlist(data)
                             dname = "<del>"+dname+"</del>";
                         }    
                         var did = data['LDATA'][id][cid]['id'];
-                        $("tr#"+id).append("<td class=\""+cls+"\" id=\""+cid+"\" it=\""+did+"\" vt=\""+data['PSET'][cid]['type']+"\">"+dname+"</td>");    
+                        shtml = shtml + "<td class=\""+cls+"\" id=\""+cid+"\" it=\""+did+"\" vt=\""+data['PSET'][cid]['type']+"\">"+dname+"</td>";    
                     }
                     else
                     {
-                        $("tr#"+id).append("<td class=\""+cls+"\" id=\""+cid+"\" it=\"\" vt=\""+data['PSET'][cid]['type']+"\"></td>");    
+                        shtml = shtml + "<td class=\""+cls+"\" id=\""+cid+"\" it=\"\" vt=\""+data['PSET'][cid]['type']+"\"></td>";    
                     }    
                 }
-                $mt.append("</tr>");
+                shtml = shtml + "</tr>";
             }
         }    
     }
+    $mh.append(shtml);
     $(".modal-title").text('Выбор из списка');
     $('body').one('click', '#dcsModalOK', function () {
         $('#dcsModal').modal('hide');
@@ -214,7 +218,7 @@ function onLoadValID(data)
     }    
     if ('LDATA' in data)
     {    
-        if (curid=='')
+        if (curid == '')
         {
             $elist = $("tbody#entitylist");
         }    
@@ -222,49 +226,57 @@ function onLoadValID(data)
         {
             $elist = $("tbody#entitylist",$("div#"+curid));
         }    
-        $elist.find("tr").remove();
+        $elist.empty();
+        shtml = '';
+        var dname_st;
+        var dname_en;
         for(var id in data['LDATA'])
         {
-            $elist.append("<tr class=\"active\" st=\""+data['LDATA'][id].class+"\" id=\""+id+"\"></tr>");
+            shtml = shtml + "<tr class=\"active\" st=\""+data['LDATA'][id].class+"\" id=\""+id+"\">";
+            dname_st = "";
+            dname_en = "";
+            if (data['LDATA'][id].class == 'erased')
+            {
+                dname_st = "<del>";
+                dname_en = "</del>";
+            }    
             for(var cid in data['PSET'])
             {
                 cls = data['PSET'][cid]['class'];
                 if (cid in data['LDATA'][id])
                 {    
                     var dname = data['LDATA'][id][cid]['name'];
-                    if (data['LDATA'][id].class=='erased')
-                    {
-                        dname = "<del>"+dname+"</del>";
-                    }    
                     var did = data['LDATA'][id][cid]['id'];
-                    $elist.find("tr#"+id).append("<td class=\""+cls+"\" id=\""+cid+"\" it=\""+did+"\" vt=\""+data['PSET'][cid]['type']+"\">"+dname+"</td>");    
+                    shtml = shtml + "<td class=\""+cls+"\" id=\""+cid+"\" it=\""+did+"\" vt=\""+data['PSET'][cid]['type']+"\">"+dname_st+dname+dname_en+"</td>";    
                 }
                 else
                 {
-                    $elist.find("tr#"+id).append("<td class=\""+cls+"\" id=\""+cid+"\" it=\"\" vt=\""+data['PSET'][cid]['type']+"\"></td>");    
+                    shtml = shtml + "<td class=\""+cls+"\" id=\""+cid+"\" it=\"\" vt=\""+data['PSET'][cid]['type']+"\"></td>";    
                 }    
             }
-//            $("tbody#entitylist").append("");
+            shtml = shtml + "</tr>";
         }
+        $elist.append(shtml);
     }    
     actionlist(data['actionlist']);
 }
 function onLoadGetData(data) {
-    var curinp = $(".row :input[st='info']");
-    var curname = curinp.attr('name');
-    var curid = $(curinp).attr('id');
+    var $curinp = $(".row :input[st='info']");
+    var curname = $curinp.attr('name');
+    var curid = $curinp.attr('id');
     var exd = 0;
-    $("#"+curid+"~.types_list").find('li').remove();
+    var shtml = '';
+    var $curlist = $("#"+curid+"~.types_list");
+    $curlist.empty();
     $.each(data.items, function(key, val) 
     {
         if (val.id)
         {    
-            $("#"+curid+"~.types_list").append('<li id='+val.id+' class="active">'+val.name+'</li>');
-            exd++;
+            shtml = shtml + '<li id='+val.id+' class="active">'+val.name+'</li>';
         }
-    }    
-    );
-    $("#"+curid+"~.types_list").slideToggle('fast');
+    });
+    $curlist.append(shtml);        
+    $curlist.slideToggle('fast');
 };
 $('body').keyup(function(eventObject) { 
     if (eventObject.which == 27) { 
@@ -272,19 +284,20 @@ $('body').keyup(function(eventObject) {
     }
 });
 $('input.form-control').keyup(function(eventObject) { 
-    var $action = $("input[name='action']").val();
-    if ($action==='VIEW')
+    var action = $("input[name='action']").val();
+    var itemid = $("input[name='itemid']").val();
+    if (action==='VIEW')
     {
         return;
     }
-    var itype = $(this).attr("it");
+    var itype = this.attr("it");
     var curid = this.id;
-    var curinp = $(".row :input[st='info']");
+    var $curinp = $(".row :input[st='info']");
     var arr_type = ['id','cid','mdid','propid'];
-    if (curinp!=this)
+    if ($curinp != this)
     {
-        $(curinp).attr('st','active');
-        $(this).attr('st','info');
+        $curinp.attr('st','active');
+        this.attr('st','info');
     }    
     if (eventObject.which==27) 
     { 
@@ -292,16 +305,16 @@ $('input.form-control').keyup(function(eventObject) {
     }
     else 
     {
-        var vt = $(this).attr("vt");
-        if (vt=='')
+        var vt = this.attr("vt");
+        if (vt == '')
         {
             vt = $("input[it='mdid'][type='hidden']").val();
         }    
-        var $data = {action:$action, id:vt, type:itype, name:$(this).val(), command:'find', prefix:'field'};
-        if (curid=='name_valmdid')
+        var $data = {action:action, id:vt, type:itype, name:this.val(), command:'find', prefix:'field'};
+        if (curid == 'name_valmdid')
         {    
             var $curtype = $("input#type");
-            $data = {action:$action, id:$("input#valmdid").val(),type: 'mdid',name:$(this).val(),'command':'find', prefix:'field'};
+            $data = {action:action, id:$("input#valmdid").val(),type: 'mdid',name:this.val(),'command':'find', prefix:'field'};
             itype = $curtype.val();
         }
         if (arr_type.indexOf(itype)>=0)
@@ -316,16 +329,16 @@ $('input.form-control').keyup(function(eventObject) {
             if ($(this).val().length>1) 
             {
                $.getJSON(
-                    '/common/get_ajax.php',
+                    '/ajax/'+itemid+'/'+curid+'/'+action,
                     $data,
                     onLoadGetData
                 );
             }
             else
             {
-                if ($(this).val().length === 0) 
+                if (this.val().length === 0) 
                 {
-                    var curname = curinp.attr('name');
+                    var curname = $curinp.attr('name');
                     if((curname.indexOf('name_') + 1)>0)
                     {
                         curid = curname.substring(5);
@@ -338,11 +351,11 @@ $('input.form-control').keyup(function(eventObject) {
     }  
 }); 
 $('.row :input').dblclick(function () {
-    var curinp = $(".row :input[st='info']");
-    if (curinp !== this)
+    var $curinp = $(".row :input[st='info']");
+    if ($curinp !== this)
     {
-        $(curinp).attr('st','active');
-        $(this).attr('st','info');
+        $curinp.attr('st','active');
+        this.attr('st','info');
     }    
 });
 $('input#type').dblclick(function() { 
@@ -351,8 +364,8 @@ $('input#type').dblclick(function() {
 }); 
 $('input.form-control[it=bool]').dblclick(function(e) { 
     e.preventDefault();
-    $action = $("input[name='action']").val();
-    if (($action==='EDIT')||($action==='CREATE'))
+    action = $("input[name='action']").val();
+    if ((action === 'EDIT')||(action === 'CREATE'))
     {    
         var curid = this.id;
         $(".types_list").slideUp('fast'); 
@@ -363,23 +376,23 @@ $('body').on('dblclick','#entitylist tr',function ()
 {
     var action = $("input[name='action']").val();
     var mode = $("input[name='mode']").val();
-    if (action === 'VIEW')
-    {    
-        location.href=getprefix()+this.id+"/view";
-    }
+    var itemid = this.id;
     if (mode === 'CONFIG')
     {
-        location.href=getprefix()+this.id+"/edit";
+        action = "edit";
     }
+    location.href=getprefix()+itemid+'/'+action;
 });
 $('body').on('dblclick','#modallist tr',function (e) 
 {
     e.preventDefault();
+    var itemid = $("input[name='itemid']").val(); 
+    var action = $("input[name='action']").val(); 
     $("input[name='curid']").val(this.id); 
     $("input[name='command']").val('choice'); 
     $data = $('.row :input').serializeArray();
     $.ajax({
-      url: '/common/post_ajax.php',
+      url: '/ajax/'+itemid+'/'+this.id+'/'+action,
       type: 'post',
       dataType: 'json',
       data: $data,
@@ -430,7 +443,7 @@ function setvals(data)
         console.log(data);
         return;
     }    
-    if (data.items['status']!='OK')
+    if (data.items['status'] != 'OK')
     {
         console.log(data);
         return;
@@ -448,6 +461,7 @@ function submitModalForm(e)
     var $x = $('div#ivalue');
     var $ci = $x.find('input');
     var action = $("input[name='action']").val();
+    var itemid = $("input[name='itemid']").val();
     var $pan = $('.tab-pane.fade.in.active');
     var $curcol = $pan.find('#tablehead th.info');
     var propid = $curcol.attr('id');
@@ -457,7 +471,7 @@ function submitModalForm(e)
     var cid = $ci.attr('it');
     var typ = $ci.attr('type');
     $x.hide();
-    if (typ=='file')
+    if (typ == 'file')
     {
         var $photos = $('#dcsFileInput'),
             formdata = new FormData,
@@ -493,7 +507,7 @@ function submitModalForm(e)
     }   
     var $data = {action:action, propid: propid, id: cid, type:typ, name:cnm, itemid:$currow.attr('id'), command:'save', prefix:'field'};
     $.getJSON(
-         '/common/get_ajax.php',
+         '/ajax/'+itemid+'/'+propid+'/'+action,
          $data,
          setvals
      );
@@ -502,6 +516,7 @@ function submitModalForm(e)
 $('body').on('dblclick','#entitylist td',function () 
 {
     var action = $("input[name='action']").val();
+    var itemid = $("input[name='itemid']").val();
     var mode = $("input[name='mode']").val();
     if (mode === 'CONFIG')
     {
@@ -512,8 +527,8 @@ $('body').on('dblclick','#entitylist td',function ()
         return;
     }
     var etd = $(this);
-    var it = $(this).attr('it');
-    var vt = $(this).attr('vt');
+    var it = this.it;
+    var vt = this.vt;
     var dname = $(this).html();
     var arr_type = ['id','cid','mdid','propid'];
     if ((action !== 'SET_EDIT')&&(action !== 'SET_VIEW'))
@@ -608,12 +623,13 @@ $('body').on('click','button.form-value#list', function(e)
     var $tr = $pan.find('tr.info'); 
     var $th = $pan.find('th.info'); 
     var action = $("input[name='action']").val();  
+    var itemid = $("input[name='itemid']").val(); 
     $("input[name='curid']").val($tr.attr('id')); 
     $("input[name='filter_id']").val($th.attr('id')); 
     $("input[name='command']").val('list'); 
     $data = $('.row :input').serializeArray();
     $.ajax({
-      url: '/common/post_ajax.php',
+      url: '/ajax/'+itemid+'/'+$tr.attr('id')+'/'+action,
       type: 'post',
       dataType: 'json',
       data: $data,
@@ -625,19 +641,20 @@ $('body').on('click','button.form-value#delete_ivalue', function(e)
 {
     e.preventDefault();
     var action = $("input[name='action']").val();
-    var x = $('div#ivalue');
-    var $ci = $(x).find('input');
+    var itemid = $("input[name='itemid']").val();
+    var $x = $('div#ivalue');
+    var $ci = $x.find('input');
     var $curcol = $('th.info');
     var propid = $curcol.attr('id');
     var $currow = $('tr.info');
-    var etd = $currow.find('td#'+propid);
+    var $etd = $currow.find('td#'+propid);
     var typ = $ci.attr('type');
-    etd.html('');
-    etd.attr('it','');
-    $(x).hide();
+    $etd.html('');
+    $etd.attr('it','');
+    $x.hide();
     var $data = {action:action, propid: propid, id: '', type:typ, name:'', itemid:$currow.attr('id'), command:'save', prefix:'field'};
     $.getJSON(
-         '/common/get_ajax.php',
+         '/ajax/'+itemid+'/'+propid+'/'+action,
          $data
 
      );
@@ -645,33 +662,35 @@ $('body').on('click','button.form-value#delete_ivalue', function(e)
 
 $('.row :input').click(function () {
     $("input~.types_list").slideUp('fast');
-    var curinp = $(".row :input[st='info']");
-    $(curinp).attr('st','active');
-    $(this).attr('st','info');
+    var $curinp = $(".row :input[st='info']");
+    $curinp.attr('st','active');
+    this.st = 'info';
 });
 
 
 $('body').on('click', 'ul.types_list li', function(){
+    var action = $("input[name='action']").val();
+    var itemid = $("input[name='itemid']").val();
     var tx = $(this).html(); 
-    var lid = $(this).attr('id'); 
-    var curdiv = $(this).parent().parent();
-    var curinp = curdiv.find("input[type='text']");
-    var curname = curinp.attr('name');
-    var curtype = curinp.attr('it');
+    var lid = this.id; 
+    var $curdiv = $(this).parent().parent();
+    var $curinp = $curdiv.find("input[type='text']");
+    var curname = $curinp.attr('name');
+    var curtype = $curinp.attr('it');
     var curid = '';
     if((curname.indexOf('name_') + 1)>0)
     {
         curid = curname.substring(5);
-        curinpid = $('div.form-group').find('input#'+curid);
-        curinpid.val(lid); 
+        $curinpid = $('div.form-group').find('input#'+curid);
+        $curinpid.val(lid); 
     }    
-    curinp.val(tx); 
+    $curinp.val(tx); 
     $(".types_list").slideUp('fast'); 
     if ((curname=='name_propid')||(curname=='name_valmdid'))
     {
         $.getJSON(
-            '/common/get_ajax.php',
-            {action:$("input[name='action']").val(), id:lid, type:curname, name:tx, command:'get', prefix:'mdname'},
+            '/ajax/'+itemid+curid+'/'+action,
+            {action:action, id:lid, type:curname, name:tx, command:'get', prefix:'mdname'},
             onGetMdData
         );
     }    
@@ -679,10 +698,14 @@ $('body').on('click', 'ul.types_list li', function(){
     {
         if ((curtype=='id')||(curtype=='cid'))
         {
-            
+            var scurid = '';
+            if (curid != '')
+            {
+                scurid = '/'+curid;
+            }    
             $.getJSON(
-                '/common/get_ajax.php',
-                {action:$("input[name='action']").val(), id:$("input[name='itemid']").val(), type:curtype, name:lid, command:'Choice', prefix:'After', propid:curid},
+                '/ajax/'+itemid+scurid+'/'+action,
+                {action:action, id:itemid, type:curtype, name:lid, command:'Choice', prefix:'After', propid:curid},
                 onGetData
             );    
         }    
@@ -721,16 +744,16 @@ $('body').on('click','a#create', function ()
     var mode = $("input[name='mode']").val();    
     var action = $("input[name='action']").val();    
     $("input[name='command']").val('create'); 
-    if (itemid!='') 
+    if (itemid != '') 
     {
-        if (action=='SET_EDIT')
+        if (action == 'SET_EDIT')
         {
             var curid = $("ul#dcsTab").find("li.active a").attr('href').substring(1);
             $("input[name='curid']").val(curid);    
             $data = $('.row :input').serializeArray();
             $.ajax(
             {
-                url: '/common/post_ajax.php',
+                url: '/ajax/'+itemid+'/'+curid+'/'+action,
                 type: 'post',
                 dataType: 'json',
                 data: $data,
@@ -750,7 +773,7 @@ $('body').on('click','a#create', function ()
             {
                 dop +='/'+curid; 
             }   
-            location.href=getprefix()+itemid+"/create"+dop;
+            location.href=getprefix()+itemid+dop+"/create";
         }    
     }  
 });
@@ -786,28 +809,36 @@ $('body').on('click', '#view', function () {
 });
 function erase_success (result)
 {
-    var $itemid = $("input[name='itemid']").val(); 
-    var $action = $("input[name='action']").val(); 
+    var itemid = $("input[name='itemid']").val(); 
+    var action = $("input[name='action']").val(); 
     var curid = $("input[name='curid']").val();    
     $('#dcsModal').modal('hide');
     dop='';
-    if (curid!='')
+    if (curid != '')
     {
         dop +='/'+curid; 
     }   
     //alert("curid = "+curid);
-    location.href=getprefix()+$itemid+dop+'/'+$action;
+    location.href=getprefix()+itemid+dop+'/'+action;
     console.log(result);
 };
 function erase() {
     var $data;
+    var itemid = $("input[name='itemid']").val(); 
+    var action = $("input[name='action']").val(); 
+    var $cid = $("input[name='curid']");    
+    var curid = $cid.val();    
     $("input[name='command']").val('delete'); 
-    var curid = $("input[name='curid']").val();    
-    $("input[name='curid']").val($('tr.info').attr('id')); 
+    $cid.val($('tr.info').attr('id')); 
     $data = $('.row :input').serializeArray();
-    $("input[name='curid']").val(curid); 
+    $cid.val(curid); 
+    dop='';
+    if (curid != '')
+    {
+        dop +='/'+curid; 
+    }   
     $.ajax({
-      url: '/common/post_ajax.php',
+      url: '/ajax'+itemid+dop+'/'+action,
       type: 'post',
       dataType: 'json',
       data: $data,
@@ -822,7 +853,7 @@ function before_delete_success(result)
     $mh.empty();
     $mt.empty();
     
-    $mh.append("<tr><th>Объект</th><th>Наименование</th><th>Действие</th></tr>");
+    var shtml = "<tr><th>Объект</th><th>Наименование</th><th>Действие</th></tr>";
     
     if (Object.keys(result).length) 
     {
@@ -830,11 +861,12 @@ function before_delete_success(result)
         {
             if (key!='handlername')
             {
-                $mt.append('<tr><td>'+val.name+'</td><td>'+val.pval+'</td><td>'+val.nval+'</td></tr>');
+                shtml = shtml +'<tr><td>'+val.name+'</td><td>'+val.pval+'</td><td>'+val.nval+'</td></tr>';
                 len++;
             }
         });    
     }
+    $mh.append(shtml);
     if (len)
     {    
         $(".modal-title").text('Подтвердите действие');
@@ -857,14 +889,21 @@ $('#dcsModal').on('shown.bs.modal', function () {
 });
 $('body').on('click', '#delete', function () 
 {
+    var itemid = $("input[name='itemid']").val(); 
     var action = $("input[name='action']").val();  
-    var curid = $("input[name='curid']").val();
-    $("input[name='curid']").val($('tr.info').attr('id')); 
+    var $cid = $("input[name='curid']");    
+    var curid = $cid.val();
+    $cid.val($('tr.info').attr('id')); 
     $("input[name='command']").val('before_delete'); 
     $data = $('.row :input').serializeArray();
-    $("input[name='curid']").val(curid); 
+    $cid.val(curid); 
+    var dop='';
+    if (curid != '')
+    {
+        dop +='/'+curid; 
+    }   
     $.ajax({
-      url: '/common/post_ajax.php',
+      url: '/ajax/'+itemid+dop+'/'+action,
       type: 'post',
       dataType: 'json',
       data: $data,
@@ -873,30 +912,32 @@ $('body').on('click', '#delete', function ()
 });
 $('body').on('click', '#filter', function (e) 
 {
+    var itemid = $("input[name='itemid']").val(); 
+    var action = $("input[name='action']").val();  
     var curid = $('tr.info').attr('id');
     var curcol = $('th.info').attr('id');
     e.preventDefault();
     var $data;
     var $el_cur  = $("tr#"+curid).find("td#"+curcol);
     var $el_fval = $("input[name='filter_val']");
-    var $filter_val=$el_fval.val();
+    var filter_val=$el_fval.val();
     var curval='';
-    var $fval  = $el_cur.html();
-    var $fid   = $el_cur.attr("it");
+    var fval  = $el_cur.html();
+    var fid   = $el_cur.attr("it");
     $("input[name='filter_id']").val(curcol); 
-    if ($fid !== '')
+    if (fid !== '')
     {
-        $el_fval.val($fid); 
-        curval = $fid;
+        $el_fval.val(fid); 
+        curval = fid;
     }
     else 
     {
-        $el_fval.val($fval); 
-        curval = $fval;
+        $el_fval.val(fval); 
+        curval = fval;
     }
     if (curval !== "") 
     {
-        if ($filter_val!=curval) 
+        if (filter_val != curval) 
         {
             $el_fval.val(curval); 
         }
@@ -907,7 +948,7 @@ $('body').on('click', '#filter', function (e)
     }
     else 
     {
-        if ($filter_val !== "") 
+        if (filter_val !== "") 
         {
             $el_fval.val(''); 
         }    
@@ -915,8 +956,13 @@ $('body').on('click', '#filter', function (e)
     curval = $el_fval.val();
     $("input[name='command']").val('load'); 
     $data = $('.row :input').serializeArray();
+    var dop='';
+    if (curid != '')
+    {
+        dop +='/'+curid; 
+    }   
     $.ajax({
-      url: '/common/post_ajax.php',
+      url: '/ajax/'+itemid+dop+'/'+action,
       type: 'post',
       dataType: 'json',
       data: $data,
@@ -928,19 +974,22 @@ $('body').on('click', '#filter', function (e)
 });
 $('body').on('click', '#sort', function (e) 
 {
+    var itemid = $("input[name='itemid']").val(); 
+    var action = $("input[name='action']").val();  
     e.preventDefault();
     var $data;
     var $el_sort_id = $("input[name='sort_id']");
     var $el_sort_dir = $("input[name='sort_dir']");
-    var $cur_sort_dir =$el_sort_dir.val();
-    var $cur_sort_id =$el_sort_id.val();
-    if ($cur_sort_id!=curcol)
+    var curcol = $('th.info').attr('id');
+    var cur_sort_dir =$el_sort_dir.val();
+    var cur_sort_id =$el_sort_id.val();
+    if (cur_sort_id != curcol)
     {
         $el_sort_id.val(curcol); 
     }
     else
     {
-        if ($cur_sort_dir!='')
+        if (cur_sort_dir != '')
         {
             $el_sort_dir.val(''); 
         }
@@ -951,8 +1000,13 @@ $('body').on('click', '#sort', function (e)
     }
     $("input[name='command']").val('load'); 
     $data = $('.row :input').serializeArray();
+    var dop='';
+    if (curcol != '')
+    {
+        dop +='/'+curcol; 
+    }   
     $.ajax({
-      url: '/common/post_ajax.php',
+      url: '/ajax/'+itemid+dop+'/'+action,
       type: 'post',
       dataType: 'json',
       data: $data,
@@ -1012,11 +1066,12 @@ function show_history(result)
 
 $('body').on('click', '#history', function (e)
 {
-    var $entityid = $("input[name='itemid']").val();
+    var itemid = $("input[name='itemid']").val();
+    var action = $("input[name='action']").val();  
     var curinp = $(".row :input[st='info']").attr('id');
-    if ($entityid!='') 
+    if (itemid != '') 
     {
-        if (curinp!='') 
+        if (curinp != '') 
         {
             var tcurid = curinp;  
             if (-1 < curinp.indexOf('name_')) 
@@ -1027,7 +1082,7 @@ $('body').on('click', '#history', function (e)
             $("input[name='command']").val('history'); 
             $data = $('.row :input').serializeArray();
             $.ajax({
-              url: '/common/post_ajax.php',
+              url: '/ajax/'+itemid+'/'+tcurid+'/'+action,
               type: 'post',
               dataType: 'json',
               data: $data,
@@ -1039,9 +1094,12 @@ $('body').on('click', '#history', function (e)
 
 $('body').on('click', '#submit', function (e)
 {
+    var itemid = $("input[name='itemid']").val(); 
+    var action = $("input[name='action']").val();  
+    var $data;
     $data = $('.row :input').serializeArray();
     $.ajax({
-      url: '/common/post_ajax.php',
+      url: '/ajax/'+itemid+'/'+action,
       type: 'post',
       dataType: 'json',
       data: $data,
@@ -1054,21 +1112,29 @@ $('body').on('click', '#submit', function (e)
 
 $('body').on('click', '#print', function (e) 
 {
-    var $itemid = $("input[name='itemid']").val();
+    var itemid = $("input[name='itemid']").val();
     var href='';
     e.preventDefault();
-    href="\\print\\"+$itemid;
+    href="\\print\\"+itemid;
     var otherWindow = window.open(href,"_blank");
     otherWindow.opener = null;
 });
 
 function before_save() 
 {
+    var itemid = $("input[name='itemid']").val(); 
+    var action = $("input[name='action']").val();  
+    var curid = $("input[name='curid']").val();  
     var $data;
+    var dop='';
+    if (curid != '')
+    {
+        dop +='/'+curid; 
+    }   
     $("input[name='command']").val('before_save'); 
     $data = $('.row :input').serializeArray();
     $.ajax({
-      url: '/common/post_ajax.php',
+      url: '/ajax/'+itemid+dop+'/'+action,
       type: 'post',
       dataType: 'json',
       data: $data,
@@ -1077,11 +1143,19 @@ function before_save()
 };
 function save() 
 {
+    var itemid = $("input[name='itemid']").val(); 
+    var action = $("input[name='action']").val();  
+    var curid = $("input[name='curid']").val();  
     var $data;
+    var dop='';
+    if (curid != '')
+    {
+        dop +='/'+curid; 
+    }   
     $("input[name='command']").val('save'); 
     $data = $('.row :input').serializeArray();
     $.ajax({
-      url: '/common/post_ajax.php',
+      url: '/ajax/'+itemid+dop+'/'+action,
       type: 'post',
       dataType: 'json',
       data: $data,
@@ -1102,18 +1176,21 @@ function before_save_success(result)
     var len=0;
     $mh.empty();
     $mt.empty();
-    
-    $mh.append("<tr><th>Реквизит</th><th>Значение было</th><th>Новое значение</th></tr>");
+    shtml = '';
+    shtml = "<tr><th>Реквизит</th><th>Значение было</th><th>Новое значение</th></tr>";
+    mh.append(shtml)
     if (Object.keys(result).length) 
     {
+        shtml = '';
         $.each(result, function(key, val) 
         {
             if (key!='handlername')
             {
-                $mt.append('<tr><td>'+val.name+'</td><td>'+val.pval+'</td><td>'+val.nval+'</td></tr>');
+                shtml = shtml +'<tr><td>'+val.name+'</td><td>'+val.pval+'</td><td>'+val.nval+'</td></tr>';
                 len++;
             }
         });    
+        $mt.append(shtml);
     }
     if (len)
     {    
@@ -1140,13 +1217,40 @@ $('body').on('click','#save',function(e) {
         save();  
     }
 });
-
+function logout()
+{
+    $("input[name='command']").val('logout');
+    $("input[name='mode']").val('AUTH'); 
+    var data = $('.row :input').serializeArray();
+    $.ajax(
+    {
+        url: '/common/post_ajax.php',
+        type: 'post',
+        dataType: 'json',
+        data: data,
+        success: function(result) {
+            location.href=result['redirect'];
+        }
+    })      
+};
+function activate_pickadate(action)
+{
+    if ((action == 'EDIT')||
+        (action == 'CREATE')) {
+        $('input.form-control[it=date]').pickadate({
+                    selectMonths: true,
+                    format: 'yyyy-mm-dd',
+                    formatSubmit: 'yyyy-mm-dd'
+                  });
+    }              
+};
 $(document).ready(function() 
 { 
     var curid = $("input[name='curid']").val(); 
     var itemid = $("input[name='itemid']").val(); 
     var action = $("input[name='action']").val();
     $("input[name='command']").val('load'); 
+    activate_pickadate(action);
     $data = $('.row :input').serializeArray();
     if (curid !== '') {
         curid = curid + '/';
@@ -1159,12 +1263,4 @@ $(document).ready(function()
       success: onLoadValID
       }
     );
-    $("body").one('OnResize',function(){
-        var x = $('div#ivalue');
-        if (x!=undefined) 
-        {    
-            $(x).empty();
-            $(x).hide();
-        }
-    });
 });

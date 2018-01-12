@@ -17,8 +17,8 @@ class Controller_Cproperty extends Controller
 	function action_index($context)
 	{
 		$data = $this->model->get_data();
-                $context['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/views/cproperty_view.php";
-		$this->view->generate($context, 'template_view.php', $data);
+                $context['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING).$this->view->get_views_path()."/cproperty_view.php";
+		$this->view->generate($context, $data);
 	}
 	function action_edit($context)
 	{

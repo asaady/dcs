@@ -1,10 +1,14 @@
 <?php
 namespace Dcs\Vendor\Core\Models;
+
 use PDO;
 
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 
-class Mdproperty extends PropertySet implements iPropertySet {
+class Mdproperty extends Property implements IProperty {
+    use TeProperty;
+    use TProperties;
+    
     protected $propstemplate;
     protected $typeid;
     protected $propid;
@@ -63,12 +67,8 @@ class Mdproperty extends PropertySet implements iPropertySet {
             $this->isenumber = false;        
             $this->isdepend = false;
         }
-        $this->mdentity = new Mdentity($mdid);
+        $this->head = new Mdentity($mdid);
         $this->version=time();
-    }
-    function getmdentity()
-    {
-        return $this->mdentity;
     }
     function getvalmdid()
     {
@@ -82,54 +82,10 @@ class Mdproperty extends PropertySet implements iPropertySet {
     {
         return $this->propstemplate;
     }
-    function get_data($mode='') 
-    {
-        return array('id'=>$this->id,      
-                    'version'=>$this->version,
-                    'PLIST'=>array( 
-                        array('id'=>'id','name'=>'id','synonym'=>'ID','rank'=>0,'type'=>'str','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'hidden'),
-                        array('id'=>'name','name'=>'name','synonym'=>'NAME','rank'=>1,'type'=>'str','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active'),
-                        array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM','rank'=>3,'type'=>'str','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active'),
-                        array('id'=>'propid','name'=>'propid','synonym'=>'PROPID','rank'=>2,'type'=>'cid','valmdid'=>$this->propid,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active'),
-                        array('id'=>'length','name'=>'length','synonym'=>'LENGTH','rank'=>5,'type'=>'str','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active'),
-                        array('id'=>'prec','name'=>'prec','synonym'=>'PREC','rank'=>6,'type'=>'str','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active'),
-                        array('id'=>'rank','name'=>'rank','synonym'=>'RANK','rank'=>7,'type'=>'str','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active'),
-                        array('id'=>'ranktoset','name'=>'ranktoset','synonym'=>'RANKTOSET','rank'=>8,'type'=>'str','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active'),
-                        array('id'=>'ranktostring','name'=>'ranktostring','synonym'=>'RANKTOSTRING','rank'=>9,'type'=>'str','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active'),
-                        array('id'=>'isedate','name'=>'isedate','synonym'=>'ISEDATE','rank'=>13,'type'=>'bool','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active'),
-                        array('id'=>'isenumber','name'=>'isenumber','synonym'=>'ISENUMBER','rank'=>14,'type'=>'bool','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active'),
-                        array('id'=>'isdepend','name'=>'isdepend','synonym'=>'IS DEPENDENT','rank'=>15,'type'=>'bool','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active')
-                    ),
-                    'navlist'=>array(
-                    $this->mdentity->getmditem()=>$this->mdentity->getmditemsynonym(),
-                    $this->mdentity->getid()=>$this->mdentity->getsynonym(),
-                    $this->id=>$this->synonym
-                    )
-              );
-
-    }
-    function getplist() 
-    {
-        return array(
-            'id'=>array('id'=>'id','name'=>'id','synonym'=>'ID','rank'=>0,'type'=>'str','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'hidden'),
-            'name'=>array('id'=>'name','name'=>'name','synonym'=>'NAME','rank'=>1,'type'=>'str','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active'),
-            'propid'=>array('id'=>'propid','name'=>'propid','synonym'=>'PROPID','rank'=>2,'type'=>'cid','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active'),
-            'synonym'=>array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM','rank'=>3,'type'=>'str','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active'),
-            'length'=>array('id'=>'length','name'=>'length','synonym'=>'LENGTH','rank'=>5,'type'=>'int','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active'),
-            'prec'=>array('id'=>'prec','name'=>'prec','synonym'=>'PREC','rank'=>6,'type'=>'int','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active'),
-            'rank'=>array('id'=>'rank','name'=>'rank','synonym'=>'RANK','rank'=>7,'type'=>'int','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active'),
-            'ranktoset'=>array('id'=>'ranktoset','name'=>'ranktoset','synonym'=>'RANKTOSET','rank'=>8,'type'=>'int','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active'),
-            'ranktostring'=>array('id'=>'ranktostring','name'=>'ranktostring','synonym'=>'RANKTOSTRING','rank'=>9,'type'=>'int','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active'),
-            'isedate'=>array('id'=>'isedate','name'=>'isedate','synonym'=>'ISEDATE','rank'=>13,'type'=>'bool','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active'),
-            'isenumber'=>array('id'=>'isenumber','name'=>'isenumber','synonym'=>'ISENUMBER','rank'=>14,'type'=>'bool','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active'),
-            'isdepend'=>array('id'=>'isdepend','name'=>'isdepend','synonym'=>'IS DEPENDENT','rank'=>15,'type'=>'bool','valmdtype'=>DCS_TYPE_EMPTY,'class'=>'active')
-                   );
-    }
-            
     function load_data($mode,$edit_mode) 
     {
         $objs = array();
-        $objs['PLIST']=$this->getplist();
+        $objs['PLIST']=$this->get_plist($mode);
         $objs['actionlist']= DataManager::getActionsbyItem('Entity', $mode,$edit_mode);
         $sql = DataManager::get_select_properties(" where mp.id = :id ");
 	$res = DataManager::dm_query($sql,array('id'=>$this->id));
@@ -337,101 +293,6 @@ class Mdproperty extends PropertySet implements iPropertySet {
         $sql = DataManager::get_select_properties(" WHERE mp.id = :propid ");
 	$res = DataManager::dm_query($sql,array('propid'=>$propid));
         return $res->fetch(PDO::FETCH_ASSOC);
-    }
-    public static function getPropertyByName($propname,$mdid) 
-    {
-        $sql = DataManager::get_select_properties(" WHERE mp.mdid = :mdid AND (mp.name ILIKE :filter OR mp.synonym ILIKE :filter)");
-        $params = array('filter'=>"%$propname%",'mdid'=>$mdid);
-        $sql .= " LIMIT 5";
-        $sth = DataManager::dm_query($sql,$params);
-        return $sth->fetchAll(PDO::FETCH_ASSOC);
-    }
-    public static function IsExistTheProp($mdid,$propid) 
-    {
-	$sql = "SELECT 	mp.name, mp.id, mp.synonym, mp.rank FROM \"MDProperties\" as mp
-		WHERE mp.mdid=:mdid and mp.propid=:propid";	
-	$res = DataManager::dm_query($sql,array('mdid'=>$mdid,'propid'=>$propid));
-	return $res->fetch(PDO::FETCH_ASSOC);
-    }
-    function create($data) 
-    {
-        $plist = self::getplist();
-        $fname='mdid';
-        $fval=':mdid';
-        $params = array();
-        $params['mdid'] = $this->mdentity->getid();
-        foreach ($plist as $prop)
-        {
-            $key = $prop['id'];
-            if ($key=='id')
-            {
-                continue;
-            }    
-            if (array_key_exists($key,$data))
-            {
-                $val = $data[$key]['name'];
-                if (($prop['type']=='id')||($prop['type']=='cid')||($prop['type']=='mdid'))
-                {
-                    $val = $data[$key]['id'];
-                }    
-                if ($val == '')
-                {
-                    continue;
-                }    
-                $fname .=", $key";
-                $fval .=", :$key";
-                $params[$key]=$val;
-            }        
-        }    
-	$sql = "INSERT INTO \"MDProperties\" ($fname) VALUES ($fval) RETURNING \"id\"";
-	$res = DataManager::dm_query($sql,$params);
-        return $res->fetch(PDO::FETCH_ASSOC);
-    }
-    public static function createMDProperty($data) 
-    {
-        $fname='';
-        $fval='';
-        $params = array();
-        foreach ($data as $key=>$val)
-        {
-            $fname .=", $key";
-            $fval .=", :$key";
-            $params[$key]=$val;
-        }    
-        $fname = substr($fname, 1);
-        $fval = substr($fval, 1);
-	$sql = "INSERT INTO \"MDProperties\" ($fname) VALUES ($fval) RETURNING \"id\"";
-	$res = DataManager::dm_query($sql,$params);
-        return $res->fetch(PDO::FETCH_ASSOC);
-    }
-    public function CreateMustBeProperty()
-    {
-        $arMB = $this->getMustBePropsUse();
-        if (count($arMB)) 
-        {
-            foreach($arMB as $mdprop) 
-            {
-                if($this->isExistTheProp($mdprop['propid']))
-                {        
-                    continue;
-                }
-                $arMDProperty = array(
-                              'name'=> strtolower($mdprop['name']),
-                              'synonym'=>$mdprop['synonym'],
-                              'mdid'=>$mdid,
-                              'propid'=>$mdprop['propid'],
-                              'rank'=>$mdprop['rank'],
-                              'length'=>$mdprop['length'],
-                              'prec'=>$mdprop['prec'],
-                              'ranktostring'=>$mdprop['rank'],
-                              'ranktoset'=>$mdprop['rank'],
-                              'isedate'=>($mdprop['isedate'] ? 'TRUE':'FALSE'),
-                              'isenumber'=>($mdprop['isenumber'] ? 'TRUE':'FALSE'),
-                              'isdepend'=>($mdprop['isdepend'] ? 'TRUE':'FALSE')
-                              );
-                $res = self::createMDProperty($arMDProperty);
-            }
-        }
     }
 }
 

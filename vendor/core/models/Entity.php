@@ -4,20 +4,15 @@ namespace Dcs\Vendor\Core\Models;
 use PDO;
 use DateTime;
 use Exception;
-//use dcs\vendor\core\Model;
-//use dcs\vendor\core\Mdentity;
-//use dcs\vendor\core\MdpropertySet;
-//use dcs\vendor\core\DataManager;
 
-class Entity extends Model {
-    protected $mdentity;
+class Entity extends Item implements Iitem {
+    use TeItem;
+    use TeProperty;
+    
     protected $activity;
     protected $edate;
     protected $enumber;
     protected $num;
-    protected $data;
-    protected $plist;
-    protected $mode;
     
     public function __construct($id,$version=0,$mode='')
     {
@@ -26,17 +21,16 @@ class Entity extends Model {
         }
         $arData = self::getEntityDetails($id);
             
-        if ($arData['id']!='') {
-            $this->id =$id; 
+        if ($arData['id'] != '') {
+            $this->id = $id; 
             $mdid = $arData['mdid'];
         } else {
-            $this->id =''; 
+            $this->id = ''; 
             $mdid = $id;
         }
-        $this->mdentity = new Mdentity($mdid);
-        $this->plist = MdpropertySet::getMDProperties($mdid, 'CONFIG', 
-                                            " WHERE mp.mdid = :mdid ",
-                                            true);
+        $this->head = new Mdentity($mdid);
+        $mdprop = new MdpropertySet($mdid);
+        $this->properties = $mdprop->getProperties(" WHERE mp.mdid = :mdid ",true);
         $this->data = $this->entity_data();
         $this->edate = $this->getpropdate();
         $this->enumber = $this->getpropnumber();
@@ -44,7 +38,7 @@ class Entity extends Model {
         $this->name = $this->gettoString();
         $this->mode = $mode;
         $prop_activity = array_search("activity", 
-                                array_column($this->plist,'name','id'));
+                                array_column($this->properties,'name','id'));
         if ($prop_activity !== FALSE)
         {    
             $this->activity = $this->getattr($prop_activity); 
@@ -73,7 +67,7 @@ class Entity extends Model {
         $data = array();
 
         
-	foreach($this->plist as $aritem)
+	foreach($this->properties as $aritem)
         {
 	    $v = $aritem['id'];
             $data[$v]=array();
@@ -90,24 +84,9 @@ class Entity extends Model {
 	}
         return $data;
     }
-    function getshortname()
-    {
-        $res = $this->name;
-        if (strlen($res)>55)
-        {    
-            $res = substr($res, 0, 55);
-            $end = strlen(strrchr($res, ' ')); // длина обрезка 
-            $res = substr($res, 0, -$end) . '...';         
-        }    
-        return $res;
-    }
     function getactivity()
     {
         return $this->activity;
-    }
-    function getmdentity()
-    {
-        return $this->mdentity;
     }
     function get_data($mode = '') 
     {
@@ -133,22 +112,19 @@ class Entity extends Model {
                     $this->id => $this->name
                 );
         }    
-        $plist = MdpropertySet::getMDProperties($this->mdentity->getid(),
-                                        $mode,
-                                        " WHERE mp.mdid = :mdid ");
+        $mdprop = new MdpropertySet($this->mdentity->getid());
+        $properties = $mdprop->getProperties(" WHERE mp.mdid = :mdid ",FALSE);
         $sets = array();
-        foreach ($plist as $prop) {
+        foreach ($properties as $prop) {
             if ($prop['valmdtypename']!='Sets') {
                 continue;
             }
-            $setprop = MdpropertySet::getMDProperties($prop['valmdid'],
-                                                $mode,
-                                                " WHERE mp.mdid = :mdid ");
+            $mdprop = new MdpropertySet($prop['valmdid']);
+            $setprop = $mdprop->getProperties(" WHERE mp.mdid = :mdid ",FALSE);
             foreach ($setprop as $sprop) {    
                 if ($sprop['valmdtypename']=='Items') {
-                    $sets[$prop['id']] = MdpropertySet::getMDProperties(
-                            $sprop['valmdid'],
-                            $mode,
+                    $mdprop = new MdpropertySet($sprop['valmdid']);
+                    $sets[$prop['id']] = $mdprop->getProperties(
                             " WHERE mp.mdid = :mdid and mp.ranktoset>0 ",
                             true
                         );
@@ -166,7 +142,7 @@ class Entity extends Model {
                 'num'=>$this->num,
                 'mdsynonym'=>$this->mdentity->getsynonym(),
                 'mdtypedescription'=>$this->mdentity->getmdtypedescription(),
-                'PLIST'=>$plist,
+                'PLIST'=>$properties,
                 'sets' => $sets,
                 'navlist'=>$navlist
         );        
@@ -204,7 +180,7 @@ class Entity extends Model {
     }
     function set_data($data) 
     {
-	foreach($this->plist as $aritem)
+	foreach($this->properties as $aritem)
         {
 	    $v = $aritem['id'];
             $this->data[$v]=array();
@@ -232,74 +208,9 @@ class Entity extends Model {
         $this->name = $this->gettoString();
         $this->synonym = $this->name;
     }
-    
-    public function gettoString() 
-    {
-        $artoStr = array();
-        foreach($this->plist as $prop)
-        {
-            if ($prop['ranktostring'] > 0) 
-            {
-              $artoStr[$prop['id']] = $prop['ranktostring'];
-            }
-        }
-        if (!count($artoStr)) {
-            foreach($this->plist as $prop) {
-                if ($prop['rank'] > 0) {
-                  $artoStr[$prop['id']] = $prop['rank'];
-                }  
-            }
-            if (count($artoStr)) {
-              asort($artoStr);
-              array_splice($artoStr,1);
-            }  
-        } else {
-            asort($artoStr);
-        }
-        if (count($artoStr)) {
-            $res = '';
-            foreach($artoStr as $prop => $rank)
-            {
-                if ($this->mdentity->getmdtypename() == 'Docs')
-                {
-                    if ($this->plist[$prop]['isenumber'])
-                    {
-                        continue;
-                    }    
-                    if ($this->plist[$prop]['isedate'])
-                    {
-                        continue;
-                    }    
-                }    
-                $name = $this->data[$prop]['name'];
-                if ($this->plist[$prop]['type']=='date')
-                {
-                    $name =substr($name,0,10);
-                }
-                $res .=' '.$name;
-            }
-            if ($this->mdentity->getmdtypename()=='Docs')
-            {
-                $datetime = new DateTime($this->edate);
-                $res = $this->mdentity->getsynonym()." №".$this->enumber." от ".$datetime->format('d-m-y').$res;
-            }
-            else    
-            {
-                if ($res!='')
-                {
-                    $res = substr($res, 1);
-                }    
-            }    
-            return $res;
-        }
-        else 
-        {
-            return $this->name;
-        }
-    }
     public function getpropdate(){
 	$res=$this->edate;
-        foreach ($this->plist as $prow)
+        foreach ($this->properties as $prow)
         {    
             if (($prow['isedate']==true)||($prow['isedate']=='t')||($prow['isedate']=='true')) 
             {
@@ -311,7 +222,7 @@ class Entity extends Model {
     }
     public function getpropnumber(){
 	$res=0;
-        foreach ($this->plist as $prow)
+        foreach ($this->properties as $prow)
         {    
             if (($prow['isenumber']==true)||($prow['isenumber']=='t')||($prow['isenumber']=='true')) 
             {
@@ -320,54 +231,6 @@ class Entity extends Model {
             }  
 	}
 	return $res;
-    }
-    
-    function __toString() 
-    {
-      return $this->name;
-    }
-    
-    public function properties() 
-    {
-	return $this->plist;
-    }
-    public function getproperty($propid)
-    {
-        $val=array();
-	if(array_key_exists($propid, $this->plist))
-        {
-	  $val=$this->plist[$propid];
-	}  
-	return $val;
-    }
-    
-    public function getattr($propid) 
-    {
-        $val='';
-	if(array_key_exists($propid, $this->data))
-        {
-	  $val=$this->data[$propid]['name'];
-	}  
-	return $val;
-    }
-    function getattrid($propid)
-    {
-        $val='';
-	if(array_key_exists($propid, $this->data))
-        {
-	  $val=$this->data[$propid]['id'];
-	}  
-	return $val;
-    }
-    public function setattr($propid,$valname,$valid='') 
-    {
-        $val='';
-	if(array_key_exists($propid, $this->data))
-        {
-	  $this->data[$propid]['name'] = $valname;
-          $this->data[$propid]['id'] = $valid;
-	}  
-        return $this;
     }
     public function update_dependent_properties($data)
     {
@@ -456,20 +319,6 @@ class Entity extends Model {
         }
         return $res;
     }        
-
-    public function update($data)     
-    {
-        $res = $this->update_properties($data,0);
-        if ($res['status']=='OK')
-        {
-            $res1 = $this->update_dependent_properties($res['objs']);
-            if (is_array($res1['objs'])) {
-                $res['objs'] += $res1['objs'];
-            }
-        }    
-        return $res;
-    }
-    
     public function update_properties($data,$n=0)     
     {
         $objs = $this->before_save($data);
@@ -481,10 +330,10 @@ class Entity extends Model {
             if ($propid == 'id') {
                 continue;
             }
-            if(!array_key_exists($propid,$this->plist)) {
+            if(!array_key_exists($propid,$this->properties)) {
                 continue;
             }
-            $type = $this->plist[$propid]['type'];
+            $type = $this->properties[$propid]['type'];
             if ($type == 'id') {
                 $n_name = '';
                 $n_id = DCS_EMPTY_ENTITY;
@@ -493,8 +342,8 @@ class Entity extends Model {
                     $n_name = $p_ent->getname();
                     $n_id = $propval['nvalid'];
                     //заполним пересекающиеся реквизиты ссылочного типа
-                    $tpropid = $this->plist[$propid]['propid'];
-                    foreach($this->plist as $prop) {
+                    $tpropid = $this->properties[$propid]['propid'];
+                    foreach($this->properties as $prop) {
                         if ($prop['type'] != 'id') {
                             continue;
                         }    
@@ -502,7 +351,7 @@ class Entity extends Model {
                         if ($ctpropid == $tpropid) {
                             continue;
                         }    
-                        foreach($p_ent->plist as $e_prop) {
+                        foreach($p_ent->properties as $e_prop) {
                             if ($e_prop['propid'] != $ctpropid) {
                                 continue;
                             }    
@@ -532,11 +381,11 @@ class Entity extends Model {
             {
                 continue;
             }
-            if(!array_key_exists($propid,$this->plist))
+            if(!array_key_exists($propid,$this->properties))
             {
                 continue;
             }
-            $type = $this->plist[$propid]['type'];
+            $type = $this->properties[$propid]['type'];
             $params = array();
             $params['userid'] = $_SESSION['user_id'];
             $params['id'] = $id;
@@ -561,7 +410,7 @@ class Entity extends Model {
             $params = array();
             if ($type=='file')
             {
-                $t_val = str_replace(" ","_",trim($this->name))."_".$this->plist[$propid]['name'].strrchr($t_val,'.');
+                $t_val = str_replace(" ","_",trim($this->name))."_".$this->properties[$propid]['name'].strrchr($t_val,'.');
             }    
             $params['value'] = $t_val;
             $params['id'] = $row['id'];
@@ -585,20 +434,11 @@ class Entity extends Model {
         }    
         return array('status'=>$status, 'id'=>$this->id, 'objs'=>$upd);
     }
-    function before_delete() 
-    {
-        $nval="удалить";
-        if (!$this->activity)
-        {    
-            $nval='снять пометку удаления';
-        }   
-        return array($this->id=>array('id'=>$this->id,'name'=>"Элемент ".$this->getmdentity()->getsynonym(),'pval'=>$this->name,'nval'=>$nval));
-    }    
     function delete() 
     {
 	$res = DataManager::dm_query("BEGIN");
         $id = $this->id;
-        $propid = array_search('activity', array_column($this->plist,'name','id'));
+        $propid = array_search('activity', array_column($this->properties,'name','id'));
         if ($propid!==FALSE)
         {
             $params = array();
@@ -634,61 +474,8 @@ class Entity extends Model {
             return array('status'=>'NONE','msg'=>"Нет измененных записей ");
         }    
     }    
-
-    function before_save($data) {
-        $sql = '';
-        $objs = array();
-        foreach ($this->plist as $prop)
-        {    
-            $propid = $prop['id'];
-            if ($propid=='id') continue;
-            if (!array_key_exists($propid, $data))
-            {        
-                continue;
-            }
-            $nval = $data[$prop['id']]['name'];
-            $nvalid = $data[$prop['id']]['id'];
-            $pval = $this->data[$prop['id']]['name'];
-            $pvalid = '';
-            if ($prop['type']=='id') 
-            {
-                $pvalid = $this->data[$prop['id']]['id'];
-                if ($pvalid==$nvalid) 
-                {
-                    continue;
-                }    
-                if (($pvalid==DCS_EMPTY_ENTITY)&&($nvalid==''))
-                {
-                    continue;
-                }
-            }
-            elseif ($prop['type']=='date') 
-            {
-                if (substr($pval,0,19)==substr($nval,0,19)) 
-                {
-                    continue;
-                }    
-            } 
-            elseif ($prop['type']=='bool') 
-            {
-                if ((bool)$pval==(bool)$nval) 
-                {
-                    continue;
-                }   
-            } 
-            else 
-            {
-                if ($pval==$nval) 
-                {
-                    continue;
-                }    
-            }
-            $objs[]=array('id'=>$prop['id'], 'name'=>$prop['name'],'pvalid'=>$pvalid, 'pval'=>$pval, 'nvalid'=>$nvalid, 'nval'=>$nval);
-        }       
-	return $objs;
-    }
-    public function createNew(){
-        
+    public function createNew()
+    {
 	if ($this->id!=''){
             return array('status'=>'ERROR','msg'=>'this in not new object');
         }    
@@ -697,17 +484,14 @@ class Entity extends Model {
         }    
         $edate = $this->edate;
         $enumber = $this->enumber;
-        if ($this->mdentity->getmdtypename()=='Docs')
+        if ($this->head->getmdtypename()=='Docs')
         {
             if ($edate=='') {
                 return array('status'=>'ERROR','msg'=>'date is empty');
             }
-//            if ($enumber=='') {
-//                return array('status'=>'ERROR','msg'=>'number is empty');
-//            }
         }    
 	$res = DataManager::dm_query("BEGIN");
-        $mdid = $this->mdentity->getid();
+        $mdid = $this->head->getid();
         $sql = "INSERT INTO \"ETable\" (mdid) VALUES (:mdid) RETURNING \"id\"";
         $res=DataManager::dm_query($sql,array('mdid'=>$mdid));
         if(!$res) {
@@ -716,7 +500,7 @@ class Entity extends Model {
         $row = $res->fetch(PDO::FETCH_ASSOC);
         $this->id = $row['id'];
         $id = $this->id;
-        foreach($this->plist as $prop)
+        foreach($this->properties as $prop)
         {
             $propid = $prop['id'];
             if ($propid=='id') continue;
@@ -883,7 +667,8 @@ class Entity extends Model {
             $mdid = $arMD['mdid'];
             $objs['id']=$id;
         }
-        $objs['PLIST'] = MdpropertySet::getMDProperties($mdid,$mode," WHERE mp.mdid = :mdid ",true);
+        $mdprop = new MdpropertySet($mdid);
+        $objs['PLIST'] = $mdprop->getProperties(" WHERE mp.mdid = :mdid ",true);
         $objs['MD'] =  array(
                               'mdid'	=> $mdid,
                               'mditem'	=> $arMD['mditem'],
@@ -913,12 +698,12 @@ class Entity extends Model {
 	$artemptable = self::createtemptable_allprop($entities,$mdid, $ver);
 	$sql = "SELECT * FROM tt_pt";
 	$res = DataManager::dm_query($sql);	
-        $plist = $res->fetchAll(PDO::FETCH_ASSOC);
+        $properties = $res->fetchAll(PDO::FETCH_ASSOC);
         $str0_req='SELECT et.id';
         $str_req='';
         $str_p = '';
         $arr_id=array();
-        foreach($plist as $row) 
+        foreach($properties as $row) 
         {
             $rid = $row['id'];
             if ($row['type']=='id')
@@ -969,15 +754,15 @@ class Entity extends Model {
             $objs['ENT'][] = $row;
             $objs['SDATA'][$row['id']] = array();                
             $objs['SDATA'][$row['id']]['class'] ='active';               
-            foreach($plist as $row_plist) 
+            foreach($properties as $row_properties) 
             {
-                $rid = $row_plist['id'];
-                $rowname = str_replace("-","",$row_plist['id']);
+                $rid = $row_properties['id'];
+                $rowname = str_replace("-","",$row_properties['id']);
                 $field_id = "propid_$rowname";
                 $rowid = "id_$rowname";
                 $rowname = "name_$rowname";
                 $objs['SDATA'][$row['id']][$row[$field_id]] = array();                
-                if (strtolower($row_plist['name'])=='activity')
+                if (strtolower($row_properties['name'])=='activity')
                 {
                     if (!$row[$rowname])
                     {    
@@ -988,12 +773,12 @@ class Entity extends Model {
                 {   
                     if ($row[$field_id])
                     {    
-                        if ($row_plist['type']=='id')
+                        if ($row_properties['type']=='id')
                         {
-                            if ($row_plist['valmdtypename']=='Sets')
+                            if ($row_properties['valmdtypename']=='Sets')
                             {    
                                 $objs['SDATA'][$row['id']][$row[$field_id]]['id']=$row[$rowid];
-                                $objs['SDATA'][$row['id']][$row[$field_id]]['name']=$row_plist['synonym'];
+                                $objs['SDATA'][$row['id']][$row[$field_id]]['name']=$row_properties['synonym'];
                             }
                             else
                             {
@@ -1008,7 +793,7 @@ class Entity extends Model {
                                 $objs['SDATA'][$row['id']][$row[$field_id]]['name']='';
                             }
                         }
-                        elseif ($row_plist['type']=='cid')
+                        elseif ($row_properties['type']=='cid')
                         {
                             $objs['SDATA'][$row['id']][$row[$field_id]]['id']=$row[$rowid];
                             $objs['SDATA'][$row['id']][$row[$field_id]]['name']=$row[$rowname];
@@ -1070,8 +855,8 @@ class Entity extends Model {
             return $objs;
         }    
 	$mdid = $arSetItemProp['valmdid'];
-	$objs['PSET'] = MdpropertySet::getMDProperties($mdid,$mode," WHERE mp.mdid = :mdid and mp.ranktoset>0 ",true);
-                
+        $mdprop = new MdpropertySet($mdid);
+	$objs['PSET'] = $mdprop->getProperties(" WHERE mp.mdid = :mdid and mp.ranktoset>0 ",true);
         if ($this->id=='')
         {
             return $objs;
@@ -1306,62 +1091,6 @@ class Entity extends Model {
             }
 
     }	
-    public static function getPropsUse($mditem) 
-    {
-        $sql="SELECT pu.id, pu.name, pu.synonym, pv_propid.value as propid, pv_type.value as type, ct_type.name as name_type, pv_len.value as length, pv_prc.value as prec, pv_valmd.value as valmdid, md_valmd.name as valmdname FROM \"CTable\" as pu 
-                inner join \"CPropValue_cid\" as pv_propid 
-                    inner join \"CProperties\" as cp_propid
-                    ON pv_propid.pid=cp_propid.id
-                    AND cp_propid.name='propid'
-                    inner join \"CTable\" as ct_propid
-                    ON pv_propid.value = ct_propid.id
-                    
-                    inner join \"CPropValue_cid\" as pv_type
-                        inner join \"CProperties\" as cp_type
-                        ON pv_type.pid=cp_type.id
-                        AND cp_type.name='type'
-                        inner join \"CTable\" as ct_type
-                        ON pv_type.value = ct_type.id
-                    ON pv_propid.value = pv_type.id
-                    AND ct_propid.mdid = cp_type.mdid
-
-                    left join \"CPropValue_int\" as pv_len
-                        inner join \"CProperties\" as cp_len
-                        ON pv_len.pid=cp_len.id
-                        AND cp_len.name='length'
-                    ON pv_propid.value = pv_len.id
-                    AND ct_propid.mdid = cp_len.mdid
-                    
-                    left join \"CPropValue_int\" as pv_prc
-                        inner join \"CProperties\" as cp_prc
-                        ON pv_prc.pid=cp_prc.id
-                        AND cp_prc.name='prec'
-                    ON pv_propid.value = pv_prc.id
-                    AND ct_propid.mdid = cp_prc.mdid
-                    
-                    left join \"CPropValue_mdid\" as pv_valmd
-                        inner join \"CProperties\" as cp_valmd
-                        ON pv_valmd.pid=cp_valmd.id
-                        AND cp_valmd.name='valmdid'
-                        inner join \"MDTable\" as md_valmd
-                        ON pv_valmd.value = md_valmd.id
-                    ON pv_propid.value = pv_valmd.id
-                    AND ct_propid.mdid = cp_valmd.mdid
-                    
-                ON pu.id=pv_propid.id
-                AND pu.mdid = cp_propid.mdid
-                inner join \"CPropValue_cid\" as pv_mditem
-                    inner join \"CProperties\" as cp_mditem
-                    ON pv_mditem.pid=cp_mditem.id
-                    AND cp_mditem.name='mditem'
-                ON pu.id=pv_mditem.id
-                AND pv_mditem.value = :mditem";
-        $params = array();
-        $params['mditem']=$mditem;
-        $res = DataManager::dm_query($sql,$params); 
-        return $res->fetchAll(PDO::FETCH_ASSOC);
-        
-    }
     public function createItem($name,$mode='')
     {
         $arSetItemProp = self::getMDSetItem($this->mdentity->getid());

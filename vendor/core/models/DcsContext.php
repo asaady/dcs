@@ -23,12 +23,15 @@ class DcsContext
         $this->context = array();
         $this->context['TITLE'] = DCS_COMPANY_SHORTNAME;
         $this->context['MODE'] = 'ENTERPRISE';
+        $this->context['CLASSNAME'] = '';
+        $this->context['CLASSTYPE'] = '';
         $this->context['ACTION'] = 'VIEW';
         $this->context['PREFIX'] = '';
         $this->context['ITEMID'] = '';
         $this->context['CURID'] = '';
         $this->context['PARAM'] = '';
         $this->context['PAGE'] = 1;
+        $this->context['LIMIT'] = DCS_COUNT_REC_BY_PAGE;
         $this->context['MENU'] = array();
         $this->context['USERNAME'] = 'Anonymous';
     } 
@@ -45,21 +48,24 @@ class DcsContext
     // [3] - curid
     // [4] - action
     // [5] - param
-    protected function setitems($data, &$curval, &$validation, &$indx)
+    protected function setitems($data, &$curval, &$validation, &$indx,&$indd)
     {
         if ($validation == $this->valindx[$indx]['validate']) {
             $this->setattr($this->valindx[$indx]['name'], $curval);
             $indx++;
-            if ($indx>5) {
+            $indd++;
+            if ($indd >= count($data)) {
                 return;
             }
-            if (empty($data[$indx])) {
-                return;
-            }
-            $curval = trim($data[$indx]);
+            $curval = trim($data[$indd]);
             $validation = Common_data::check_uuid($curval);
-            $this->setitems($data, $curval, $validation, $indx);
+        } else {
+            $indx++;
+        }    
+        if ($indx>5) {
+            return;
         }
+        $this->setitems($data, $curval, $validation, $indx,$indd);
     }        
     public function setcontext($data)
     {
@@ -78,7 +84,8 @@ class DcsContext
         }
         $curval = trim($data[$indx]);
         $validation = Common_data::check_uuid($curval);
-        $this->setitems($data, $curval, $validation, $indx);
+        $indd = $indx;
+        $this->setitems($data, $curval, $validation, $indx, $indd);
     }   
     
     public function setattr($attrname, $attrval)

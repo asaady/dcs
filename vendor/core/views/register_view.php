@@ -1,6 +1,6 @@
     <div class="container">
 
-      <?php if (dcs\vendor\core\User::isAuthorized()): ?>
+      <?php if (\Dcs\Vendor\Core\Models\User::isAuthorized()): ?>
     
       <h1>Your are already registered!</h1>
 

@@ -38,7 +38,7 @@
         foreach($data['PSET'] as $key=>$val)
         {    
             $ishide='';
-            if ($arResult['MODE']!=='CONFIG')
+            if ($context['MODE']!=='CONFIG')
             {
                 if ($key=='id'){
                     $ishide=' hidden';

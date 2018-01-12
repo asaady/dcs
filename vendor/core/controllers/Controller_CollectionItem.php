@@ -17,8 +17,8 @@ class Controller_CollectionItem extends Controller
 	{
 		$data = $this->model->get_data($context['MODE']);
                 
-                $context['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/views/item_view.php";
-		$this->view->generate($context, 'template_view.php', $data);
+                $context['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING).$this->view->get_views_path()."/item_view.php";
+		$this->view->generate($context, $data);
 	}
 	function action_view($context)
 	{
@@ -32,7 +32,7 @@ class Controller_CollectionItem extends Controller
 	{
 		$data = $this->model->get_data($context['MODE']);
                 
-                $context['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/views/collection_del.php";
-		$this->view->generate($context, 'template_view.php', $data);
+                $context['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING).$this->view->get_views_path()."/collection_del.php";
+		$this->view->generate($context, $data);
 	}
 }

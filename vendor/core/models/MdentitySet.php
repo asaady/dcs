@@ -4,62 +4,85 @@ require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)
 use PDO;
 //use dcs\vendor\core\Mditem;
 
-class MdentitySet extends Mditem {
+class MdentitySet extends Model implements I_Head
+{
+    use T_Head;
+    
+    public function __construct($id = '') 
+    {
+	if ($id == '') 
+        {
+            throw new Exception("empty mditem");
+	}
+        $res = self::getMDitem($id);
+        $this->id = $id; 
+        $this->name = $res['name']; 
+        $this->synonym = $res['synonym']; 
+        $this->version = time();
+    }
+    public static function getMDitem($itemid) 
+    {
+        $sql = "SELECT ct.id, ct.name, ct.synonym FROM \"CTable\" as ct 
+        	LEFT JOIN \"MDTable\" as md
+                ON ct.mdid=md.id AND md.name= :namemditems WHERE ct.id=:itemid LIMIT 1";
+        
+	$res = DataManager::dm_query($sql,array('namemditems'=>'MDitems','itemid'=>$itemid)); 
+        return  $res->fetch(PDO::FETCH_ASSOC);
+    }
     function get_data($mode='') 
     {
-        $clsid='active';
-        if ($mode!='CONFIG')
-        {
-            $clsid='hidden';
-        }    
-        $plist = array(
-          'id'=>array('name'=>'id','synonym'=>'ID','class'=>$clsid),
-          'name'=>array('name'=>'name','synonym'=>'NAME','class'=>'active'),
-          'synonym'=>array('name'=>'synonym','synonym'=>'SYNONYM','class'=>'active')
-        );
         return array(
           'id'=>$this->id,
           'name'=>$this->name,
           'synonym'=>$this->synonym,
           'version'=>$this->version,
-          'PSET' => $plist,   
+          'PSET' => $this->get_properties($mode),
           'navlist' => array(
-              $this->id=>$this->synonym
+              $this->id => $this->synonym
             )
           );
     }
-    function getMdentity($mode,$edit_mode)
+    function get_item()
     {
-        
-	$sql = "SELECT md.id, md.name, md.synonym FROM \"MDTable\" AS md WHERE md.mditem= :mditem";
+        return new Mdentity($this->id);
+    }
+    function get_properties($mode = '') 
+    {
+        $properties = array(
+            'id'=>array('id'=>'id','name'=>'id','synonym'=>'ID','rank'=>0,'type'=>'str','class'=>'hidden','field'=>1),
+            'name'=>array('id'=>'name','name'=>'name','synonym'=>'NAME','rank'=>1,'type'=>'str','class'=>'active','field'=>1),
+            'synonym'=>array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM','rank'=>3,'type'=>'str','class'=>'active','field'=>1),
+            'mditem'=>array('id'=>'mditem','name'=>'mditem','synonym'=>'MDITEM','rank'=>4,'type'=>'cid','class'=>'hidden','field'=>1)
+            );        
+        if ($mode == 'CONFIG')
+        {
+            $properties['id']['class'] = 'readonly';
+        }    
+        return $properties;
+    }
+    
+    function getItemsByFilter($context, $filter) 
+    {
+        $mode = $context['MODE'];
+        $action = $context['ACTION'];
+	$sql = "SELECT md.id, md.name, md.synonym, md.mditem FROM \"MDTable\" AS md WHERE md.mditem= :mditem";
         $params = array('mditem'=>$this->id);
-        $dop = DataManager::get_md_access_text($edit_mode);
+        $dop = DataManager::get_md_access_text($action);
         if ($dop!='')
         {    
             $params['userid'] = $_SESSION['user_id'];
             $sql .= " AND ".$dop;
         }    
         $sth = DataManager::dm_query($sql,$params);        
-        $plist = array();
-        if ($mode!='CONFIG')
-        {
-            $plist['id'] = array('name'=>'id','synonym'=>'ID','class'=>'hidden');
-        } 
-        else 
-        {
-            $plist['id'] = array('name'=>'id','synonym'=>'ID','class'=>'active');
-        }    
-        $plist['name'] = array('name'=>'name','synonym'=>'NAME','class'=>'active');
-        $plist['synonym'] = array('name'=>'synonym','synonym'=>'SYNONYM','class'=>'active');
         $objs = array();
-        $objs['PLIST'] = $plist;
-        $objs['PSET'] = $plist;
+        $objs['PLIST'] = array();
+        $objs['PSET'] = $this->get_properties($mode);
         $objs['SDATA'] = array();
         $objs['SDATA'][$this->id] = array();
         $objs['SDATA'][$this->id]['id'] = array('id'=>$this->id,'name'=>'');
         $objs['SDATA'][$this->id]['name'] = array('id'=>'','name'=>$this->name);
         $objs['SDATA'][$this->id]['synonym'] = array('id'=>'','name'=>$this->synonym);
-        $objs['actionlist'] = DataManager::getActionsbyItem('EntitySet',$mode,$edit_mode);          
+        $objs['actionlist'] = DataManager::getActionsbyItem('EntitySet',$mode,$action);          
         $objs['LDATA'] = array();
         while($row = $sth->fetch(PDO::FETCH_ASSOC)) 
         {
@@ -67,6 +90,7 @@ class MdentitySet extends Mditem {
             $objs['LDATA'][$row['id']]['id'] = array('id'=>'','name'=>$row['id']);
             $objs['LDATA'][$row['id']]['name'] = array('id'=>'','name'=>$row['name']);
             $objs['LDATA'][$row['id']]['synonym'] = array('id'=>'','name'=>$row['synonym']);
+            $objs['LDATA'][$row['id']]['class'] = 'active';
         }
         return $objs;
     }
@@ -114,6 +138,5 @@ class MdentitySet extends Mditem {
             
         return $objs;
     }       
-    
 }
 

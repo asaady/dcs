@@ -2,29 +2,16 @@
 namespace Dcs\Vendor\Core\Models;
 use Exception;
 
-interface iModel 
-{
-    public function get_data($mode='');
-    public function getid();
-    public function getname();
-    public function getsynonym();
-    public function getversion();
-}
-
-class Model implements iModel
+abstract class Model implements I_Model
 {
     protected $id;
     protected $name;
     protected $synonym;
     protected $version;
+    protected $properties;
     
     function __construct()
     {
-    }
-    // метод выборки данных
-    public function get_data($mode='')
-    {
-            // todo
     }
     function getid() 
     {
@@ -67,5 +54,38 @@ class Model implements iModel
         {
             throw new Exception("Неверное имя свойства \"$propertyName\"!");
 	}
+    }
+    public function get_properties() 
+    {
+	return $this->properties;
+    }
+    public function getProperty($id) 
+    {
+        $res = array();
+        if ($this->isExistTheProp($id))
+        {
+            $res = $this->properties[$id];
+        }
+        return $res;
+    }
+    public function isExistTheProp($id) 
+    {
+        return isset($this->properties[$id]);
+    }
+    public function setproperty($propid,$val)
+    {
+        $this->properties[$propid] = $val;
+    }
+    public function getplist() 
+    {
+        return array(
+            'id'=>array('id'=>'id','name'=>'id','synonym'=>'ID','type'=>'str'),
+            'name'=>array('id'=>'name','name'=>'name','synonym'=>'NAME','type'=>'str'),
+            'synonym'=>array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM','type'=>'str'),
+            'rank'=>array('id'=>'rank','name'=>'rank','synonym'=>'RANK','type'=>'int'),
+            'type'=>array('id'=>'type','name'=>'type','synonym'=>'TYPE','type'=>'str'),
+            'class'=>array('id'=>'class','name'=>'class','synonym'=>'CLASS','type'=>'str'),
+            'field'=>array('id'=>'field','name'=>'field','synonym'=>'FIELD','type'=>'int')
+            );        
     }
 }

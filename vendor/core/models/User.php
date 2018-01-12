@@ -1,6 +1,8 @@
 <?php
 namespace Dcs\Vendor\Core\Models;
+
 use PDO;
+use Exception;
 
 class User
 {

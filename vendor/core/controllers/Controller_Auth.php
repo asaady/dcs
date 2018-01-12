@@ -28,8 +28,8 @@ class Controller_Auth extends Controller
                 $data['navlist']=array();
                 $data['plist']=array();
                 $data['ardata']=array();
-                $context['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/vendor/views/auth_view.php";
-		$this->view->generate($context, "template_view.php", $data);
+                $context['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING).$this->view->get_views_path()."/auth_view.php";
+		$this->view->generate($context, $data);
 	}
 	function action_register($context)
 	{       

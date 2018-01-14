@@ -1095,11 +1095,19 @@ $('body').on('click', '#history', function (e)
 $('body').on('click', '#submit', function (e)
 {
     var itemid = $("input[name='itemid']").val(); 
+    var mode = $("input[name='mode']").val();  
     var action = $("input[name='action']").val();  
+    var act = $("input[name='act']").val();  
     var $data;
+    var curl = '/';
     $data = $('.row :input').serializeArray();
+    if (mode == 'AUTH') {
+        curl = '/auth/'+act;
+    } else {
+        curl = '/ajax/'+itemid+'/'+action;
+    }
     $.ajax({
-      url: '/ajax/'+itemid+'/'+action,
+      url: curl,
       type: 'post',
       dataType: 'json',
       data: $data,
@@ -1224,8 +1232,8 @@ function logout()
     var data = $('.row :input').serializeArray();
     $.ajax(
     {
-        url: '/common/post_ajax.php',
-        type: 'post',
+        url: '/auth/logout',
+        type: 'get',
         dataType: 'json',
         data: data,
         success: function(result) {
@@ -1235,8 +1243,9 @@ function logout()
 };
 function activate_pickadate(action)
 {
-    if ((action == 'EDIT')||
-        (action == 'CREATE')) {
+    var action = $("input[name='action']").val();
+    if ((action === 'EDIT')||
+        (action === 'CREATE')) {
         $('input.form-control[it=date]').pickadate({
                     selectMonths: true,
                     format: 'yyyy-mm-dd',
@@ -1253,14 +1262,16 @@ $(document).ready(function()
     activate_pickadate(action);
     $data = $('.row :input').serializeArray();
     if (curid !== '') {
-        curid = curid + '/';
+        itemid = itemid + '/' + curid;
     }
-    $.ajax({
-      url: '/ajax/'+itemid+'/'+curid+action,
-      type: 'get',
-      dataType: 'json',
-      data: $data,
-      success: onLoadValID
-      }
-    );
+    if (itemid !== '') {
+        $.ajax({
+          url: '/ajax/'+itemid+'/'+action,
+          type: 'get',
+          dataType: 'json',
+          data: $data,
+          success: onLoadValID
+          }
+        );
+    }
 });

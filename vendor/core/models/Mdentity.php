@@ -5,9 +5,9 @@ require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)
 
 use PDO;
 
-class Mdentity extends Head implements I_Head, I_Item 
+class Mdentity extends Head implements I_Head, I_Property
 {
-    use T_Head;
+    use T_EProperty;
     
     public function __construct($id='') {
 	if ($id=='') {
@@ -21,9 +21,9 @@ class Mdentity extends Head implements I_Head, I_Item
     {
         return new Property($this->id);
     }
-    function getarProps($mode='') 
+    function getProperties($mode='') 
     {
-        $mdprop = new MdpropertySet($this->mdentityset->getid());
+        $mdprop = new MdpropertySet($this->head->getid());
         $objs['PSET'] = $mdprop->getProperties(" WHERE mp.mdid = :mdid AND mp.ranktoset>0 ",true);
         
         if ($this->id)
@@ -43,8 +43,10 @@ class Mdentity extends Head implements I_Head, I_Item
              'synonym'=>array('name'=>'synonym','synonym'=>'SYNONYM','class'=>'active'),
             );
     }
-    function getPropData($mode='',$edit_mode='') 
+    function getItemsByFilter($context, $filter)
     {
+        $mode = $context['MODE'];
+        $action = $context['ACTION'];
         $objs = array();
         $objs['id'] = $this->id;
         $objs['name'] = $this->name;
@@ -252,17 +254,7 @@ class Mdentity extends Head implements I_Head, I_Item
         }    
 	return $objs;
     }
-    public static function getMDbyName($filter,$mditem='') 
+    public function getItemsByName($name) 
     {
-        $params = array('filter'=>"%$filter%");
-        $sql = "SELECT id, name, synonym, mditem FROM \"MDTable\" WHERE name ILIKE :filter or synonym ILIKE :filter";
-	if ($mditem!='') 
-        {
-	  $sql .= " AND mditem=:mditem";
-          $params['mditem'] = $mditem;
-	}
-        $sql .= " LIMIT 5";
-        $sth = DataManager::dm_query($sql,$params);
-        return $sth->fetchAll(PDO::FETCH_ASSOC);
     }
 }

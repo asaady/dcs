@@ -5,8 +5,11 @@ use PDO;
 use DateTime;
 use Exception;
 
-class Head extends Model {
+abstract class Head extends Model
+{
+    
     use T_Head;
+    use T_Property;
     
     protected $mditem;     
     
@@ -17,10 +20,19 @@ class Head extends Model {
         $this->id = $id; 
         $this->version = time();
         $this->getMD();
+        $this->loadProperties(" WHERE mp.mdid = :mdid AND mp.ranktoset>0 ");
     }
     function getmditem()
     {
         return $this->mditem;
+    }
+    function getmditemsynonym() 
+    {
+      return $this->mditem->getsynonym();
+    }
+    function getmditemname() 
+    {
+      return $this->mditem->getname();
     }
     public function getMD() 
     {

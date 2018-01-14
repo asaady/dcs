@@ -5,9 +5,8 @@ use PDO;
 use DateTime;
 use Exception;
 
-class Entity extends Item implements Iitem {
-    use TeItem;
-    use TeProperty;
+class Entity extends Item implements I_Item {
+    use T_Item;
     
     protected $activity;
     protected $edate;
@@ -29,8 +28,7 @@ class Entity extends Item implements Iitem {
             $mdid = $id;
         }
         $this->head = new Mdentity($mdid);
-        $mdprop = new MdpropertySet($mdid);
-        $this->properties = $mdprop->getProperties(" WHERE mp.mdid = :mdid ",true);
+        $this->properties = $this->getProperties(" WHERE mp.mdid = :mdid ",true);
         $this->data = $this->entity_data();
         $this->edate = $this->getpropdate();
         $this->enumber = $this->getpropnumber();
@@ -474,7 +472,7 @@ class Entity extends Item implements Iitem {
             return array('status'=>'NONE','msg'=>"Нет измененных записей ");
         }    
     }    
-    public function createNew()
+    public function save_new()
     {
 	if ($this->id!=''){
             return array('status'=>'ERROR','msg'=>'this in not new object');

@@ -1,11 +1,9 @@
 <?php
 namespace Dcs\Vendor\Core\Models;
 
-class MdpropertySet extends Head implements I_Head, I_Property
+class MdpropertySet extends Head implements I_Head
 {
-    use T_Properties;
-    use T_EProperty;
-    use T_EItem;
+    use T_Head;
     
     public function __construct($mdid='') 
     {
@@ -20,5 +18,13 @@ class MdpropertySet extends Head implements I_Head, I_Property
     public function get_item() {
         return new Mdproperty($this->id);
     }
+    public function getItemsByFilter($context, $filter) 
+    {
+        
+    }
+    public function getItemsByName($name)
+    {
+        
+    }        
 }
 

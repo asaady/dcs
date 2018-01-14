@@ -16,7 +16,7 @@ trait T_Head {
           'mditem'=>$this->mditem->getid(),
           'mditemsynonym'=>$this->mditem->getsynonym(),
           'version'=>$this->version,
-          'PSET' => $this->get_properties($mode),
+          'PSET' => $this->getProperties($mode),
           'navlist' => array(
               $this->mditem->getid() => $this->mditem->getsynonym(),
               $this->id => $this->synonym
@@ -29,4 +29,8 @@ trait T_Head {
         $entity->set_data($data);
         return $entity->save_new();
     }
+    public function search_by_name($name)
+    {
+        return $this->getItemsByName($name);
+    }        
 }

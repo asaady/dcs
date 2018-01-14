@@ -116,17 +116,23 @@ class Route {
         $routes = explode('/', $routes);
         $this->context = new DcsContext;
         $this->context->setcontext($routes);
-        $this->action_name = 'action_'. strtolower($this->context->getattr('ACTION'));
-        $arSubSystems = $this->context->getsubsystems();
-        if (($this->context->getattr('ITEMID') == '')&&(count($arSubSystems))) {
-            $ritem = '';
-            foreach ($arSubSystems as $row)
-            {
-                $ritem = $row['id'];
-                break;
-            }   
-            $this->context->setattr('ITEMID',$ritem);
+        if (!User::isAuthorized()) {
+            if ($this->context->getattr('ACTION') !== 'AUTH') {
+                $this->context->setattr('MODE','AUTH');
+            }    
+        } else {
+            $arSubSystems = $this->context->getsubsystems();
+            if (($this->context->getattr('ITEMID') == '')&&(count($arSubSystems))) {
+                $ritem = '';
+                foreach ($arSubSystems as $row)
+                {
+                    $ritem = $row['id'];
+                    break;
+                }   
+                $this->context->setattr('ITEMID',$ritem);
+            }
         }
+        $this->action_name = 'action_'. strtolower($this->context->getattr('ACTION'));
         $handlername = $this->modes[$this->context->getattr('MODE')];
         $handlername();
         $this->context->setattr('CLASSNAME', $this->classname);

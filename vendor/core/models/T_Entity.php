@@ -3,7 +3,7 @@ namespace Dcs\Vendor\Core\Models;
 
 use PDO;
 
-trait TeItem {
+trait T_Entity {
     public function gettoString() 
     {
         $artoStr = array();
@@ -68,12 +68,12 @@ trait TeItem {
             return $this->name;
         }
     }
-    function createtemptable_all($tt_entities,$mdid)
+    public function createtemptable_all($tt_entities)
     {
 	$artemptable = array();
         
         $sql = DataManager::get_select_properties(" WHERE mp.mdid=:mdid AND mp.rank>0 ");
-        $artemptable[1]= DataManager::createtemptable($sql,'tt_pt',array('mdid'=>$mdid));   
+        $artemptable[1]= DataManager::createtemptable($sql,'tt_pt',array('mdid'=>$this->id));   
         
         $sql=DataManager::get_select_maxupdate($tt_entities,'tt_pt');
         $artemptable[2] = DataManager::createtemptable($sql,'tt_id');   
@@ -113,8 +113,9 @@ trait TeItem {
         $sql = DataManager::get_select_entities($str_entities);
         return DataManager::createtemptable($sql,$ttname);
     }
-    public function get_findEntitiesByProp($ttname, $mdid, $propid, $ptype, $access_prop, $filter ,$limit) 
+    public function get_findEntitiesByProp($ttname, $propid, $ptype, $access_prop, $filter ,$limit) 
     {
+        $mdid = $this->id;
         $params = array();
         $rec_limit = $limit*2;
         $prop_templ_id = '';
@@ -137,7 +138,7 @@ trait TeItem {
         }
         else
         {
-            $key_edate = array_search(true, array_column($mdentity->getarProps(), 'isedate','id'));
+            $key_edate = array_search(true, array_column($this->properties, 'isedate','id'));
             if ($key_edate !== FALSE)
             {
                 //если есть реквизит с установленным флагом isedate сортируем по этому реквизиту по убыванию
@@ -165,7 +166,7 @@ trait TeItem {
                 {
                     continue;
                 }    
-                $isprop = array_search($prop, array_column($mdentity->getarProps(), 'propid','id'));
+                $isprop = array_search($prop, array_column($this->properties, 'propid','id'));
                 if ($isprop===FALSE)
                 {
                     //в текущем объекте нет реквизита с таким значением $prop

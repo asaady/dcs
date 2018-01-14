@@ -5,9 +5,10 @@ use PDO;
 use DateTime;
 use Exception;
 
-class EntitySet extends Head implements I_Head 
+class EntitySet extends Head implements I_Head, I_Property
 {
-    use T_Head;
+    use T_EProperty;
+    use T_Entity;
     
     public function get_item() 
     {
@@ -39,7 +40,7 @@ class EntitySet extends Head implements I_Head
         //поищем среди реквизитов объекта-хозяина реквизиты совпадающие по шаблону с реквизитами выбираемых строк
         //это реквизиты выбираемых строк
         $arr_ent_propid = array_column($ent_plist, 'propid','id'); // это массив шаблонов реквизитов объекта хозяина
-        $plist = MdpropertySet::getMDProperties($mdid, 'CONFIG', " WHERE mp.mdid = :mdid AND mp.ranktoset>0 ",true);
+        $plist = $this->getProperties(" WHERE mp.mdid = :mdid AND mp.ranktoset>0 ",true);
         foreach ($plist as $prop)
         {
             if ($prop['type']=='id') //фильтруем только по полям ссылочного типа
@@ -88,7 +89,7 @@ class EntitySet extends Head implements I_Head
         {
             $item = new Entity($ent_obj->getattrid($filter_id));
             self::add_filter_val($item,$mdid,$ent_filter);
-            if ($ent_obj->getmdentity()->getmdtypename()=='Items')
+            if ($ent_obj->head->getmditemname()=='Items')
             {
                 //хозяин объект сам является строкой
                 $doc = new Entity($docid);
@@ -108,8 +109,10 @@ class EntitySet extends Head implements I_Head
         }   
         return $tt_et;
     }
-    static function sqltext_entitylist($mdid,$plist,$filter,$arr_prop,$access_prop,$action,&$params)
+    public function sqltext_entitylist($filter,$arr_prop,$access_prop,$action,&$params)
     {
+        $mdid = $this->id;
+        $plist = $this->properties;
         $str0_req='SELECT et.id';
         $str_req='';
         $str_p = '';
@@ -207,7 +210,6 @@ class EntitySet extends Head implements I_Head
         $sql .= $orderstr;
         return $sql;
     }
-
     public function getItemsByFilter($context, $filter) 
     {
         $mode = $context['MODE'];
@@ -255,8 +257,7 @@ class EntitySet extends Head implements I_Head
                 }    
             }    
         }
-        $mdentity = new Mdentity($mdid); //метаданные объекта который выбираем
-        if ($mdentity->getmdtypename()=='Items') //запрошены строки ТЧ?
+        if ($this->getmditemname()=='Items') //запрошены строки ТЧ?
         {
             $tt_et = self::get_tt_items($docid,$mdid,$curid,$ent_filter,$entities);
         }    
@@ -269,7 +270,7 @@ class EntitySet extends Head implements I_Head
         }    
         if ($tt_et == '')
         {
-            $tt_et = self::get_findEntitiesByProp('tt_et', $mdid, $propid, $ptype, $access_prop, $ent_filter ,$limit);
+            $tt_et = $this->get_findEntitiesByProp('tt_et', $propid, $ptype, $access_prop, $ent_filter ,$limit);
         }    
         if ($tt_et == '')
         {
@@ -277,7 +278,7 @@ class EntitySet extends Head implements I_Head
             return $objs;
         }
         
-	$artemptable = self::createtemptable_all($tt_et,$mdid);
+	$artemptable = $this->createtemptable_all($tt_et);
         $artemptable[] = $tt_et;
 	$sql = "SELECT * FROM tt_pt";
 	$res = DataManager::dm_query($sql);	
@@ -302,7 +303,7 @@ class EntitySet extends Head implements I_Head
         }    
         
         $params = array();
-        $sql = self::sqltext_entitylist($mdid,$plist,$ent_filter,$arr_prop,$access_prop,$action,$params);
+        $sql = $this->sqltext_entitylist($ent_filter,$arr_prop,$access_prop,$action,$params);
         if ($sql=='')
         {
             $objs['RES']='access denied';
@@ -374,8 +375,7 @@ class EntitySet extends Head implements I_Head
             }    
         }
         $objs['LNAME'] = $arr_name;
-        $mdprop = new MdpropertySet($mdid);
-        $objs['PSET'] = $mdprop->getProperties(" WHERE mp.mdid = :mdid AND mp.ranktoset>0 ",true);
+        $objs['PSET'] = $this->getProperties(true);
         $sql = "SELECT count(*) as countrec FROM tt_tv";
 	$res = DataManager::dm_query($sql);	
 	$objs['CNT_REC']=0;
@@ -558,8 +558,9 @@ class EntitySet extends Head implements I_Head
         }
         return $objs;
     }
-    public static function getEntitiesByName($mdid,$name) 
+    public function getItemsByName($name)
     {
+        $mdid = $this->id;
         $artt = array();
         if (!User::isAdmin())
         {
@@ -571,8 +572,8 @@ class EntitySet extends Head implements I_Head
             $access_prop = array();
             $arr_prop = array();
         }
-        $mdentity = new Mdentity($mdid);
-        if ($mdentity->getmdtypename()=='Docs')
+        $mdentity = new Mdentity($this->id);
+        if ($mdentity->getmditemname()=='Docs')
         {
             $sql = "select et.id, pv.value as name, it.dateupdate FROM \"PropValue_int\" as pv
                     inner join \"IDTable\" as it
@@ -692,22 +693,5 @@ class EntitySet extends Head implements I_Head
         DataManager::droptemptable($artt);
         return $objs;
     }
-    public static function search_by_name($mdid,$type,$name)
-    {
-        $objs = array();
-        if ($type=='id')
-        {
-            $objs = self::getEntitiesByName($mdid,$name);
-        }    
-        elseif ($type=='cid') 
-        {
-            $objs = CollectionSet::getCollByName($mdid,$name);
-        }
-        elseif ($type=='mdid') 
-        {
-            $objs = Mdentity::getMDbyName($name);
-        }
-        return $objs;
-    }        
 }
 

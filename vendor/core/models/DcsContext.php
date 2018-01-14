@@ -69,12 +69,8 @@ class DcsContext
     }        
     public function setcontext($data)
     {
-        if (!User::isAuthorized())
+        if (User::isAuthorized())
         {
-            $this->setattr('MODE','AUTH');
-            $this->setattr('ACTION','LOGIN');
-            return;
-        } else {
             $this->setattr('USERNAME',User::getUserName($_SESSION['user_id']));
         }
         $this->context['TITLE'] = DCS_COMPANY_SHORTNAME.' '.$this->context['USERNAME'];
@@ -97,11 +93,11 @@ class DcsContext
                     $this->context['PREFIX'] = '/config';
                     $this->context['ACTION'] = 'EDIT';
                 }
-                if ($attrname==='ACTION') {
-                    if(!CollectionSet::isExistCollItemByName('Action',$attrval)) {
-                        return FALSE;
-                    }
-                }    
+//                if ($attrname==='ACTION') {
+//                    if(!CollectionSet::isExistCollItemByName('Action',$attrval)) {
+//                        return FALSE;
+//                    }
+//                }    
             }
             $this->context[$attrname] = $attrval;
         } else {
@@ -118,6 +114,7 @@ class DcsContext
     }        
     public function getsubsystems()
     {
+        $arSubSystems = array();
         if ((User::isAdmin())&&($this->context['MODE']==='CONFIG')) {
             $arSubSystems = Mditem::getAllMDitems();
         } else { 

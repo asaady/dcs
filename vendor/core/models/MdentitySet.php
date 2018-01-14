@@ -61,7 +61,7 @@ class MdentitySet extends Model implements I_Head
         return $properties;
     }
     
-    function getItemsByFilter($context, $filter) 
+    public function getItemsByFilter($context, $filter) 
     {
         $mode = $context['MODE'];
         $action = $context['ACTION'];
@@ -138,5 +138,9 @@ class MdentitySet extends Model implements I_Head
             
         return $objs;
     }       
+    public function getItemsByName($name)
+    {
+        
+    }
 }
 

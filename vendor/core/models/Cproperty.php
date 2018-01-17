@@ -64,16 +64,16 @@ class Cproperty extends Property implements iProperty {
         if ($this->id == '')
         {    
             $navlist = array(
-                        $this->collectionset->getmditem()->getid()=>$this->collectionset->getmditem()->getsynonym(),
-                        $this->collectionset->getid()=>$this->collectionset->getsynonym(),
+                        $this->head->getmditem()->getid()=>$this->head->getmditem()->getsynonym(),
+                        $this->head->getid()=>$this->head->getsynonym(),
                         $this->id=>'Новый'
                         );
         }
         else
         {
             $navlist = array(
-                        $this->collectionset->getmditem()->getid()=>$this->collectionset->getmditem()->getsynonym(),
-                        $this->collectionset->getid()=>$this->collectionset->getsynonym(),
+                        $this->head->getmditem()->getid()=>$this->head->getmditem()->getsynonym(),
+                        $this->head->getid()=>$this->head->getsynonym(),
                         $this->id=>$this->synonym
                         );
         }    
@@ -209,7 +209,7 @@ class Cproperty extends Property implements iProperty {
             $flds = substr($flds, 1);
             $vals = substr($vals, 1);
             $sql = "INSERT INTO \"CProperties\" (".$flds.",mdid) VALUES (".$vals.", :mdid) RETURNING \"id\"";
-            $params['mdid'] = $this->collectionset->getid();
+            $params['mdid'] = $this->head->getid();
             
             $objs['status']='ERROR';
             $objs['msg']=$sql;

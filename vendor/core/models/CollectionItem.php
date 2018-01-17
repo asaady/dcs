@@ -1,113 +1,24 @@
 <?php
 namespace Dcs\Vendor\Core\Models;
 
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 use PDO;
-//use dcs\vendor\core\CollectionSet;
+use DateTime;
+use Exception;
 
-class CollectionItem extends Item {
-    function __construct($id) {
-        if ($id==''){
-            die("class.CollectionItem constructor: id is empty");
-        }
-        $arData = CollectionSet::getCollectionItemByID($id);
-        if ($arData){
-            //передан id реального элемента коллекции
-            $this->id = $arData['id'];
-            $this->name = $arData['name'];    
-            $this->synonym = $arData['synonym'];    
-            $headid = $arData['headid'];    
-	}else {
-            //передан id реальной коллекции
-            $this->id = '';
-            $this->name = '';    
-            $this->synonym = '';    
-            $headid = $id;    
-	}
-        $this->head = new CollectionSet($headid);
-        $this->version=time();
+class CollectionItem extends Head implements I_Head, I_Property {
+    use T_Item;
+    use T_Collection;
+    use T_CProperty;
+    
+    function item() {
+        return NULL;
     }
-    function get_data($mode='') 
-    {
-        $cprop = new CPropertySet($this->head->getid());
-        $plist = $cprop->getProperties(" WHERE mp.mdid = :mdid ",FALSE);
-        $navlist = array($this->head->getmditem()->getid()=>$this->collectionset->getmditem()->getsynonym(),
-                   $this->head->getid()=>$this->collectionset->getsynonym());
-        if ($this->id == '') {    
-            $navlist['new'] = 'Новый';
-        } else {
-            $navlist[$this->id] = $this->synonym;
-        }    
-      
-        return array('id'=>$this->id,      
-                   'name'=>$this->name,
-                   'synonym'=>$this->synonym,
-                   'version'=>$this->version,
-                   'PLIST' => $plist,
-                   'LDATA'=>array(),
-                   'navlist'=>$navlist
-              );
-
-    }
-    function getData($mode='',$edit_mode='') 
-    {
-        $objs = array();
-        $objs['PLIST'] = MdpropertySet::getMDProperties($this->collectionset->getid(),$mode," WHERE mp.mdid = :mdid ",true);
-        $objs['SDATA'] = array();
-        $objs['actionlist']= DataManager::getActionsbyItem('CollectionItem',$mode,$edit_mode);
-        $sql = "SELECT pt.id, pt.name, pt.synonym, pt.mdid, pt.type FROM \"CProperties\" AS pt WHERE pt.mdid = :mdid";
-        $sth = DataManager::dm_query($sql,array('mdid'=>$this->collectionset->getid()));        
-        $join = " FROM \"CTable\" AS ct";
-        $params = array();
-        $plist = array();
-        $sql = 'SELECT ct.id, ct.name, ct.synonym, ct.mdid';
-        while($row = $sth->fetch(PDO::FETCH_ASSOC)) 
-        {
-            $rowname = str_replace("  ","",$row['name']);
-            $rowname = str_replace(" ","",$rowname);
-            $rowtype = $row['type'];
-            if ($rowtype=='cid')
-            {
-                $join .= " LEFT JOIN \"CPropValue_$rowtype\" as pv_$rowname INNER JOIN \"CTable\" as ct_$rowname ON pv_$rowname.value = ct_$rowname.id ON ct.id=pv_$rowname.id AND pv_$rowname.pid = :pv_$rowname";
-                $sql .= ", pv_$rowname.value as id_$rowname, ct_$rowname.synonym as name_$rowname";
-            }    
-            elseif ($rowtype=='mdid')
-            {
-                $join .= " LEFT JOIN \"CPropValue_$rowtype\" as pv_$rowname INNER JOIN \"MDTable\" as ct_$rowname ON pv_$rowname.value = ct_$rowname.id ON ct.id=pv_$rowname.id AND pv_$rowname.pid = :pv_$rowname";
-                $sql .= ", pv_$rowname.value as id_$rowname, ct_$rowname.synonym as name_$rowname";
-            }    
-            else 
-            {
-                $join .= " LEFT JOIN \"CPropValue_$rowtype\" as pv_$rowname ON ct.id=pv_$rowname.id AND pv_$rowname.pid = :pv_$rowname";
-                $sql .= ", pv_$rowname.value as name_$rowname, '' as id_$rowname";
-                
-            }
-            $params["pv_$rowname"]=$row['id'];
-            $plist[] = $row;
-        }        
-        
-        $sql = $sql.$join." WHERE ct.id = :id";
-        $params['id']=$this->id;
-        $sth = DataManager::dm_query($sql,$params);        
-        while($row = $sth->fetch(PDO::FETCH_ASSOC)) 
-        {
-            $objs['SDATA'][$row['id']] = array();
-            $objs['SDATA'][$row['id']]['id'] = array('id'=>'','name'=>$row['id']);
-            $objs['SDATA'][$row['id']]['name'] = array('id'=>'','name'=>$row['name']);
-            $objs['SDATA'][$row['id']]['synonym'] = array('id'=>'','name'=>$row['synonym']);
-            $objs['SDATA'][$row['id']]['mdid'] = array('id'=>'','name'=>$row['mdid']);
-            foreach($plist as $prow)
-            {
-                $rowname = str_replace("  ","",$prow['name']);
-                $rowname = str_replace(" ","",$rowname);
-                $objs['SDATA'][$row['id']][$prow['id']] = array('id'=>$row["id_$rowname"],'name'=>$row["name_$rowname"]);
-            }    
-        }
-        return $objs;
+    function head($mdid='') {
+        return new CollectionSet($mdid);
     }
     function update($data) 
     {
-        if ($this->collectionset->getname()=='Users')
+        if ($this->head->getname()=='Users')
         {
             $user = new User;
             $ares = $user->update($data);
@@ -247,14 +158,14 @@ class CollectionItem extends Item {
 	return $objs;
     }
     function before_delete() {
-        return array($this->id=>array('id'=>$this->id,'name'=>"Элемент коллекции ".$this->collectionset->getsynonym(),'pval'=>$this->synonym,'nval'=>'Удалить'));
+        return array($this->id=>array('id'=>$this->id,'name'=>"Элемент коллекции ".$this->head->getsynonym(),'pval'=>$this->synonym,'nval'=>'Удалить'));
     }    
     function delete() {
         $sql = "DELETE FROM \"CTable\" WHERE id=:id";
         $params = array();
         $params['id'] = $this->id;
         $res = DataManager::dm_query($sql,$params);        
-        $ares = array('status'=>'OK', 'id'=>$this->collectionset->getid());
+        $ares = array('status'=>'OK', 'id'=>$this->head->getid());
         if(!$res) {
             $ares = array('status'=>'ERROR', 'msg'=>$sql);
         }
@@ -308,7 +219,7 @@ class CollectionItem extends Item {
         }    
         else
         {
-            if ($this->collectionset->getname()=='Users')
+            if ($this->head->getname()=='Users')
             {
                 $user = new User;
                 $ares = $user->create($data);
@@ -316,13 +227,13 @@ class CollectionItem extends Item {
             else 
             {
                 $sql ="INSERT INTO \"CTable\" (name, synonym, mdid) VALUES (:name, :synonym, :mdid) RETURNING \"id\"";
-                $params = array('name' => $curname, 'synonym'=>$data['synonym']['name'],'mdid'=> $this->collectionset->getid());
+                $params = array('name' => $curname, 'synonym'=>$data['synonym']['name'],'mdid'=> $this->head->getid());
                 $res = DataManager::dm_query($sql,$params);
                 $row = $res ->fetch(PDO::FETCH_ASSOC);
                 $id = $row['id'];
                 $ares = array('status'=>'OK', 'id'=>$id);
                 $sql = "SELECT pt.id, pt.name, pt.synonym, pt.mdid, pt.type FROM \"CProperties\" AS pt WHERE pt.mdid = :mdid";
-                $res = DataManager::dm_query($sql,array('mdid'=>$this->collectionset->getid()));        
+                $res = DataManager::dm_query($sql,array('mdid'=>$this->head->getid()));        
                 $plist = $res ->fetchAll(PDO::FETCH_ASSOC);
                 foreach ($plist as $f)
                 {   
@@ -364,14 +275,8 @@ class CollectionItem extends Item {
         }    
         return $ares;
     }
-    
-    function getcollectionset()
+    public function getItemsByName($name)
     {
-        return $this->collectionset;
+        
     }
-    function setcollectionset($collectionset)
-    {
-        $this->collectionset = $collectionset;
-    }
-
 }

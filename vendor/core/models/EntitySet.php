@@ -7,17 +7,20 @@ use Exception;
 
 class EntitySet extends Head implements I_Head, I_Property
 {
-    use T_EProperty;
     use T_Entity;
+    use T_EProperty;
     
-    public function get_item() 
+    public function item() 
     {
         return new Entity($this->id);
     }
-
+    public function head($mdid='') 
+    {
+        return NULL;
+    }
     public static function fill_ent_name($arr_e,$arr_id,&$ldata)
     {
-        $arr_entities = self::getAllEntitiesToStr($arr_e);
+        $arr_entities = $this->getAllEntitiesToStr($arr_e);
         foreach($arr_id as $rid=>$prow)
         {
             foreach($ldata as $id=>$row) 
@@ -40,7 +43,7 @@ class EntitySet extends Head implements I_Head, I_Property
         //поищем среди реквизитов объекта-хозяина реквизиты совпадающие по шаблону с реквизитами выбираемых строк
         //это реквизиты выбираемых строк
         $arr_ent_propid = array_column($ent_plist, 'propid','id'); // это массив шаблонов реквизитов объекта хозяина
-        $plist = $this->getProperties(" WHERE mp.mdid = :mdid AND mp.ranktoset>0 ",true);
+        $plist = $this->getProperties(true,'toset');
         foreach ($plist as $prop)
         {
             if ($prop['type']=='id') //фильтруем только по полям ссылочного типа
@@ -57,11 +60,12 @@ class EntitySet extends Head implements I_Head, I_Property
     }   
     
     //получаем объекты владельцы строк ТЧ
-    public static function get_tt_items($docid,$mdid,$curid,&$ent_filter,$entities)
+    public function get_tt_items($docid, $curid,&$ent_filter,$entities)
     {        
         $filter_id = '';
         $filter_pid = '';
         $tt_et = '';
+        $mdid = $this->id;
         //надо найти Объекты у которых есть ТЧ к которой относятся запрошенные строки ТЧ
         $ar_obj = DataManager::get_parentmd_by_item($mdid);
         if (count($ar_obj) == 0) {
@@ -212,14 +216,14 @@ class EntitySet extends Head implements I_Head, I_Property
     }
     public function getItemsByFilter($context, $filter) 
     {
-        $mode = $context['MODE'];
+        $prefix = $context['PREFIX'];
         $action = $context['ACTION'];
         $limit = $context['LIMIT'];
         $page = $context['PAGE'];
     	$objs = array();
 	$objs['LDATA'] = array();
 	$objs['PSET'] = array();
-        $objs['actionlist'] = DataManager::getActionsbyItem('EntitySet',$mode,$action);
+        $objs['actionlist'] = DataManager::getActionsbyItem('EntitySet',$prefix,$action);
         $propid = $filter['filter_id']['id']; //это уид реквизита отбора для выборки
         $docid = (array_key_exists('docid', $filter) ? $filter['docid']['id'] : '');  
         $curid = (array_key_exists('curid', $filter) ? $filter['curid']['id'] : '');  
@@ -259,13 +263,13 @@ class EntitySet extends Head implements I_Head, I_Property
         }
         if ($this->getmditemname()=='Items') //запрошены строки ТЧ?
         {
-            $tt_et = self::get_tt_items($docid,$mdid,$curid,$ent_filter,$entities);
+            $tt_et = $this->get_tt_items($docid, $curid, $ent_filter, $entities);
         }    
         else
         {
             if (count($entities))
             {
-                $tt_et = self::get_EntitiesFromList($entities,'tt_et',$limit);
+                $tt_et = $this->get_EntitiesFromList($entities,'tt_et',$limit);
             }    
         }    
         if ($tt_et == '')
@@ -277,31 +281,9 @@ class EntitySet extends Head implements I_Head, I_Property
             $objs['RES'] = 'list entities is empty';
             return $objs;
         }
-        
-	$artemptable = $this->createtemptable_all($tt_et);
+        $artemptable = array();
+	$this->createtemptable_all($tt_et,$artemptable);
         $artemptable[] = $tt_et;
-	$sql = "SELECT * FROM tt_pt";
-	$res = DataManager::dm_query($sql);	
-        $plist = array();
-        while ($row = $res->fetch(PDO::FETCH_ASSOC))
-        {
-            if ($expr($row))
-            {    
-                continue;
-            }
-            $plist[] = $row;
-        }    
-        $arr_id = array();
-        //получим ассоциированный массив реквизитов с ссылочного типа
-        foreach($plist as $row) 
-        {
-            $rid = $row['id'];
-            if ($row['type']=='id')
-            {
-                $arr_id[$rid]=$row;
-            }
-        }    
-        
         $params = array();
         $sql = $this->sqltext_entitylist($ent_filter,$arr_prop,$access_prop,$action,$params);
         if ($sql=='')
@@ -310,31 +292,27 @@ class EntitySet extends Head implements I_Head, I_Property
             return $objs;
         }    
 	$res = DataManager::dm_query($sql,$params);
-        
-        
         $arr_e = array();
         $arr_name = array();
+        $arr_id = array_filter($this->properties, function ($prow) { return $prow['type'] == 'id'; });
         while($row = $res->fetch(PDO::FETCH_ASSOC)) {
             $objs['LDATA'][$row['id']]= array('id'=>$row['id'],'name'=>'','class' => 'active');
             $arr_name[$row['id']] = array();
-            foreach($plist as $row_plist) 
-            {
-                $rid = $row_plist['id'];
+            foreach($this->properties as $rid => $row_plist) {
                 $field_val = strtolower(str_replace(" ","",strtolower($row_plist['name'])));
                 $field_id = "propid_$field_val";
                 $rowid = "id_$field_val";
                 $rowname = "name_$field_val";
                 $r_name = $row[$rowname];
                 $r_id = $row[$rowid];
-                if (strtolower($row_plist['name'])=='activity')
+                if (strtolower($row_plist['name']) == 'activity')
                 {
                     if ($row[$rowname]===false)
                     {    
                         $objs['LDATA'][$row['id']]['class'] ='erased';               
                     }    
                 }    
-                if ($row_plist['type']=='id')
-                {
+                if ($row_plist['type'] == 'id') {
                     if ($row[$rowid]!='') {
                         if (!in_array($row[$rowid],$arr_e)){
                             $arr_e[]=$row[$rowid];
@@ -342,8 +320,7 @@ class EntitySet extends Head implements I_Head, I_Property
                     }
                     $r_name = '';
                 } else {
-                    if ($row_plist['type'] == 'date')
-                    {
+                    if ($row_plist['type'] == 'date') {
                         $r_name = substr($r_name,0,10);
                     }    
                 }    
@@ -355,7 +332,7 @@ class EntitySet extends Head implements I_Head, I_Property
         }
         if (count($arr_e))
         {
-            $arr_entities = self::getAllEntitiesToStr($arr_e);
+            $arr_entities = $this->getAllEntitiesToStr($arr_e);
             foreach($arr_id as $rid=>$prow)
             {
                 foreach($objs['LDATA'] as $id=>$row) 
@@ -375,7 +352,7 @@ class EntitySet extends Head implements I_Head, I_Property
             }    
         }
         $objs['LNAME'] = $arr_name;
-        $objs['PSET'] = $this->getProperties(true);
+        $objs['PSET'] = $this->getProperties(true,'toset');
         $sql = "SELECT count(*) as countrec FROM tt_tv";
 	$res = DataManager::dm_query($sql);	
 	$objs['CNT_REC']=0;
@@ -390,173 +367,6 @@ class EntitySet extends Head implements I_Head, I_Property
 	
 	DataManager::droptemptable($artemptable);
 	return $objs;
-    }
-    public static function getEntitiesToStr($entities,&$all_entities,&$data,&$count_req) 
-    {
-        // entities - массив ссылок
-        $artemptable = self::createTempTableEntitiesToStr($entities,$count_req);
-        $sql = "SELECT * FROM tt_t4";
-	$res = DataManager::dm_query($sql);
-        $objs = $res->fetchAll(PDO::FETCH_ASSOC);
-            
-        $data += $objs;
-        $all_entities +=$entities;
-          
-        $sql = "SELECT DISTINCT pv_id.value as entityid FROM tt_t4 AS ts INNER JOIN \"PropValue_id\" AS pv_id ON ts.tid = pv_id.id";
-	$res = DataManager::dm_query($sql);
-        $objs = array();
-        while ($row = $res->fetch(PDO::FETCH_ASSOC)) 
-        {
-            if (!in_array($row['entityid'],$all_entities ))
-            {
-                $objs[] = $row['entityid'];
-            }
-
-        }
-      	DataManager::droptemptable($artemptable);
-        if (count($objs))
-        {
-            $add_entities = $objs;
-            if ($count_req<5) 
-            {//ограничим глубину рекурсии до посмотреть
-                ++$count_req;
-                $add_entities = self::getEntitiesToStr($add_entities,$all_entities,$data,$count_req);
-            }
-        }
-        return $objs;
-    }
-    public static function getAllEntitiesToStr($entities) 
-    {
-        $all_entities = array();
-        $count_req = 1;
-        $data = array();
-        $add_entities = self::getEntitiesToStr($entities,$all_entities, $data,$count_req);
-        $str_entities = "('".implode("','", $all_entities)."')"; 
-    	$sql = "SELECT DISTINCT et.mdid, md.name, md.synonym FROM \"ETable\" as et INNER JOIN \"MDTable\" as md ON et.mdid=md.id WHERE et.id in $str_entities"; 
-	$res = DataManager::dm_query($sql);
-        $armd = $res->fetchAll(PDO::FETCH_ASSOC);
-        $str_md = "('".implode("','", array_column($armd,'mdid'))."')"; 
-        // соберем список ссылок в представлении (ranktostring>0) 
-    	$sql = "SELECT mp.rank, mp.id, mp.name, ct_type.name as type, mp.mdid, mp.synonym, mp.isenumber, mp.isedate FROM \"MDProperties\" as mp "
-                . "INNER JOIN \"CTable\" as pr "
-                . "INNER JOIN \"CPropValue_cid\" as pv_type "
-                . "INNER JOIN \"CProperties\" as cp_type "
-                . "ON pv_type.pid = cp_type.id "
-                . "AND cp_type.name='type' "
-                . "INNER JOIN \"CTable\" as ct_type "
-                . "ON pv_type.value = ct_type.id "
-                . "ON pr.id = pv_type.id "
-                . "ON mp.propid = pr.id "
-                . "WHERE mp.ranktostring>0 AND mp.mdid IN $str_md ORDER BY mp.ranktostring"; 
-        
-	$res = DataManager::dm_query($sql);
-        $props = array();
-        while ($row = $res->fetch(PDO::FETCH_ASSOC)) 
-        {
-            $props[$row['id']] = $row;
-        }
-        $arr_tid = array_unique(array_column($data,'tid'));
-        $str_tid = "('".implode("','", $arr_tid)."')"; 
-	$sql = "SELECT t.id as tid, t.propid, t.entityid,
-		       pv_str.value as str_value, 
-		       pv_int.value as int_value, 
-		       pv_id.value as id_value, 
-		       ct_cid.synonym as cid_value, 
-		       pv_date.value as date_value, 
-		       pv_float.value as float_value, 
-		       pv_file.value as file_value, 
-		       pv_bool.value as bool_value, 
-		       pv_text.value as text_value
-		FROM \"IDTable\" AS t 
-		LEFT JOIN \"PropValue_str\" AS pv_str
-		ON t.id = pv_str.id	
-		LEFT JOIN \"PropValue_id\" AS pv_id
-		ON t.id = pv_id.id	
-		LEFT JOIN \"PropValue_cid\" AS pv_cid
-                INNER JOIN \"CTable\" as ct_cid
-                ON pv_cid.value=ct_cid.id
-		ON t.id = pv_cid.id	
-		LEFT JOIN \"PropValue_int\" AS pv_int
-		ON t.id = pv_int.id	
-		LEFT JOIN \"PropValue_date\" AS pv_date
-		ON t.id = pv_date.id	
-		LEFT JOIN \"PropValue_bool\" AS pv_bool
-		ON t.id = pv_bool.id	
-		LEFT JOIN \"PropValue_file\" AS pv_file
-		ON t.id = pv_file.id	
-		LEFT JOIN \"PropValue_text\" AS pv_text
-		ON t.id = pv_text.id	
-		LEFT JOIN \"PropValue_float\" AS pv_float
-		ON t.id = pv_float.id  
-                WHERE t.id in $str_tid";
-        
-	$res = DataManager::dm_query($sql);
-        $vals = $res->fetchAll(PDO::FETCH_ASSOC);
-        $objs=array();
-        for ($i=$count_req;$i>0;$i--){
-            foreach ($armd as $mdrow) 
-            {
-                $mdid = $mdrow['mdid'];
-                $filtered_prop = array_filter ($props, function ($item) use ($mdid) { return ($item['mdid']==$mdid); });
-                $filtered_data = array_filter ($data, function ($item) use ($i, $mdid) { return (($item['creq']==$i)AND($item['mdid']==$mdid)); });
-
-                foreach ($filtered_data as $row_data)
-                {    
-                    $entityid = $row_data['entityid'];
-                    if (count($objs)) 
-                    {
-                        $filtered_objs = array_filter ($objs, function ($item) use ($entityid) { return ($item['id']==$entityid); });
-                        if (count($filtered_objs))
-                        {
-                            continue;
-                        }
-                    }    
-                    $objs[$entityid] = array();
-                    $objs[$entityid]['name']=''; 
-                    $objs[$entityid]['id']=$entityid; 
-                    foreach ($filtered_prop as $row_prop)
-                    {
-                        $propid = $row_prop['id'];
-                        $colname= "$row_prop[type]_value";
-                        $filtered_vals = array_filter ($vals, function ($item) use ($entityid,$propid) { return (($item['entityid']==$entityid)AND($item['propid']==$propid)); });
-                        if (count($filtered_vals))
-                        {
-                            foreach ($filtered_vals as $row_val)
-                            {
-                                if ($row_prop['type']=='id')
-                                {
-                                    $valid = $row_val[$colname];    
-                                    if (array_key_exists($valid, $objs))
-                                    {
-                                        $cname = $objs[$valid];
-                                        $objs[$entityid]['name'] .= " $cname[name]";
-                                    }
-                                }
-                                else
-                                {
-                                    $name = $row_val[$colname];
-                                    if ($row_prop['isenumber']===true)
-                                    {    
-                                        $name =$mdrow['synonym']." №$name";
-                                    }
-                                    elseif ($row_prop['isedate']===true)
-                                    {
-                                        $datetime = new DateTime($name);
-                                        $name = " от ".$datetime->format('d-m-y');
-                                    }    
-                                    $objs[$entityid]['name'].=" $name";
-                                }
-                            }
-                        }
-                    }    
-                    if ($objs[$entityid]['name']!='')
-                    {    
-                        $objs[$entityid]['name'] = trim($objs[$entityid]['name']);
-                    }    
-                }
-            }    
-        }
-        return $objs;
     }
     public function getItemsByName($name)
     {

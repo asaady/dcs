@@ -15,7 +15,7 @@ class Controller_Head extends Controller
 	
 	function action_index($context)
 	{
-            $data = $this->model->get_data($context['MODE']);
+            $data = $this->model->get_data($context);
             $this->view->setcontext($context);
             $this->view->generate($data);
 	}
@@ -27,13 +27,11 @@ class Controller_Head extends Controller
 	{
             $this->action_index($context);
         }
-	function action_load($context,$filter)
+	function action_create($context)
 	{
-            return $this->model->getItemsByFilter($context, $filter);
-        }
-	function action_create($context,$data)
-	{
-            return $this->model->create($data);
+            $data = $this->model->create($context);
+            $this->view->setcontext($context);
+            $this->view->generate($data);
 	}
 }
 

@@ -12,6 +12,7 @@ class DcsContext
     protected $context;
     protected $valindx = array (
                             array('name' => "ROOT", 'validate'=>FALSE),
+                            array('name' => "PREFIX", 'validate'=>FALSE),
                             array('name' => "MODE", 'validate'=>FALSE),
                             array('name' => "ITEMID", 'validate'=>TRUE),
                             array('name' => "CURID", 'validate'=>TRUE),
@@ -43,11 +44,12 @@ class DcsContext
     //
     // $data = array 
     // [0] - document_root
-    // [1] - mode 
-    // [2] - itemid
-    // [3] - curid
-    // [4] - action
-    // [5] - param
+    // [1] - prefix (is empty or <config>)
+    // [2] - mode 
+    // [3] - itemid
+    // [4] - curid
+    // [5] - action
+    // [6] - param
     protected function setitems($data, &$curval, &$validation, &$indx,&$indd)
     {
         if ($validation == $this->valindx[$indx]['validate']) {
@@ -62,7 +64,7 @@ class DcsContext
         } else {
             $indx++;
         }    
-        if ($indx>5) {
+        if ($indx>6) {
             return;
         }
         $this->setitems($data, $curval, $validation, $indx,$indd);
@@ -79,8 +81,19 @@ class DcsContext
             return;
         }
         $curval = trim($data[$indx]);
-        $validation = Common_data::check_uuid($curval);
         $indd = $indx;
+        if (strtolower($curval) == 'config') {
+            $this->setattr('PREFIX', 'CONFIG');
+            $indx++;
+            $indd++;
+            if (empty($data[$indx])) {
+                return;
+            }
+            $curval = trim($data[$indx]);
+        } else {
+            $indx++;
+        }
+        $validation = Common_data::check_uuid($curval);
         $this->setitems($data, $curval, $validation, $indx, $indd);
     }   
     
@@ -88,6 +101,9 @@ class DcsContext
     {
         if (array_key_exists($attrname, $this->context)) {
             if (($attrname==='MODE')||($attrname==='ACTION')) {
+                if ($attrval === '') {
+                    return FALSE;
+                }
                 $attrval = strtoupper($attrval);
                 if (($attrname==='MODE')&&($attrval==='CONFIG')) {
                     $this->context['PREFIX'] = '/config';
@@ -115,7 +131,7 @@ class DcsContext
     public function getsubsystems()
     {
         $arSubSystems = array();
-        if ((User::isAdmin())&&($this->context['MODE']==='CONFIG')) {
+        if ((User::isAdmin())&&($this->context['PREFIX']==='CONFIG')) {
             $arSubSystems = Mditem::getAllMDitems();
         } else { 
             $cur_interface = User::getUserInterface();

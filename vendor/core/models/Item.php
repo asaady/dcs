@@ -13,54 +13,6 @@ class Item extends Model
     {
         //todo
     }
-    function getshortname()
-    {
-        $res = $this->name;
-        if (strlen($res)>55)
-        {    
-            $res = substr($res, 0, 55);
-            $end = strlen(strrchr($res, ' ')); // длина обрезка 
-            $res = substr($res, 0, -$end) . '...';         
-        }    
-        return $res;
-    }
-    function get_head()
-    {
-        return $this->head;
-    }
-    function __toString() 
-    {
-      return $this->name;
-    }
-    
-    public function getattr($propid) 
-    {
-        $val='';
-	if(array_key_exists($propid, $this->data))
-        {
-	  $val=$this->data[$propid]['name'];
-	}  
-	return $val;
-    }
-    function getattrid($propid)
-    {
-        $val='';
-	if(array_key_exists($propid, $this->data))
-        {
-	  $val=$this->data[$propid]['id'];
-	}  
-	return $val;
-    }
-    public function setattr($propid,$valname,$valid='') 
-    {
-        $val='';
-	if(array_key_exists($propid, $this->data))
-        {
-	  $this->data[$propid]['name'] = $valname;
-          $this->data[$propid]['id'] = $valid;
-	}  
-        return $this;
-    }
     function before_delete() 
     {
         $nval="удалить";

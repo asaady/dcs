@@ -2,12 +2,16 @@
 namespace Dcs\Vendor\Core\Models;
 
 use PDO;
+use DateTime;
 
 trait T_Entity {
     public function gettoString() 
     {
         $artoStr = array();
-        foreach($this->plist as $prop)
+        if ($this->head->getmditemname() == 'Sets') {
+            return $this->name;
+        }
+        foreach($this->properties as $prop)
         {
             if ($prop['ranktostring'] > 0) 
             {
@@ -15,7 +19,7 @@ trait T_Entity {
             }
         }
         if (!count($artoStr)) {
-            foreach($this->plist as $prop) {
+            foreach($this->properties as $prop) {
                 if ($prop['rank'] > 0) {
                   $artoStr[$prop['id']] = $prop['rank'];
                 }  
@@ -31,25 +35,25 @@ trait T_Entity {
             $res = '';
             foreach($artoStr as $prop => $rank)
             {
-                if ($this->head->getmdtypename() == 'Docs')
+                if ($this->head->getmditemname() == 'Docs')
                 {
-                    if ($this->plist[$prop]['isenumber'])
+                    if ($this->properties[$prop]['isenumber'])
                     {
                         continue;
                     }    
-                    if ($this->plist[$prop]['isedate'])
+                    if ($this->properties[$prop]['isedate'])
                     {
                         continue;
                     }    
                 }    
                 $name = $this->data[$prop]['name'];
-                if ($this->plist[$prop]['type']=='date')
+                if ($this->properties[$prop]['type'] == 'date')
                 {
                     $name =substr($name,0,10);
                 }
                 $res .=' '.$name;
             }
-            if ($this->head->getmdtypename()=='Docs')
+            if ($this->head->getmditemname()=='Docs')
             {
                 $datetime = new DateTime($this->edate);
                 $res = $this->head->getsynonym()." №".$this->enumber." от ".$datetime->format('d-m-y').$res;
@@ -68,60 +72,100 @@ trait T_Entity {
             return $this->name;
         }
     }
-    public function createtemptable_all($tt_entities)
+    public function getDetails($entityid) 
     {
-	$artemptable = array();
-        
+	$sql = "select et.id, '' as name, '' as synonym, 
+                et.mdid , md.mditem as mditem, md.name as mdname, md.synonym as mdsynonym, 
+                tp.name as mdtypename, tp.synonym as mdtypedescription 
+                FROM \"ETable\" as et
+		    INNER JOIN \"MDTable\" as md
+			INNER JOIN \"CTable\" as tp
+			ON md.mditem = tp.id
+		    ON et.mdid = md.id 
+		WHERE et.id=:entityid";  
+	$res = DataManager::dm_query($sql,array('entityid'=>$entityid));
+        $objs = $res->fetch(PDO::FETCH_ASSOC);
+	if(!$objs) {
+            $objs = array('id'=>'','mdid'=>'','mditem'=>'');
+	}
+        return $objs;
+    }
+    public function get_tt_sql_data()
+    {
+        $artemptable = array();
+        $sql = "SELECT max(it.dateupdate) AS dateupdate, it.entityid, it.propid "
+                . "FROM \"IDTable\" as it "
+                . "INNER JOIN \"MDProperties\" as mp "
+                . "ON it.propid = mp.id AND mp.mdid = :mdid "
+                . "WHERE it.entityid = :id "
+                . "GROUP BY it.entityid, it.propid";
+        $artemptable[] = DataManager::createtemptable($sql,'tt_id',array('mdid'=>$this->head->getid(),'id'=>$this->id));   
+        $sql = "SELECT t.id as tid, t.userid, ts.dateupdate, ts.entityid
+		FROM \"IDTable\" AS t 
+		INNER JOIN tt_id AS ts
+                ON t.entityid=ts.entityid
+		AND t.propid = ts.propid
+		AND t.dateupdate=ts.dateupdate";
+        $artemptable[] = DataManager::createtemptable($sql,'tt_tv');   
+        $str0_req='SELECT et.id';
+        $str_req='';
+        $str_p = '';
+        foreach($this->properties as $row) 
+        {
+            $rid = $row['id'];
+            $rowname = "$row[id]";
+            $rowname = str_replace("-","",$rowname);
+            $str0_t = ", tv_$rowname.propid as propid_$rowname, pv_$rowname.value as name_$rowname, '' as id_$rowname";
+            $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            if ($row['type']=='id') {
+                $str0_t = ", tv_$rowname.propid as propid_$rowname, '' as name_$rowname, pv_$rowname.value as id_$rowname";
+                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            } elseif ($row['type']=='cid') {
+                $str0_t = ", tv_$rowname.propid as propid_$rowname, ct_$rowname.synonym as name_$rowname, pv_$rowname.value as id_$rowname";
+                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname INNER JOIN \"CTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            } elseif ($row['type']=='mdid') {
+                $str0_t = ", tv_$rowname.propid as propid_$rowname, ct_$rowname.synonym as name_$rowname, pv_$rowname.value as id_$rowname";
+                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname INNER JOIN \"MDTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            } elseif ($row['type']=='date') {
+                $str0_t = ", tv_$rowname.propid as propid_$rowname, to_char(pv_$rowname.value,'DD.MM.YYYY') as name_$rowname, '' as id_$rowname";
+                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            }
+            $str0_req .= $str0_t;
+            $str_req .=$str_t;
+        }
+        $str0_req .=" FROM \"Entity\" as et";
+        $sql = $str0_req.$str_req." WHERE et.id=:id";
+        $artemptable[] = DataManager::createtemptable($sql,'tt_out',array('id'=>$this->id));   
+        return $artemptable;
+    }    
+    public function createtemptable_all($tt_entities,&$artemptable)
+    {
         $sql = DataManager::get_select_properties(" WHERE mp.mdid=:mdid AND mp.rank>0 ");
-        $artemptable[1]= DataManager::createtemptable($sql,'tt_pt',array('mdid'=>$this->id));   
+        $artemptable[]= DataManager::createtemptable($sql,'tt_pt',array('mdid'=>($this->head) ? $this->head->getid() : $this->id));   
         
         $sql=DataManager::get_select_maxupdate($tt_entities,'tt_pt');
-        $artemptable[2] = DataManager::createtemptable($sql,'tt_id');   
-        
+        $artemptable[] = DataManager::createtemptable($sql,'tt_id');   
         
         $sql=DataManager::get_select_lastupdate('tt_id','tt_pt');
-        $artemptable[3] = DataManager::createtemptable($sql,'tt_tv');   
-        
-        return $artemptable;
+        $artemptable[] = DataManager::createtemptable($sql,'tt_tv');   
     }
-    public function createTempTableEntitiesToStr($entities,$count_req) 
+    
+    public function createtemptable_allprop($entities)
     {
-        // делаем строку разделенных запятыми уидов в одинарных кавычках заключенная в круглые скобки
-        $str_entities = "('".implode("','", $entities)."')"; 
-        // соберем список ссылок в представлении (ranktostring>0) 
 	$artemptable=array();
-        $sql = DataManager::get_select_entities($str_entities,true);
-        $artemptable[0] = DataManager::createtemptable($sql,'tt_t0');   
-        
-        $sql = DataManager::get_select_unique_mdid('tt_t0');
-        $artemptable[1] = DataManager::createtemptable($sql,'tt_t1');   
-        
-        $sql = DataManager::get_select_properties(" WHERE mp.mdid in (SELECT mdid FROM tt_t1) AND mp.ranktostring>0 ");
-        $artemptable[2] = DataManager::createtemptable($sql,'tt_t2');   
-        
-        $sql=DataManager::get_select_maxupdate('tt_t0','tt_t2');
-        $artemptable[3] = DataManager::createtemptable($sql,'tt_t3');   
-        
-        $sql=DataManager::get_select_lastupdateForReq($count_req,'tt_t3','tt_t0');
-        $artemptable[4] = DataManager::createtemptable($sql,'tt_t4');  
+        $artemptable[] = self::get_EntitiesFromList($entities,'tt_et');   
+        $this->createtemptable_all('tt_et',$artemptable);
         
         return $artemptable;    
     }
-    public function get_EntitiesFromList($entities,$ttname) 
-    {
-        $str_entities = "('".implode("','", $entities)."')";
-        $sql = DataManager::get_select_entities($str_entities);
-        return DataManager::createtemptable($sql,$ttname);
-    }
     public function get_findEntitiesByProp($ttname, $propid, $ptype, $access_prop, $filter ,$limit) 
     {
-        $mdid = $this->id;
+        $mdid = ($this->head) ? $this->head->getid() : $this->id;
         $params = array();
         $rec_limit = $limit*2;
         $prop_templ_id = '';
         $strwhere = '';
         $arprop = array();
-        $mdentity = new Mdentity($mdid);
         if ($propid!='')
         {
             if ($ptype<>'text')

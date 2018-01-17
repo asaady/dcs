@@ -71,7 +71,7 @@ class DataManager {
         return $sth->fetch(PDO::FETCH_ASSOC);
     }
 
-    public static function getActionsbyItem($classname, $mode = '', $edit_mode = '') {
+    public static function getActionsbyItem($classname, $prefix = '', $action = '') {
         $sql = "SELECT ia.id, ct_icon.name, ct_icon.synonym, pv_icon.value as icon FROM \"CTable\" as ia 
 	inner join \"MDTable\" as md
 	ON ia.mdid = md.id
@@ -110,18 +110,18 @@ class DataManager {
 		inner join \"CTable\" as ct_icon
 		on pv_action.value = ct_icon.id
 	ON ia.id=pv_action.id
-	where ct_cls.name = :class #mode #edit ORDER BY pv_rank.value";
+	where ct_cls.name = :class #prefix #action ORDER BY pv_rank.value";
         $params = array();
         $params['class'] = $classname;
-        if ($mode === 'CONFIG') {
-            $sql = str_replace('#mode', '', $sql);
+        if ($prefix === 'CONFIG') {
+            $sql = str_replace('#prefix', '', $sql);
         } else {
-            $sql = str_replace('#mode', 'AND NOT pv_mode.value', $sql);
+            $sql = str_replace('#prefix', 'AND NOT pv_mode.value', $sql);
         }
-        if (($edit_mode === 'EDIT') || ($edit_mode === 'SET_EDIT') || ($edit_mode === 'CREATE') || ($edit_mode === 'CREATE_PROPERTY')) {
-            $sql = str_replace('#edit', '', $sql);
+        if (($action === 'EDIT') || ($action === 'SET_EDIT') || ($action === 'CREATE') || ($action === 'CREATE_PROPERTY')) {
+            $sql = str_replace('#action', '', $sql);
         } else {
-            $sql = str_replace('#edit', 'AND NOT pv_edit.value', $sql);
+            $sql = str_replace('#action', 'AND NOT pv_edit.value', $sql);
         }
         $sth = self::dm_query($sql, $params);
         return $sth->fetchAll(PDO::FETCH_ASSOC);
@@ -211,7 +211,8 @@ class DataManager {
         return "$tmpname";
     }
 
-    public static function get_select_entities($entities) {
+    public static function get_select_entities($entities) 
+    {
         $sql = "SELECT id, mdid FROM \"ETable\" as et WHERE id in $entities";
         return $sql;
     }
@@ -815,8 +816,8 @@ class DataManager {
         return $res;
     }
 
-    public static function get_md_access_text($edit_mode = '') {
-        if (($edit_mode == 'EDIT') || ($edit_mode == 'SET_EDIT') || ($edit_mode == 'CREATE')) {
+    public static function get_md_access_text($action = '') {
+        if (($action == 'EDIT') || ($action == 'SET_EDIT') || ($action == 'CREATE')) {
             $dop = self::get_access_text('md', 'write');
         } else {
             $dop = self::get_access_text('md', 'read');
@@ -1255,17 +1256,17 @@ class DataManager {
 	$res = self::dm_query($sql, array('userid'=>$userid));	
         return $res->fetchAll(PDO::FETCH_ASSOC);
     }
-    public static function arr_rls($propid, $access_prop,$edit_mode)
+    public static function arr_rls($propid, $access_prop,$action)
     {
         $rls = array();
         foreach ($access_prop as $prop)
         {
             if ($prop['propid'] == $propid)
             {
-                if (($edit_mode === 'EDIT')||
-                    ($edit_mode === 'SET_EDIT')||
-                    ($edit_mode === 'CREATE')||
-                    ($edit_mode === 'CREATE_PROPERTY')) {
+                if (($action === 'EDIT')||
+                    ($action === 'SET_EDIT')||
+                    ($action === 'CREATE')||
+                    ($action === 'CREATE_PROPERTY')) {
                     if ($prop['wr'] === true)
                     {    
                         $rls[] = $prop['value'];

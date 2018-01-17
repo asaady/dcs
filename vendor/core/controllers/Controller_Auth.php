@@ -41,7 +41,7 @@ class Controller_Auth extends Controller
             if (empty($data['username']['name'])) {
                 $arData = array('status'=>'ERROR', 'msg'=>"Введите имя пользователя");
             } elseif (empty($data['password']['name'])) {
-                $arData = array('status'=>'ERROR', 'msg'=>"Введите паоль");
+                $arData = array('status'=>'ERROR', 'msg'=>"Введите пароль");
             } else {
                 $remember = false;
                 if (array_key_exists('remember-me', $data)) {

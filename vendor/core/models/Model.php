@@ -21,6 +21,17 @@ abstract class Model implements I_Model
     {
       return $this->name;
     }
+    function getshortname()
+    {
+        $res = $this->name;
+        if (strlen($res)>55)
+        {    
+            $res = substr($res, 0, 55);
+            $end = strlen(strrchr($res, ' ')); // длина обрезка 
+            $res = substr($res, 0, -$end) . '...';         
+        }    
+        return $res;
+    }
     function getsynonym() 
     {
       return $this->synonym;

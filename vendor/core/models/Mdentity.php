@@ -9,39 +9,70 @@ class Mdentity extends Head implements I_Head, I_Property
 {
     use T_EProperty;
     
-    public function __construct($id='') {
-	if ($id=='') {
-            throw new Exception("empty id");
-	}
-        $this->id = $id; 
-        $this->version = time();
-        $this->getMD();
-    }
-    public function get_item() 
-    {
-        return new Property($this->id);
-    }
-    function getProperties($mode='') 
-    {
-        $mdprop = new MdpropertySet($this->head->getid());
-        $objs['PSET'] = $mdprop->getProperties(" WHERE mp.mdid = :mdid AND mp.ranktoset>0 ",true);
-        
-        if ($this->id)
-        {    
-            return $mdprop->getProperties(" WHERE mp.mdid = :mdid ",true);
-        }
-        else
-        {
-            return $mdprop->getMustBePropsUse();
-        }    
-    }
-    public static function getMDprop()
+    function get_data($mode='') 
     {
         return array(
-             'id'=>array('name'=>'id','synonym'=>'ID','class'=>'active'),
-             'name'=>array('name'=>'name','synonym'=>'NAME','class'=>'active'),
-             'synonym'=>array('name'=>'synonym','synonym'=>'SYNONYM','class'=>'active'),
-            );
+          'id'=>$this->id,
+          'name'=>$this->name,
+          'synonym'=>$this->synonym,
+          'mdtype'=>$this->mditem->getname(),
+          'mditem'=>$this->mditem->getid(),
+          'mditemsynonym'=>$this->mditem->getsynonym(),
+          'version'=>$this->version,
+          'PSET' => $this->getProperties(TRUE,'toset'),
+          'navlist' => array(
+              $this->mditem->getid() => $this->mditem->getsynonym(),
+              $this->id => $this->synonym
+            )
+          );
+    }
+    public function getProperties($byid = FALSE, $filter = '') 
+    {
+        
+        $objs = array();
+        if (is_callable($filter)) {
+            $f = $filter;
+        } else {
+            if (strtolower($filter) == 'toset') {
+                $f = function($item) {
+                    return $item['ranktoset'] > 0;
+                };
+            } elseif (strtolower($filter) == 'tostring') {
+                $f = function($item) {
+                    return $item['ranktostring'] > 0;
+                };
+            } else {
+                $f = NULL;
+            }
+        }
+        $plist = $this->getplist();
+        $key = -1;    
+        foreach($plist as $prop) 
+        {
+            $rid = $prop['id'];
+            if (($rid !== 'id')&&($f !== NULL)&&(!$f($prop))) {
+                continue;
+            }
+            if ($byid) {    
+                $key = $rid;
+            } else {
+                $key++;
+            }    
+            $objs[$key] = $prop;
+            $objs[$key]['class'] = 'active';
+            if ($key == 'id') {
+                $objs[$key]['class'] = 'hidden';
+            }
+        }
+        return $objs;
+    }
+    public function item() 
+    {
+        return new Mdproperty($this->id);
+    }
+    public function head($mdid='') 
+    {
+        return NULL;
     }
     function getItemsByFilter($context, $filter)
     {
@@ -53,53 +84,15 @@ class Mdentity extends Head implements I_Head, I_Property
         $objs['synonym'] = $this->synonym;
         $objs['version'] = $this->version;
         $objs['LDATA']=array();
-        $objs['PSET'] = self::getMDprop();
-        $objs['actionlist'] = DataManager::getActionsbyItem('Mdentity',$mode,$edit_mode);
-        if ($this->id=='')
-        {
-            $objs['navlist'] = array(   $this->mdentityset->getid()=>$this->mdentityset->getsynonym(),
-                                    $this->id=>'Новый');
-        
-            return $objs;
-        }    
-        $objs['navlist'] = array(   $this->mdentityset->getid()=>$this->mdentityset->getsynonym(),
-                                    $this->id=>$this->synonym);
-        
-        $sql = DataManager::get_select_properties(" WHERE mp.mdid = :mdid ");	
-	$res = DataManager::dm_query($sql,array('mdid'=>$this->id));
-        while($row = $res->fetch(PDO::FETCH_ASSOC)) 
-        {
+        $objs['PSET'] = $this->getProperties(TRUE,'toset');
+//        die(var_dump($objs['PSET']).var_dump($this->properties));
+        $objs['actionlist'] = DataManager::getActionsbyItem('Mdentity',$mode,$action);
+        foreach ($this->properties as $row) {
             $objs['LDATA'][$row['id']] = array();
             foreach ($objs['PSET'] as $pkey=>$prow)
             {
-                $objs['LDATA'][$row['id']][$pkey]=array('name'=>$row[$prow['name']],'id'=>'');
+                $objs['LDATA'][$row['id']][$pkey]=array('name'=>$row[$prow['id']],'id'=>'');
             }    
-        }
-        if (!count($objs['LDATA']))
-        {
-            $sql = DataManager::get_select_cproperties(" WHERE mp.mdid = :mdid ");	
-            $res = DataManager::dm_query($sql,array('mdid'=>$this->id));
-            $objs['LDATA'] = array();
-            $objs['LDATA']['id'] = array();
-            $objs['LDATA']['id']['id']=array('name'=>'id','id'=>'id');
-            $objs['LDATA']['id']['name']=array('name'=>'id','id'=>'id');
-            $objs['LDATA']['id']['synonym']=array('name'=>'ID','id'=>'id');
-            $objs['LDATA']['name'] = array();
-            $objs['LDATA']['name']['id']=array('name'=>'name','id'=>'name');
-            $objs['LDATA']['name']['name']=array('name'=>'name','id'=>'name');
-            $objs['LDATA']['name']['synonym']=array('name'=>'NAME','id'=>'name');
-            $objs['LDATA']['synonym'] = array();
-            $objs['LDATA']['synonym']['id']=array('name'=>'synonym','id'=>'synonym');
-            $objs['LDATA']['synonym']['name']=array('name'=>'synonym','id'=>'synonym');
-            $objs['LDATA']['synonym']['synonym']=array('name'=>'SYNONYM','id'=>'synonym');
-            while($row = $res->fetch(PDO::FETCH_ASSOC)) 
-            {
-                $objs['LDATA'][$row['id']] = array();
-                foreach ($objs['PSET'] as $pkey=>$prow)
-                {
-                    $objs['LDATA'][$row['id']][$pkey]=array('name'=>$row[$prow['name']],'id'=>'');
-                }    
-            }
         }
         return $objs;
     }
@@ -256,5 +249,6 @@ class Mdentity extends Head implements I_Head, I_Property
     }
     public function getItemsByName($name) 
     {
+        return NULL;
     }
 }

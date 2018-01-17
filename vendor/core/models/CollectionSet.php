@@ -1,137 +1,33 @@
 <?php
 namespace Dcs\Vendor\Core\Models;
 
-//use dcs\vendor\core\Mditem;
-//use dcs\vendor\core\CollectionItem;
-//use dcs\vendor\core\CpropertySet;
 use PDO;
+use DateTime;
+use Exception;
 
-require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
-
-class CollectionSet extends Model {
-    protected $mditem;
+class CollectionSet extends Head implements I_Head, I_Property
+{
+    use T_Collection;
+    use T_CProperty;
     
-    public function __construct($id='') 
+    public function item() 
     {
-	if ($id=='') 
-        {
-            die("empty id collection");
-	}
-        $arPar = self::getMDCollection($id);
-        if ($arPar)
-        {
-            $this->id = $id; 
-            $this->name = $arPar['name']; 
-            $this->synonym = $arPar['synonym']; 
-            $this->mditem = new MDitem($arPar['mditem']);
-        }    
-        else 
-        {
-            $this->id = ''; 
-            $this->name = ''; 
-            $this->synonym = ''; 
-            $this->mditem = new MDitem($id);
-        }
-        $this->version = time();
+        return new CollectionItem($this->id);
     }
-    function getmditem() 
+    public function head($mdid='') 
     {
-      return $this->mditem;
+        return NULL;
     }
-    function get_data($mode='') 
+    public function createtemptable_all($entities)
     {
-        $cprop = new CPropertySet($this->id);
-        $plist = $cprop->getProperties(" WHERE mp.mdid = :mdid AND mp.rank>0 AND mp.ranktoset>0 ",true);
-        if ($this->id=='')
-        {
-            $navlist = array($this->mditem->getid()=>$this->mditem->getsynonym(),'new'=>'Новый');
-        }   
-        else
-        {
-            $navlist = array($this->mditem->getid()=>$this->mditem->getsynonym(),$this->id=>$this->synonym);
-        }    
-        return array(
-            'id'=>$this->id,
-            'name'=>$this->name,
-            'synonym'=>$this->synonym,
-            'version'=>$this->version,
-            'mditem'=>$this->mditem->getid(),
-            'mdtypename'=>$this->mditem->getname(),
-            'mdtypedescription'=>$this->mditem->getsynonym(),
-            'PLIST' => $plist,   
-            'navlist' => $navlist
-            );
+        $str_entities = "('".implode("','", $entities)."')";
+	$artemptable = array();
+        $sql = DataManager::get_select_collections($str_entities);
+        $artemptable[] = DataManager::createtemptable($sql,'tt_et');   
+        
+        return $artemptable;
     }
-    function create($data) {
-      $colitem = new CollectionItem($this->id);
-      return $colitem->create($data);
-    }
-    public static function getAllCollections() 
-    {
-	$sql = "SELECT md.id, md.name, md.synonym FROM \"MDTable\" as md 		    
-                    INNER JOIN \"CTable\" as tp
-                    ON md.mditem = tp.id
-                    and tp.name='Cols'";
-        $sth = DataManager::dm_query($sql);        
-        $objs = array();
-        while($row = $sth->fetch(PDO::FETCH_ASSOC)) 
-        {
-            $objs[$row['id']] = $row;
-        }
-        return $objs;
-    }
-    public static function getMDCollection($id) 
-    {
-	$sql = "SELECT md.id, md.name, md.synonym, tp.id as mditem, tp.name as mdtypename FROM \"MDTable\" as md 		    
-                    INNER JOIN \"CTable\" as tp
-                    ON md.mditem = tp.id
-                    and (tp.name='Cols' or tp.name='Comps')
-                WHERE md.id=:id";
-        $sth = DataManager::dm_query($sql,array('id'=>$id));        
-        $res = $sth->fetch(PDO::FETCH_ASSOC);
-        return $res;
-    }
-    public static function isExistCollItemByName($colname,$itemname)
-    {
-        $res = self::getMDCollectionByName($colname,true);
-        if (count($res))
-        {
-            $sql = "SELECT ct.name, ct.id, ct.synonym FROM \"CTable\" as ct WHERE ct.mdid=:mdid and ct.name=:name";
-            $sth = DataManager::dm_query($sql,array('mdid'=>$res[0]['id'],'name'=>$itemname));        
-            return $sth->fetch(PDO::FETCH_ASSOC);
-        }   
-        return FALSE;
-    }
-    public static function getMDCollectionByName($name,$equal_only=false) 
-    {
-	$sql = "SELECT md.id, md.name, md.synonym, tp.name as mdtypename FROM \"MDTable\" as md 		    
-                    INNER JOIN \"CTable\" as tp
-                    ON md.mditem = tp.id
-                    AND (tp.name='Cols' or tp.name='Comps')
-                WHERE md.name ilike :name OR md.synonym ilike :name";
-        if ($equal_only)
-        {    
-            $sql = str_replace('ilike', '=', $sql);
-            $sth = DataManager::dm_query($sql,array('name'=>$name));        
-        }    
-        else 
-        {
-            $sth = DataManager::dm_query($sql,array('name'=>"%$name%"));        
-        }
-        $res = $sth->fetchAll(PDO::FETCH_ASSOC);
-        return $res;
-    }
-    public static function getCollectionItemByID($itemid) 
-    {
-        $sql = "SELECT 'CollectionItem' as classname, ct.name, ct.id, ct.synonym, "
-                . "mc.id as headid, mc.name as name_head, mc.synonym as synonym_head "
-                . "FROM \"CTable\" as ct "
-                . "INNER JOIN \"MDTable\" as mc "
-                . "ON ct.mdid = mc.id WHERE ct.id=:itemid";
-        $sth = DataManager::dm_query($sql,array('itemid'=>$itemid));        
-        return $sth->fetch(PDO::FETCH_ASSOC);
-    }
-    public static function findCollByProp($filter) 
+    public function findCollByProp($filter) 
     {
 //      $filter: array 
 //      id = property id (CProperties)
@@ -141,39 +37,25 @@ class CollectionSet extends Model {
         $ftype='';
         $dbtable = '';
         $propid = $filter['filter_id']['id'];
-        if ($propid!='')
-        {
-            $arprop = Cproperty::getCProperty($propid);
-            if ($arprop['type']=='text')
-            {
+        if ($propid != '') {
+            $arprop = $this->properties[$propid];
+            if ($arprop['type'] == 'text') {
                 return array();
             }
             $dbtable = "CPropValue_$arprop[type]";
-            $ftype=$arprop['type'];
-            $mdid = $arprop['mdid'];
-        }
-        else
-        {
-            if ($filter['itemid']['id']!='')
-            {
-                $mdid = $filter['itemid']['id'];
-            }
-            else 
-            {
-                return array();
-            }
+            $ftype = $arprop['type'];
         }
         $params = array();
         $strwhere = DataManager::getstrwhere($filter,$ftype,'pv.value',$params);
-        if ($strwhere!='')
+        if ($strwhere != '')
         {
             $sql = "SELECT DISTINCT pv.id as cid FROM \"$dbtable\" as pv WHERE $strwhere and pv.pid=:propid"; 
-            $params['propid']=$propid;
+            $params['propid'] = $propid;
         }
         else
         {
             $sql = "SELECT et.id as cid FROM \"CTable\" as et WHERE et.mdid=:mdid LIMIT ".DCS_COUNT_REC_BY_PAGE; 
-            $params=array('mdid'=>$mdid);
+            $params = array('mdid'=>$this->id);
         }    
         $res = DataManager::dm_query($sql,$params);
         $objs = array();
@@ -186,55 +68,18 @@ class CollectionSet extends Model {
         }
         return $objs;
     }    
-
-    function createtemptable_all($entities,$mdid, $ver='')
+    public function getItemsByFilter($context, $filter) 
     {
-        $str_entities = "('".implode("','", $entities)."')";
-	$artemptable = array();
-        $sql = DataManager::get_select_collections($str_entities);
-        $artemptable[0] = DataManager::createtemptable($sql,'tt_et');   
-        
-        $sql = DataManager::get_select_cproperties(" WHERE mp.mdid=:mdid AND mp.rank>0 AND mp.ranktoset>0 ");
-        $artemptable[1]= DataManager::createtemptable($sql,'tt_pt',array('mdid'=>$mdid));   
-        
-        return $artemptable;
-    }
-    
-    public static function getCDetails($cid) 
-    {
-	$sql = "select et.id, et.name, et.synonym, et.mdid , md.mditem, md.name as mdname, md.synonym as mdsynonym, tp.name as mdtypename, tp.synonym as mdtypedescription FROM \"CTable\" as et
-		    INNER JOIN \"MDTable\" as md
-			INNER JOIN \"CTable\" as tp
-			ON md.mditem = tp.id
-		      ON et.mdid = md.id 
-		    WHERE et.id=:cid";  
-	$res = DataManager::dm_query($sql,array('cid'=>$cid));
-        $objs = $res->fetch(PDO::FETCH_ASSOC);
-	if(!count($objs)) {
-            $objs = array('id'=>'','name'=>'','synonym'=>'');
-	}
-        return $objs;
-    }
-    
-    public static function getCollectionByFilter($filter, $mode='',$edit_mode='', $limit=DCS_COUNT_REC_BY_PAGE, $page=1, $order='name') 
-    {
-        
+        $prefix = $context['PREFIX'];
+        $action = $context['ACTION'];
+        $limit = $context['LIMIT'];
+        $page = $context['PAGE'];
+        $mdid = $this->id;
     	$objs = array();
-	$objs['MD'] = array();
 	$objs['LDATA'] = array();
 	$objs['PSET'] = array();
-        $arMD = Mdentity::getMD($filter['itemid']['id']);
-        $mdid = $arMD['id'];
-        $objs['actionlist'] = Route::getActionList($mdid,$mode,$edit_mode);
-        $objs['MD'] =  array(
-                              'mdid'	=> $mdid,
-                              'mditem'	=> $arMD['mditem'],
-                              'mdsynonym'	=> $arMD['synonym'],
-                              'mdtypename'	=> $arMD['mdtypename'],
-                              'mdtypedescription'	=> $arMD['mdtypedescription']
-                              );
-        if ($arMD['name']=='user_settings')
-        {
+        $objs['actionlist'] = DataManager::getActionsbyItem('CollectionSet',$prefix,$action);
+        if ($this->name == 'user_settings') {
             if (!User::isAdmin())
             {
                 //это уид реквизита user в таблице user_settings
@@ -243,18 +88,15 @@ class CollectionSet extends Model {
                 $filter['filter_val']['name']= User::getUserName($_SESSION['user_id']);
             }    
         }    
-        $entities = self::findCollByProp($filter);
+        $entities = $this->findCollByProp($filter);
         if (!count($entities))
         {
             $objs['RES']='list entities is empty';
             return $objs;
         }
 	$offset=(int)($page-1)*$limit;
-	$artemptable = self::createtemptable_all($entities,$mdid);
-	$sql = "SELECT * FROM tt_pt";
-	$res = DataManager::dm_query($sql);	
-        $plist = $res->fetchAll(PDO::FETCH_ASSOC);
-        $objs['ENT'] = array();
+	$artemptable = $this->createtemptable_all($entities);
+        $plist = $this->properties;
         $str0_req='SELECT et.id, et.name, et.synonym';
         $str_req='';
         $str_p = '';
@@ -263,6 +105,9 @@ class CollectionSet extends Model {
         $params = array();
         foreach($plist as $row) 
         {
+            if (!$row['field']) {
+                continue;
+            }
             $rid = $row['id'];
             $rowname = str_replace("  ","",$row['name']);
             $rowname = str_replace(" ","",$rowname);
@@ -305,35 +150,29 @@ class CollectionSet extends Model {
         $str0_req .=" FROM tt_et as et";
         $sql = $str0_req.$str_req;
         $dop = DataManager::get_col_access_text('et');
-        if ($strwhere!='')
-        {
+        if ($strwhere != '') {
             $sql .= " WHERE $strwhere";
-            if ($dop!='')
-            {
+            if ($dop!='') {
                 $sql .= " AND ".$dop;
                 $params['userid'] = $_SESSION['user_id'];
             }    
-        }
-        else
-        {
-            if ($dop!='')
-            {
+        } else {
+            if ($dop != '') {
                 $sql .= " WHERE ".$dop;
                 $params['userid'] = $_SESSION['user_id'];
             }    
         }    
-        $objs['SQL']=$sql;
-        //die('sql = '.$sql.var_dump($params));
 	$res = DataManager::dm_query($sql,$params);
- 
         while($row = $res->fetch(PDO::FETCH_ASSOC)) {
-            $objs['ENT'][] = $row;
             $objs['LDATA'][$row['id']]=array();
             $objs['LDATA'][$row['id']]['id']=array('name'=>$row['id'],'id'=>'');
             $objs['LDATA'][$row['id']]['name']=array('name'=>$row['name'],'id'=>'');
             $objs['LDATA'][$row['id']]['synonym']=array('name'=>$row['synonym'],'id'=>'');
             foreach($plist as $row_plist) 
             {
+                if (!$row_plist['field']) {
+                    continue;
+                }
                 $rid = $row_plist['id'];    
                 $field_val = str_replace(" ","",strtolower($row_plist['name']));
                 $field_id = "pid_$field_val";
@@ -344,9 +183,7 @@ class CollectionSet extends Model {
                 }    
             }
         }
-        $cprop = new CPropertySet($mdid);
-        $objs['PSET'] = $cprop->getProperties(" WHERE mp.mdid = :mdid AND mp.rank>0 AND mp.ranktoset>0 ",true);
-        
+        $objs['PSET'] = $this->getProperties(TRUE,'toset');
    	$sql = "SELECT count(*) as countrec FROM tt_et";
 	$res = DataManager::dm_query($sql);	
 	$objs['CNT_REC']=0;
@@ -362,23 +199,140 @@ class CollectionSet extends Model {
 	DataManager::droptemptable($artemptable);
 	return $objs;
     }
-    public static function getCollByName($mdid,$name) 
+    public function getItemsByName($name)
     {
-        
-	$sql = "select ct.id, ct.name, ct.synonym FROM \"CTable\" as ct
-		WHERE ct.mdid=:mdid AND (ct.name ILIKE :name OR ct.synonym ILIKE :name) LIMIT 5";  
-        
-	$res = DataManager::dm_query($sql,array('mdid'=>$mdid, 'name'=>"%$name%"));
-	$rows = $res->fetchAll(PDO::FETCH_ASSOC);
-        if (!count($rows))
+        $mdid = $this->id;
+        $artt = array();
+        if (!User::isAdmin())
         {
-            $sql = "select ct.id, ct.name, ct.synonym FROM \"CTable\" as ct inner join \"CTable\" as md on ct.mdid=md.mdid
-                    WHERE md.id=:mdid AND (ct.name ILIKE :name OR ct.synonym ILIKE :name) LIMIT 5";  
+            $access_prop = self::get_access_prop();
+            $arr_prop = array_unique(array_column($access_prop,'propid'));
+        }
+        else 
+        {
+            $access_prop = array();
+            $arr_prop = array();
+        }
+        $mdentity = new Mdentity($this->id);
+        if ($mdentity->getmditemname()=='Docs')
+        {
+            $sql = "select et.id, pv.value as name, it.dateupdate FROM \"PropValue_int\" as pv
+                    inner join \"IDTable\" as it
+                        inner join \"ETable\" as et
+                        on it.entityid=et.id
+                        inner join \"MDProperties\" as mp
+                            inner join \"CTable\" as pt
+                            on mp.propid=pt.id
+                        on it.propid=mp.id
+                    on pv.id=it.id";
+            $str_where = " WHERE et.mdid=:mdid and mp.mdid = et.mdid and pv.value = :name LIMIT 30";  
+            $params = array('mdid'=>$mdid, 'name'=>$name);
+        }   
+        else
+        {
+            $sql = "select et.id, pv.value as name, it.dateupdate FROM \"PropValue_str\" as pv
+                    inner join \"IDTable\" as it
+                        inner join \"ETable\" as et
+                        on it.entityid=et.id
+                        inner join \"MDProperties\" as mp
+                            inner join \"CTable\" as pt
+                            on mp.propid=pt.id
+                        on it.propid=mp.id
+                    on pv.id=it.id";
+            $str_where = " WHERE et.mdid=:mdid and mp.mdid = et.mdid and pv.value ILIKE :name LIMIT 30";  
+            $params = array('mdid'=>$mdid, 'name'=>"%$name%");
+        }    
+        $params_fin = array();
+        $sql_rls = '';
+        if (count($access_prop))
+        {
+            $arr_prop = array_unique(array_column($access_prop,'propid'));
+            $arr_eprop = array_column($mdentity->getarProps(), 'propid','id');
+            foreach ($arr_prop as $prop)
+            {
+                $isprop = array_search($prop, $arr_eprop);
+                if ($isprop===FALSE)
+                {
+                    //в текущем объекте нет реквизита с таким значением $prop
+                    continue;
+                }    
+                $str_val='';
+                foreach ($access_prop as $ap)
+                {
+                    if ($prop!=$ap['propid'])
+                    {
+                       continue;
+                    }    
+                    $propname = $ap['propname'];
+                    $rls_type = $ap['type'];
+                    if (($ap['rd']===true)||($ap['wr']===true))
+                    {
+                        $str_val .= ",'"."$ap[value]"."'";
+                    }    
+                }    
+                if ($str_val=='')
+                {
+                    return '';
+                }    
+                $str_val = "(".substr($str_val,1).")";
+                $props_templ = new PropsTemplate($prop);
+                if ($props_templ->getvalmdentity()->getid()==$mdid)    
+                {
+                    $sql_rls .= " INNER JOIN \"ETable\" as et_$propname ON et_$propname.id=et.id AND et_$propname.id IN $str_val";
+                }    
+                else
+                {    
+                    if (!in_array($prop, $params))
+                    {        
+                        $sql_rls .= " INNER JOIN \"IDTable\" as it_$propname inner join \"MDProperties\" as mp_$propname on it_$propname.propid=mp_$propname.id AND mp_$propname.propid=:$propname inner join \"PropValue_$rls_type\" as pv_$propname ON pv_$propname.id=it_$propname.id AND pv_$propname.value in $str_val ON it_$propname.entityid=et.id";
+                        $params[$propname]=$prop;
+                        $params_fin[$propname]=$prop;
+                    }    
+                }    
+          }    
+        }   
+        if ($sql_rls<>'')
+        {
+            $sql .= $sql_rls;
+        }    
+        $sql .= $str_where;
+        
+        $artt[] = DataManager::createtemptable($sql,'tt_et',$params);   
+        
+//        $sqlr = "select * from tt_et";
+//	$res = DataManager::dm_query($sqlr);
+//	die(var_dump($res->fetchAll(PDO::FETCH_ASSOC))." sql = ".$sql. var_dump($params));
+        
+        
+	$sql = "select id, max(dateupdate) as dateupdate FROM tt_et group by id";
+        $artt[] = DataManager::createtemptable($sql,'tt_nml');   
+        
+	$sql = "select et.id, et.name FROM tt_et as et inner join tt_nml as nm on et.id=nm.id and et.dateupdate=nm.dateupdate";
+        $artt[] = DataManager::createtemptable($sql,'tt_nm');   
 
-            $res = DataManager::dm_query($sql,array('mdid'=>$mdid, 'name'=>"%$name%"));
-            $rows = $res->fetchAll(PDO::FETCH_ASSOC);
-        }  
-        return $rows;
+        
+	$sql = "select et.id, et.name, COALESCE(pv.value,TRUE) as activity, COALESCE(it.dateupdate,'epoch'::timestamp) as dateupdate FROM tt_nm as et 
+                left join \"IDTable\" as it
+                    inner join \"MDProperties\" as mp
+                    on it.propid=mp.id
+                    and mp.name='activity'
+                    inner join \"PropValue_bool\" as pv
+                    on it.id=pv.id
+                on et.id=it.entityid";  
+        $artt[] = DataManager::createtemptable($sql,'tt_act');   
+        
+	$sql = "select id, max(dateupdate) as dateupdate FROM tt_act group by id";
+        $artt[] = DataManager::createtemptable($sql,'tt_actl');   
+	$sql = "select et.id, et.name FROM tt_act as et inner join tt_actl as nm on et.id=nm.id and et.dateupdate=nm.dateupdate and et.activity";
+        if ($sql_rls<>'')
+        {
+            $sql .= $sql_rls;
+        }    
+        $sql .= " LIMIT 5";
+	$res = DataManager::dm_query($sql,$params_fin);
+	$objs = $res->fetchAll(PDO::FETCH_ASSOC);
+        DataManager::droptemptable($artt);
+        return $objs;
     }
 }
 

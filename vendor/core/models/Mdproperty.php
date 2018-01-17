@@ -5,9 +5,9 @@ use PDO;
 
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 
-class Mdproperty extends Property implements IProperty {
-    use TeProperty;
-    use TProperties;
+class Mdproperty extends Property implements I_Property {
+    use T_Property;
+    use T_EProperty;
     
     protected $propstemplate;
     protected $typeid;
@@ -24,7 +24,7 @@ class Mdproperty extends Property implements IProperty {
             throw new Exception("class.MDProperty constructor: id is empty");
         }
         
-        $arData = self::getProperty($id);
+        $arData = $this->getProperty($id);
         if ($arData)
         {
             //передан id реального свойства метаданного
@@ -259,36 +259,7 @@ class Mdproperty extends Property implements IProperty {
         
         return array('LDATA'=>$ardata,'PSET'=>$plist, 'name'=>$this->name,'synonym'=>$this->synonym);
     } 
-    function get_history($entityid,$mode='')
-    {
-        $propid = $this->id;
-        $type = $this->type;
-        $clsid='hidden';
-        if ($mode=='CONFIG')
-        {
-            $clsid='active';
-        }    
-        $plist = array(
-              'id'=>array('name'=>'id','synonym'=>'ID','class'=>$clsid),
-              'username'=>array('name'=>'username','synonym'=>'USER NAME','class'=>'active'),
-              'dateupdate'=>array('name'=>'dateupdate','synonym'=>'DATE UPDATE','class'=>'active'),
-              'value'=>array('name'=>'value','synonym'=>'VALUE','class'=>'active')
-            );
-        $ent = new Entity($entityid);
-        return array(
-          'id'=>$this->id,
-          'name'=>$this->name,
-          'synonym'=>$this->synonym,
-          'version'=>$this->version,
-          'PSET' => $plist,   
-          'navlist' => array(
-              $this->mdentity->getid()=>$this->mdentity->getsynonym(),
-              $ent->getid()=>$ent->getname(),
-              $this->id=>$this->synonym
-            )
-          );
-    } 
-    public static function getProperty($propid) 
+    public function getProperty($propid) 
     {
         $sql = DataManager::get_select_properties(" WHERE mp.id = :propid ");
 	$res = DataManager::dm_query($sql,array('propid'=>$propid));

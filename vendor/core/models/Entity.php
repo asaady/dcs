@@ -5,36 +5,24 @@ use PDO;
 use DateTime;
 use Exception;
 
-class Entity extends Item implements I_Item {
+class Entity extends Head implements I_Head, I_Property 
+{
     use T_Item;
+    use T_Entity;
+    use T_EProperty;
     
     protected $activity;
     protected $edate;
     protected $enumber;
     protected $num;
     
-    public function __construct($id,$version=0,$mode='')
+    public function __construct($id)
     {
-        if ($id == '') {
-            throw new Exception("Class Entity constructor: id is empty");
-        }
-        $arData = self::getEntityDetails($id);
-            
-        if ($arData['id'] != '') {
-            $this->id = $id; 
-            $mdid = $arData['mdid'];
-        } else {
-            $this->id = ''; 
-            $mdid = $id;
-        }
-        $this->head = new Mdentity($mdid);
-        $this->properties = $this->getProperties(" WHERE mp.mdid = :mdid ",true);
-        $this->data = $this->entity_data();
+        parent::__construct($id);
         $this->edate = $this->getpropdate();
         $this->enumber = $this->getpropnumber();
         $this->synonym = $this->name;
         $this->name = $this->gettoString();
-        $this->mode = $mode;
         $prop_activity = array_search("activity", 
                                 array_column($this->properties,'name','id'));
         if ($prop_activity !== FALSE)
@@ -46,54 +34,26 @@ class Entity extends Item implements I_Item {
             $this->activity = TRUE;
         }
     }
-    function getdata() 
+    function item() 
     {
-        return $this->data;
+        return NULL;
     }
-    function entity_data() 
+    function head($mdid) 
     {
-        $arProp = array();
-	if ($this->id!='') 
-        {
-            $arData = self::getEntityData($this->id,$this->mode);
-            if (count($arData['SDATA'])) 
-            {
-                $arProp = $arData['SDATA'][$this->id];
-            }
-	}
-        $this->version = time();
-        $data = array();
-
-        
-	foreach($this->properties as $aritem)
-        {
-	    $v = $aritem['id'];
-            $data[$v]=array();
-	    if(array_key_exists($v,$arProp))
-            {
-	      $data[$v]['id']=$arProp[$v]['id'];
-	      $data[$v]['name']=$arProp[$v]['name'];
-	    }
-            else 
-            {
-     	      $data[$v]['id']=DCS_EMPTY_ENTITY;
-	      $data[$v]['name']='';
-	    }  
-	}
-        return $data;
+        return new EntitySet($mdid);
     }
     function getactivity()
     {
         return $this->activity;
     }
-    function get_data($mode = '') 
+    function get_data($prefix = '') 
     {
-        if ($this->mdentity->getmdtypename() != 'Items')
+        if ($this->head->getmditemname() != 'Items')
         {
             $navlist = array(
-                    $this->mdentity->getmditem() => 
-                                $this->mdentity->getmditemsynonym(),
-                    $this->mdentity->getid() => $this->mdentity->getsynonym(),
+                    $this->mditem->getid() => 
+                                $this->mditem->getsynonym(),
+                    $this->head->getid() => $this->head->getsynonym(),
                     $this->id => $this->getshortname()
                 );
         }   
@@ -102,30 +62,25 @@ class Entity extends Item implements I_Item {
             $setid = self::get_set_by_item($this->id); 
             $entityid = self::get_entity_by_setid($setid);
             $entity = new Entity($entityid);
-            $mdentity = $entity->getmdentity();
+            $mdentity = $entity->head;
             $navlist = array(
-                    $mdentity->getmditem() => $mdentity->getmditemsynonym(),
+                    $mdentity->getmditem()->getid() => $mdentity->getmditem()->getsynonym(),
                     $mdentity->getid() => $mdentity->getsynonym(),
                     $entity->getid() => $entity->getshortname(),
                     $this->id => $this->name
                 );
         }    
-        $mdprop = new MdpropertySet($this->mdentity->getid());
-        $properties = $mdprop->getProperties(" WHERE mp.mdid = :mdid ",FALSE);
         $sets = array();
-        foreach ($properties as $prop) {
-            if ($prop['valmdtypename']!='Sets') {
+        foreach ($this->properties as $prop) {
+            if ($prop['valmdtypename'] != 'Sets') {
                 continue;
             }
-            $mdprop = new MdpropertySet($prop['valmdid']);
-            $setprop = $mdprop->getProperties(" WHERE mp.mdid = :mdid ",FALSE);
+            $mdprop = new EntitySet($prop['valmdid']);
+            $setprop = $mdprop->properties;
             foreach ($setprop as $sprop) {    
-                if ($sprop['valmdtypename']=='Items') {
-                    $mdprop = new MdpropertySet($sprop['valmdid']);
-                    $sets[$prop['id']] = $mdprop->getProperties(
-                            " WHERE mp.mdid = :mdid and mp.ranktoset>0 ",
-                            true
-                        );
+                if ($sprop['valmdtypename'] == 'Items') {
+                    $mdprop = new EntitySet($sprop['valmdid']);
+                    $sets[$prop['id']] = $mdprop->getProperties(true,'toset');
                     break;
                 }    
             }
@@ -138,9 +93,10 @@ class Entity extends Item implements I_Item {
                 'edate'=>$this->edate,
                 'enumber'=>$this->enumber,
                 'num'=>$this->num,
-                'mdsynonym'=>$this->mdentity->getsynonym(),
-                'mdtypedescription'=>$this->mdentity->getmdtypedescription(),
-                'PLIST'=>$properties,
+                'mdsynonym'=>$this->head->getsynonym(),
+                'mdtypedescription'=>$this->mditem->getsynonym(),
+                'PLIST'=>$this->getProperties(FALSE),
+                'PSET'=>array(),
                 'sets' => $sets,
                 'navlist'=>$navlist
         );        
@@ -176,36 +132,6 @@ class Entity extends Item implements I_Item {
         }
         return $row['entityid'];
     }
-    function set_data($data) 
-    {
-	foreach($this->properties as $aritem)
-        {
-	    $v = $aritem['id'];
-            $this->data[$v]=array();
-	    if(array_key_exists($v,$data))
-            {
-                $this->data[$v]['name']=$data[$v]['name'];
-                if (($aritem['type'] === 'id')||
-                    ($aritem['type'] === 'cid')||
-                    ($aritem['type'] === 'mdid')) {
-                    if ($data[$v]['id'] !== '')
-                    {    
-                        $this->data[$v]['id'] = $data[$v]['id'];
-                    } else {
-                        $this->data[$v]['name'] = '';
-                        $this->data[$v]['id'] = DCS_EMPTY_ENTITY;
-                    }
-                }
-	    } else {
-                $this->data[$v]['name'] = '';
-                $this->data[$v]['id'] = DCS_EMPTY_ENTITY;
-	    }  
-	}
-        $this->edate = $this->getpropdate();
-        $this->enumber = $this->getpropnumber();
-        $this->name = $this->gettoString();
-        $this->synonym = $this->name;
-    }
     public function getpropdate(){
 	$res=$this->edate;
         foreach ($this->properties as $prow)
@@ -235,7 +161,7 @@ class Entity extends Item implements I_Item {
         $res = array();
         $ar_propid = array_column($this->properties(), 'propid','id');
         foreach ($data as $pid => $val) {
-            $prop = $this->getproperty($pid);
+            $prop = $this->properties[$pid];
             $ar_rel = DataManager::get_related_fields($prop['propid']);
             foreach ($ar_rel as $rel) {
                 $dep_pid = array_search($rel['depend'], $ar_propid);
@@ -243,7 +169,7 @@ class Entity extends Item implements I_Item {
                     continue;
                 }        
                 //проверим найденный реквизит на свойство isdepend - зависимый
-                $dep_prop = $this->getproperty($dep_pid);
+                $dep_prop = $this->properties[$dep_pid];
                 if ($dep_prop['isdepend']) {
                     $dep_mdentity = new Mdentity($dep_prop['valmdid']);
                     //получим текущее значение зависимого реквизита
@@ -252,7 +178,7 @@ class Entity extends Item implements I_Item {
                         $dep_ent = new Entity($curval);
                         $cur_val_dep_ent = '';
                         //текущее значение ведущего реквизита у найденного значения зависимого реквизита
-                        if ($dep_mdentity->getmdtypename() == 'Items') {
+                        if ($dep_mdentity->getmditemname() == 'Items') {
                             //это строка тч - получим объект владелeц этой ТЧ
                             // получим массив ид метаданных которые имеют у себя такую строку ТЧ 
                             $ar_obj = DataManager::get_obj_by_item($curval);
@@ -261,7 +187,7 @@ class Entity extends Item implements I_Item {
                                 break;
                             }
                         } else {
-                            $arr_dep_ent_propid = array_column($dep_ent->properties(),'propid','id');
+                            $arr_dep_ent_propid = array_column($dep_ent->properties,'propid','id');
                             $dep_ent_pid = array_search($prop['propid'],$arr_dep_ent_propid);
                             if ($dep_ent_pid === FALSE) {
                                 //среди реквизитов зависимого объекта нет шаблона реквизита текущего объекта
@@ -279,7 +205,7 @@ class Entity extends Item implements I_Item {
                     $filter = array();
                     $filter['itemid'] =  array('id' => $dep_prop['valmdid'],'name' => '');
                     $filter['curid'] = array('id'=>$this->id,'name'=>'');
-                    if ($this->getmdentity()->getmdtypename() == 'Items') {
+                    if ($this->getmdentity()->getmditemname() == 'Items') {
                         //это строка тч - в фильтр передадим объект владелец ТЧ
                         $ar_obj = DataManager::get_obj_by_item($this->id);
                         if (count($ar_obj)>0) {
@@ -482,7 +408,7 @@ class Entity extends Item implements I_Item {
         }    
         $edate = $this->edate;
         $enumber = $this->enumber;
-        if ($this->head->getmdtypename()=='Docs')
+        if ($this->head->getmditemname()=='Docs')
         {
             if ($edate=='') {
                 return array('status'=>'ERROR','msg'=>'date is empty');
@@ -606,107 +532,58 @@ class Entity extends Item implements I_Item {
         
         return array('status'=>'OK', 'id'=>$this->id);
     }
-    public static function getEntityDetails($entityid) 
+    
+    public function getItemsByFilter($context, $filter)
     {
-	$sql = "select et.id, et.mdid , md.mditem as mditem, md.name as mdname, md.synonym as mdsynonym, tp.name as mdtypename, tp.synonym as mdtypedescription FROM \"ETable\" as et
-		    INNER JOIN \"MDTable\" as md
-			INNER JOIN \"CTable\" as tp
-			ON md.mditem = tp.id
-		      ON et.mdid = md.id 
-		    WHERE et.id=:entityid";  
-	$res = DataManager::dm_query($sql,array('entityid'=>$entityid));
-        $objs = $res->fetch(PDO::FETCH_ASSOC);
-	if(!count($objs)) {
-            $objs = array('id'=>'','mdid'=>'','mditem'=>'');
-	}
-        return $objs;
-    }
-    static function createtemptable_allprop($entities,$mdid, $ver='')
-    {
-        $str_entities = "('".implode("','", $entities)."')"; 
-        // соберем список ссылок в представлении (ranktostring>0) 
-	$artemptable=array();
-        $sql = DataManager::get_select_entities($str_entities,true);
-        
-        $artemptable[0] = DataManager::createtemptable($sql,'tt_et');   
-        
-        $sql = DataManager::get_select_properties(" WHERE mp.mdid=:mdid ");
-        $artemptable[1] = DataManager::createtemptable($sql,'tt_pt',array('mdid'=>$mdid));   
-        
-        $sql=DataManager::get_select_maxupdate('tt_et','tt_pt');
-        $artemptable[2] = DataManager::createtemptable($sql,'tt_id');   
-        
-        $sql=DataManager::get_select_lastupdate('tt_id','tt_pt');
-        $artemptable[3] = DataManager::createtemptable($sql,'tt_tv');   
-        
-        return $artemptable;    
-    }
-    public static function getEntityData($id,$mode='',$edit_mode='',$curid='',$version=0) 
-    {
-	if ($version==0) 
-        {
-	  $ver="";
-	}else{
-	  $ver="HAVING max(dateupdate)<to_timestamp($version)";
-	}  
+        $prefix = $context['PREFIX'];
+        $action = $context['ACTION'];
+        $curid = $context['CURID'];
     	$objs = array();
-	$objs['MD'] = array();
+	$objs['LDATA'] = array();
 	$objs['SDATA'] = array();
-        $objs['actionlist'] = DataManager::getActionsbyItem('Entity',$mode,$edit_mode);
-        $arMD = self::getEntityDetails($id);
-        if ($arMD['id']=='')
-        {
-            $mdid = $id;
-            $arMD = Mdentity::getMD($mdid);
-            $objs['id']='';
-        }    
-        else 
-        {
-            $mdid = $arMD['mdid'];
-            $objs['id']=$id;
-        }
-        $mdprop = new MdpropertySet($mdid);
-        $objs['PLIST'] = $mdprop->getProperties(" WHERE mp.mdid = :mdid ",true);
-        $objs['MD'] =  array(
-                              'mdid'	=> $mdid,
-                              'mditem'	=> $arMD['mditem'],
-                              'mdsynonym'	=> $arMD['mdsynonym'],
-                              'mdtypename'	=> $arMD['mdtypename'],
-                              'mdtypedescription'	=> $arMD['mdtypedescription']
-                              );
-        if ($objs['id']=='')
-        {
+        $objs['PSET'] = array();
+        $objs['actionlist'] = DataManager::getActionsbyItem('Entity',$prefix,$action);
+        $objs['PLIST'] = $this->getProperties(FALSE);
+        $id = $this->id;
+        if ($id == '') {
             $objs['SDATA'] = DataManager::getDefaultValue($objs['PLIST']);
-            if ($curid!='')
+            if ($curid != '')
             {
-                $arr_e[] =$curid;
-                $ent = new Entity($curid,$mode);
+                $arr_e[] = $curid;
+                $ent = new Entity($curid);
                 foreach($objs['PLIST'] as $row) 
                 {
-                    if ($row['valmdid']==$ent->getmdentity()->getid())
+                    if ($row['valmdid'] == $ent->head->getid())
                     {
-                        $objs['SDATA'][DCS_EMPTY_ENTITY][$row['id']]['id']=$curid;
-                        $objs['SDATA'][DCS_EMPTY_ENTITY][$row['id']]['name']=$ent->getname();
+                        $objs['SDATA'][DCS_EMPTY_ENTITY][$row['id']]['id'] = $curid;
+                        $objs['SDATA'][DCS_EMPTY_ENTITY][$row['id']]['name'] = $ent->getname();
                     }    
                 }    
+            } 
+        } else {
+            $objs['SDATA'][$id] = $this->data;
+            $objs['SDATA'][$id]['class'] ='active';               
+            if (!$this->activity) {
+                $objs['SDATA'][$id]['class'] ='erased';               
             }    
-            return $objs;
-        }    
-        $entities = array($id);
-	$artemptable = self::createtemptable_allprop($entities,$mdid, $ver);
-	$sql = "SELECT * FROM tt_pt";
-	$res = DataManager::dm_query($sql);	
-        $properties = $res->fetchAll(PDO::FETCH_ASSOC);
+        }   
+        return $objs;
+    }        
+    
+    public function get_entitydata()
+    {
+        $entities = array($this->id);
+	$artemptable = $this->createtemptable_allprop($entities);
         $str0_req='SELECT et.id';
         $str_req='';
         $str_p = '';
         $arr_id=array();
-        foreach($properties as $row) 
+        foreach($this->properties as $row) 
         {
             $rid = $row['id'];
-            if ($row['type']=='id')
+            if ($row['type'] == 'id')
             {
-                if ($row['valmdtypename']!='Sets')
+                if ($row['valmdtypename'] != 'Sets')
                 {
                     $arr_id[$rid]=$row;
                 }
@@ -743,30 +620,19 @@ class Entity extends Item implements I_Item {
         }
         $str0_req .=" FROM tt_et as et";
         $sql = $str0_req.$str_req." WHERE et.id=:id";
-        $objs['SQL']=$sql;
-        $res = DataManager::dm_query($sql, array('id'=>$id));
+        $res = DataManager::dm_query($sql, array('id'=>$this->id));
         $arr_e = array();
-        $objs['ENT'] = array();
+        $objs = array();
         while($row = $res->fetch(PDO::FETCH_ASSOC)) 
         {
-            $objs['ENT'][] = $row;
-            $objs['SDATA'][$row['id']] = array();                
-            $objs['SDATA'][$row['id']]['class'] ='active';               
-            foreach($properties as $row_properties) 
+            foreach($this->properties as $row_properties) 
             {
                 $rid = $row_properties['id'];
                 $rowname = str_replace("-","",$row_properties['id']);
                 $field_id = "propid_$rowname";
                 $rowid = "id_$rowname";
                 $rowname = "name_$rowname";
-                $objs['SDATA'][$row['id']][$row[$field_id]] = array();                
-                if (strtolower($row_properties['name'])=='activity')
-                {
-                    if (!$row[$rowname])
-                    {    
-                        $objs['SDATA'][$row['id']]['class'] ='erased';               
-                    }    
-                }    
+                $objs[$row[$field_id]] = array();                
                 if (array_key_exists($rowname,$row))
                 {   
                     if ($row[$field_id])
@@ -775,8 +641,8 @@ class Entity extends Item implements I_Item {
                         {
                             if ($row_properties['valmdtypename']=='Sets')
                             {    
-                                $objs['SDATA'][$row['id']][$row[$field_id]]['id']=$row[$rowid];
-                                $objs['SDATA'][$row['id']][$row[$field_id]]['name']=$row_properties['synonym'];
+                                $objs[$row[$field_id]]['id']=$row[$rowid];
+                                $objs[$row[$field_id]]['name']=$row_properties['synonym'];
                             }
                             else
                             {
@@ -787,20 +653,20 @@ class Entity extends Item implements I_Item {
                                         $arr_e[]=$row[$rowid];
                                     }
                                 }
-                                $objs['SDATA'][$row['id']][$row[$field_id]]['id']=$row[$rowid];
-                                $objs['SDATA'][$row['id']][$row[$field_id]]['name']='';
+                                $objs[$row[$field_id]]['id']=$row[$rowid];
+                                $objs[$row[$field_id]]['name']='';
                             }
                         }
                         elseif ($row_properties['type']=='cid')
                         {
-                            $objs['SDATA'][$row['id']][$row[$field_id]]['id']=$row[$rowid];
-                            $objs['SDATA'][$row['id']][$row[$field_id]]['name']=$row[$rowname];
+                            $objs[$row[$field_id]]['id']=$row[$rowid];
+                            $objs[$row[$field_id]]['name']=$row[$rowname];
                         }    
                         else
                         {
-                            $objs['SDATA'][$row['id']][$row[$field_id]] = array('id'=>'','name'=>$row[$rowname]);
-                            $objs['SDATA'][$row['id']][$row[$field_id]]['id']='';
-                            $objs['SDATA'][$row['id']][$row[$field_id]]['name']=$row[$rowname];
+                            $objs[$row[$field_id]] = array('id'=>'','name'=>$row[$rowname]);
+                            $objs[$row[$field_id]]['id']='';
+                            $objs[$row[$field_id]]['name']=$row[$rowname];
                         }    
                     }    
                 }
@@ -808,23 +674,19 @@ class Entity extends Item implements I_Item {
         }  
         if (count($arr_e))
         {
-            $arr_entities = EntitySet::getAllEntitiesToStr($arr_e);
+            $arr_entities = self::getAllEntitiesToStr($arr_e);
             foreach($arr_id as $rid=>$prow)
             {
-                foreach($objs['SDATA'] as $id=>$row) 
+                if (array_key_exists($rid, $objs))
                 {
-                    
-                    if (array_key_exists($rid, $row))
-                    {
-                        $crow = $row[$rid];
-                        if (array_key_exists($crow['id'], $arr_entities)){
-                            if ($arr_entities[$crow['id']]['name']!='')
-                            {    
-                                $objs['SDATA'][$id][$rid]['name']=$arr_entities[$crow['id']]['name'];
-                            }    
+                    $crow = $objs[$rid];
+                    if (array_key_exists($crow['id'], $arr_entities)){
+                        if ($arr_entities[$crow['id']]['name']!='')
+                        {    
+                            $objs[$rid]['name']=$arr_entities[$crow['id']]['name'];
                         }    
-                    }        
-                }
+                    }    
+                }        
             }
         }
 	$msg = DataManager::droptemptable($artemptable);
@@ -841,20 +703,20 @@ class Entity extends Item implements I_Item {
         
 	return $res->fetch(PDO::FETCH_ASSOC);
     }
-    function getSetData($mode,$edit_mode='') 
+    function getSetData($prefix, $action='') 
     {
 	$objs = array();
 	$objs['LDATA']=array();
         $objs['PSET'] = array();
-        $objs['actionlist'] = DataManager::getActionsbyItem('EntitySet',$mode,$edit_mode);
-	$arSetItemProp = self::getMDSetItem($this->mdentity->getid());
+        $objs['actionlist'] = DataManager::getActionsbyItem('EntitySet',$prefix, $action);
+	$arSetItemProp = self::getMDSetItem($this->head->getid());
 	if (!$arSetItemProp)
         {    
             return $objs;
         }    
 	$mdid = $arSetItemProp['valmdid'];
-        $mdprop = new MdpropertySet($mdid);
-	$objs['PSET'] = $mdprop->getProperties(" WHERE mp.mdid = :mdid and mp.ranktoset>0 ",true);
+        $mdprop = new EntitySet($mdid);
+	$objs['PSET'] = $mdprop->getProperties(true,'toset');
         if ($this->id=='')
         {
             return $objs;
@@ -1026,7 +888,7 @@ class Entity extends Item implements I_Item {
         }
         if (count($arr_e))
         {
-            $arr_entities = EntitySet::getAllEntitiesToStr($arr_e);
+            $arr_entities = self::getAllEntitiesToStr($arr_e);
             
             foreach($objs['PSET'] as $rid=>$prow)
             {
@@ -1089,15 +951,15 @@ class Entity extends Item implements I_Item {
             }
 
     }	
-    public function createItem($name,$mode='')
+    public function createItem($name,$prefix='')
     {
         $arSetItemProp = self::getMDSetItem($this->mdentity->getid());
         $mdid = $arSetItemProp['valmdid'];
         $objs = array();
-        $objs['PSET'] = MdpropertySet::getMDProperties($mdid,$mode," WHERE mp.mdid = :mdid ",true);
+        $objs['PSET'] = $this->getProperties(true,'toset');
         $sql = "INSERT INTO \"ETable\" (mdid, name) VALUES (:mdid, :name) RETURNING \"id\"";
         $params = array();
-        $params['mdid']=$mdid;
+        $params['mdid']=$this->head->getid;
         $params['name']= str_replace('Set','Item', $name);
         $res = DataManager::dm_query($sql,$params); 
         if ($res)
@@ -1109,12 +971,12 @@ class Entity extends Item implements I_Item {
             if ($rank>=0)
             {    
                 $item = new Entity($childid);
-                $arPropsUse = self::getPropsUse($item->mdentity->getmditem());
+                $arPropsUse = self::getPropsUse($item->head->getmditem());
                 $irank=0;
                 foreach ($arPropsUse as $prop)
                 {
                     $irank++;
-                    $row = Mdproperty::IsExistTheProp($item->mdentity->getid(),$prop['propid']);
+                    $row = $this->isExistTheProp($prop['propid']);
                     if (!$row)
                     {    
                         $data = array();
@@ -1137,7 +999,7 @@ class Entity extends Item implements I_Item {
                         {    
                             $data['isedate']='true';
                         }
-                        $row = Mdproperty::createMDProperty($data);
+                        $row = $this->createProperty($data);
                     }    
                     if ($row)
                     {
@@ -1165,4 +1027,8 @@ class Entity extends Item implements I_Item {
             }    
         }    
     }        
-  }
+    public function getItemsByName($name) 
+    {
+        return NULL;
+    }
+}

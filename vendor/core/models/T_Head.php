@@ -6,7 +6,7 @@ use DateTime;
 use Exception;
 
 trait T_Head {
-    function get_data($mode='') 
+    function get_data($context) 
     {
         return array(
           'id'=>$this->id,
@@ -16,7 +16,7 @@ trait T_Head {
           'mditem'=>$this->mditem->getid(),
           'mditemsynonym'=>$this->mditem->getsynonym(),
           'version'=>$this->version,
-          'PSET' => $this->getProperties($mode),
+          'PSET' => $this->getProperties($context['PREFIX'],'toset'),
           'navlist' => array(
               $this->mditem->getid() => $this->mditem->getsynonym(),
               $this->id => $this->synonym
@@ -25,7 +25,7 @@ trait T_Head {
     }
     function create($data) 
     {
-        $entity = $this->get_item();
+        $entity = $this->item();
         $entity->set_data($data);
         return $entity->save_new();
     }

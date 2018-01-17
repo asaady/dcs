@@ -110,7 +110,7 @@ class View implements I_View
                     if (($t['type']=='id')||($t['type']=='cid')||($t['type']=='mdid'))
                     {
                         echo "<input type=\"hidden\" class=\"form-control\" id=\"$t[id]\" name=\"$t[id]\" it=\"$t[type]\" vt=\"$t[valmdid]\" value=\"\">\n";
-                        echo "<input type=\"$itype\" class=\"form-control\" st=\"\" id=\"name_$t[id]\" name=\"name_$t[id]\" it=\"$t[type]\" vt=\"$t[valmdid]\" value=\"\"$readonly>\n";
+                        echo "<input type=\"$itype\" class=\"form-control\" st=\"active\" id=\"name_$t[id]\" name=\"name_$t[id]\" it=\"$t[type]\" vt=\"$t[valmdid]\" value=\"\"$readonly>\n";
                         if (($itype != 'hidden')||($readonly == ''))
                         {
                             echo "<ul class=\"types_list\">";
@@ -124,11 +124,11 @@ class View implements I_View
                         {
                             if ($t['type']=='date')  
                             {
-                                echo "<input type=\"$itype\" class=\"form-control datepicker\" st=\"\" id=\"$t[id]\" name=\"$t[id]\" it=\"$t[type]\" valid=\"\" vt=\"\" value=\"\"$readonly>\n";
+                                echo "<input type=\"$itype\" class=\"form-control datepicker\" st=\"active\" id=\"$t[id]\" name=\"$t[id]\" it=\"$t[type]\" valid=\"\" vt=\"\" value=\"\"$readonly>\n";
                             }
                             else
                             {
-                                echo "<input type=\"$itype\" class=\"form-control\" st=\"\" id=\"$t[id]\" name=\"$t[id]\" it=\"$t[type]\" valid=\"\" vt=\"\" value=\"\"$readonly>\n";
+                                echo "<input type=\"$itype\" class=\"form-control\" st=\"active\" id=\"$t[id]\" name=\"$t[id]\" it=\"$t[type]\" valid=\"\" vt=\"\" value=\"\"$readonly>\n";
                             }    
                             if ($t['type']=='bool') 
                             {    
@@ -140,7 +140,7 @@ class View implements I_View
                         }
                         else 
                         {
-                            echo "<input type=\"$itype\" class=\"form-control\" st=\"\" id=\"$t[id]\" name=\"$t[id]\" valid=\"\" vt=\"\" value=\"\"$readonly>\n";                    
+                            echo "<input type=\"$itype\" class=\"form-control\" st=\"active\" id=\"$t[id]\" name=\"$t[id]\" valid=\"\" vt=\"\" value=\"\"$readonly>\n";                    
                         }
                     }
                 echo "</div>";
@@ -251,7 +251,7 @@ class View implements I_View
         $show_head = FALSE;
         if (array_key_exists('PLIST', $data) === TRUE) {
             $show_head = TRUE;
-            if (array_search('Sets', array_column($data['PLIST'], 'valmdtypename')) === TRUE)
+            if (array_search('Sets', array_column($data['PLIST'], 'valmdtypename')) !== FALSE)
             {
                 $show_tab = TRUE;
             }   
@@ -306,7 +306,7 @@ class View implements I_View
                           echo "<div class=\"form-group\">";
                               echo "<label for=\"$t[id]\" class=\"control-label col-md-2\">$t[synonym]</label>";
                               echo "<div class=\"col-md-10\">";
-                                  echo "<textarea class=\"form-control\" rows=\"2\" st=\"\" id=\"$t[id]\" name=\"$t[id]\" it=$t[type]></textarea>";
+                                  echo "<textarea class=\"form-control\" rows=\"2\" st=\"active\" id=\"$t[id]\" name=\"$t[id]\" it=$t[type]></textarea>";
                               echo "</div>";
                           echo "</div>";
                       echo "</div>";
@@ -328,7 +328,7 @@ class View implements I_View
                       echo "</div>";
                   } else {
                       echo "<div class=\"row\">";
-                      $this->outfield($t,'col-md-offset-6 col-md-6',$context['ACTION']);
+                      $this->outfield($t,'col-md-offset-6 col-md-6',$this->context['ACTION']);
                       echo "</div>";        
                   }
               }
@@ -340,7 +340,7 @@ class View implements I_View
         }
         if ($show_tab) {
             echo "</div>";
-            if ($context['ACTION'] !== 'CREATE')
+            if ($this->context['ACTION'] !== 'CREATE')
             {    
                 for($i=0, $props=$data['PLIST'], $size=count($props); $i<$size; $i++)
                 {
@@ -350,7 +350,7 @@ class View implements I_View
                         continue;
                     }    
                     $dop='';
-                    if ($context['CURID']==$t['id'])
+                    if ($this->context['CURID']==$t['id'])
                     {
                         $dop=" in active";
                     }    
@@ -385,6 +385,10 @@ class View implements I_View
     }        
     public function out_navbar($data)
     {        
+        $prefix = '';
+        if ($this->context['PREFIX'] !== '') {
+            $prefix = "/".$this->context['PREFIX'];
+        }
         echo "<div class=\"navbar navbar-default\" role=\"navigation\">
                <div class=\"container-fluid\">";
         if (($this->context['MODE'] === 'CONFIG')||
@@ -404,10 +408,10 @@ class View implements I_View
                             if (\Dcs\Vendor\Core\Models\User::isAuthorized())
                             {    
                                 foreach($this->context['MENU'] as $ct)
-                                {    
-                                  echo "<li><a href=\"".$this->context['PREFIX']."/".$ct['ID']."\">$ct[SYNONYM]</a></li>";
+                                {  
+                                  echo "<li><a href=\"$prefix/$ct[ID]\">$ct[SYNONYM]</a></li>";
                                 }
-                                if (\Dcs\Vendor\Core\Models\User::isAdmin()&&($this->context['MODE'] !== 'CONFIG'))
+                                if (\Dcs\Vendor\Core\Models\User::isAdmin()&&($this->context['PREFIX'] !== 'CONFIG'))
                                 {    
                                     echo "<li>";
                                     echo "<a href=\"/config\">";
@@ -436,7 +440,7 @@ class View implements I_View
                     echo "<li><a href=\"/\"><i class=\"material-icons\">home</i></a></li>";
                     foreach($data['navlist'] as $key=>$val)
                     {    
-                      echo "<li><a href=\"".$this->context['PREFIX']."/$key\">$val</a></li>";
+                      echo "<li><a href=\"$prefix/$key\">$val</a></li>";
                     }
                 echo "</ol>
                     </div>

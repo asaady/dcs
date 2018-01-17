@@ -19,34 +19,6 @@ trait T_Properties {
         }
         return FALSE;
     }
-    public function getPropList($byid=false)
-    {    
-        $objs = array();
-        $plist = $this->getplist();
-        $key = -1;    
-        foreach($this->properties as $prop) 
-        {
-            $rid = $prop['id'];
-            if ($byid)
-            {    
-                $key = $rid;
-            }
-            else
-            {
-                $key++;
-            }    
-            $objs[$key] = array();
-            $objs[$key]['class'] = 'active';
-            if ($key == 'id') {
-                $objs[$key]['class'] = 'hidden';
-            }
-            foreach ($plist as $pkey => $prow)
-            {    
-                $objs[$key][$pkey] = $prop[$pkey];
-            }
-        }
-        return $objs;
-    }    
     public function loadProperties($strwhere)
     {
         $sql = $this->txtsql_getproperties($strwhere);
@@ -64,14 +36,6 @@ trait T_Properties {
         }    
         return $cnt;
     }        
-    public function getProperties($strwhere, $byid=false) 
-    {
-        if (count($this->properties) == 0)
-        {
-            $this->loadProperties($strwhere);
-        }
-        return $this->getPropList($byid);
-    }
     public function createMustBeProperty()
     {
         $arMB = $this->getMustBePropsUse();

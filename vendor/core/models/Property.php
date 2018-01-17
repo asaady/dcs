@@ -63,5 +63,29 @@ class Property extends Model
     {
       return $this->rank;
     }
+    function get_data($context) 
+    {
+        return array('id'=>$this->id,      
+                    'version'=>$this->version,
+                    'PLIST'=>array( 
+                        array('id'=>'id','name'=>'id','synonym'=>'ID','rank'=>0,'type'=>'str','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'hidden','field'=>1),
+                        array('id'=>'name','name'=>'name','synonym'=>'NAME','rank'=>1,'type'=>'str','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active','field'=>1),
+                        array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM','rank'=>3,'type'=>'str','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active','field'=>1),
+                        array('id'=>'propid','name'=>'propid','synonym'=>'PROPID','rank'=>2,'type'=>'cid','valmdid'=>$this->propid,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active','field'=>1),
+                        array('id'=>'length','name'=>'length','synonym'=>'LENGTH','rank'=>5,'type'=>'str','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active','field'=>1),
+                        array('id'=>'prec','name'=>'prec','synonym'=>'PREC','rank'=>6,'type'=>'str','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active','field'=>1),
+                        array('id'=>'rank','name'=>'rank','synonym'=>'RANK','rank'=>7,'type'=>'str','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active','field'=>1),
+                        array('id'=>'ranktoset','name'=>'ranktoset','synonym'=>'RANKTOSET','rank'=>8,'type'=>'str','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active','field'=>1),
+                        array('id'=>'ranktostring','name'=>'ranktostring','synonym'=>'RANKTOSTRING','rank'=>9,'type'=>'str','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active','field'=>1),
+                        array('id'=>'isedate','name'=>'isedate','synonym'=>'ISEDATE','rank'=>13,'type'=>'bool','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active','field'=>1),
+                        array('id'=>'isenumber','name'=>'isenumber','synonym'=>'ISENUMBER','rank'=>14,'type'=>'bool','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active','field'=>1),
+                        array('id'=>'isdepend','name'=>'isdepend','synonym'=>'IS DEPENDENT','rank'=>15,'type'=>'bool','valmdid'=>DCS_EMPTY_ENTITY,'valmdtypename'=>DCS_TYPE_EMPTY,'class'=>'active','field'=>1)
+                    ),
+                    'navlist'=>array(
+                    $this->id=>$this->synonym
+                    )
+              );
+
+    }
 }
 

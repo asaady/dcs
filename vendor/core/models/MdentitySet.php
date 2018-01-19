@@ -24,54 +24,36 @@ class MdentitySet extends Head implements I_Head
     public function loadProperties() 
     {
         $this->properties = array(
-            'id'=>array('id'=>'id','name'=>'id','synonym'=>'ID','rank'=>0,'type'=>'str','class'=>'hidden','field'=>1),
-            'name'=>array('id'=>'name','name'=>'name','synonym'=>'NAME','rank'=>1,'type'=>'str','class'=>'active','field'=>1),
-            'synonym'=>array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM','rank'=>3,'type'=>'str','class'=>'active','field'=>1),
-            'mditem'=>array('id'=>'mditem','name'=>'mditem','synonym'=>'MDITEM','rank'=>4,'type'=>'cid','class'=>'hidden','field'=>1)
+            'id'=>array('id'=>'id','name'=>'id','synonym'=>'ID','rank'=>0,'ranktoset'=>1,'ranktostring'=>0,'type'=>'str','valmdtypename'=>'','class'=>'hidden','field'=>1),
+            'name'=>array('id'=>'name','name'=>'name','synonym'=>'NAME','rank'=>1,'ranktoset'=>2,'ranktostring'=>1,'type'=>'str','valmdtypename'=>'','class'=>'active','field'=>1),
+            'synonym'=>array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM','rank'=>3,'ranktoset'=>3,'ranktostring'=>0,'type'=>'str','valmdtypename'=>'','class'=>'active','field'=>1),
+            'mditem'=>array('id'=>'mditem','name'=>'mditem','synonym'=>'MDITEM','rank'=>4,'ranktoset'=>0,'ranktostring'=>0,'type'=>'cid','valmdtypename'=>'Cols','class'=>'hidden','field'=>1)
             );        
     }        
-    public function getDetails($entityid) 
-    {
-        return array('id'=>'','mdid'=>'','mditem'=>'');
-    }
-    function get_data($mode='') 
-    {
-        return array(
-          'id'=>$this->id,
-          'name'=>$this->name,
-          'synonym'=>$this->synonym,
-          'version'=>$this->version,
-          'PSET' => $this->getProperties($mode),
-          'navlist' => array(
-              $this->id => $this->synonym
-            )
-          );
-    }
     function item()
     {
         return new Mdentity($this->id);
     }
-    function head($mdid='')
-    {
+    function load_data() {
         return NULL;
     }
-    function getProperties($mode = '') 
-    {
-        if ($mode == 'CONFIG')
-        {
-            $this->properties['id']['class'] = 'readonly';
-        }    
-        return $this->properties;
-    }
+//    function getProperties($mode = '') 
+//    {
+//        if ($mode == 'CONFIG')
+//        {
+//            $this->properties['id']['class'] = 'readonly';
+//        }    
+//        return $this->properties;
+//    }
     
     public function getItemsByFilter($context, $filter) 
     {
-        $mode = $context['MODE'];
+        $prefix = $context['PREFIX'];
         $action = $context['ACTION'];
 	$sql = "SELECT md.id, md.name, md.synonym, md.mditem FROM \"MDTable\" AS md WHERE md.mditem= :mditem";
         $params = array('mditem'=>$this->id);
         $dop = DataManager::get_md_access_text($action);
-        if ($dop!='')
+        if ($dop != '')
         {    
             $params['userid'] = $_SESSION['user_id'];
             $sql .= " AND ".$dop;
@@ -79,13 +61,13 @@ class MdentitySet extends Head implements I_Head
         $sth = DataManager::dm_query($sql,$params);        
         $objs = array();
         $objs['PLIST'] = array();
-        $objs['PSET'] = $this->getProperties($mode);
+        $objs['PSET'] = $this->getProperties(TRUE,'toset');
         $objs['SDATA'] = array();
         $objs['SDATA'][$this->id] = array();
         $objs['SDATA'][$this->id]['id'] = array('id'=>$this->id,'name'=>'');
         $objs['SDATA'][$this->id]['name'] = array('id'=>'','name'=>$this->name);
         $objs['SDATA'][$this->id]['synonym'] = array('id'=>'','name'=>$this->synonym);
-        $objs['actionlist'] = DataManager::getActionsbyItem('EntitySet',$mode,$action);          
+        $objs['actionlist'] = DataManager::getActionsbyItem('EntitySet',$prefix,$action);          
         $objs['LDATA'] = array();
         while($row = $sth->fetch(PDO::FETCH_ASSOC)) 
         {

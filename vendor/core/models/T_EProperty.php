@@ -4,34 +4,6 @@ namespace Dcs\Vendor\Core\Models;
 use PDO;
 
 trait T_EProperty {
-    public function txtsql_getproperties() 
-    {
-        $sql = "SELECT mp.id, mp.propid, pr.name as name_propid, mp.name, 
-                       mp.synonym, pst.value as typeid, pt.name as type, 
-                       mp.length, mp.prec, mp.mdid, mp.rank, mp.ranktostring, 
-                       mp.ranktoset, mp.isedate, mp.isenumber, mp.isdepend, 
-                       pmd.value as valmdid, valmd.name AS name_valmdid, 
-                       valmd.synonym AS valmdsynonym, valmd.mditem as valmditem, 
-                       mi.name as valmdtypename, 1 as field FROM \"MDProperties\" AS mp
-		  LEFT JOIN \"CTable\" as pr
-		    LEFT JOIN \"CPropValue_mdid\" as pmd
-        		INNER JOIN \"MDTable\" as valmd
-                            INNER JOIN \"CTable\" as mi
-                            ON valmd.mditem = mi.id
-                        ON pmd.value = valmd.id
-		    ON pr.id = pmd.id
-		    LEFT JOIN \"CPropValue_cid\" as pst
-                        INNER JOIN \"CProperties\" as cprs
-                        ON pst.pid = cprs.id
-                        AND cprs.name='type'
-                        INNER JOIN \"CTable\" as pt
-                        ON pst.value = pt.id
-		    ON pr.id = pst.id
-		  ON mp.propid = pr.id
-		WHERE mp.mdid = :mdid 
-		ORDER BY rank";
-        return $sql;
-    }
     public function getplist($prefix='') 
     {
         $plist = array(

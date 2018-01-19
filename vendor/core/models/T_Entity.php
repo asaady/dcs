@@ -5,143 +5,64 @@ use PDO;
 use DateTime;
 
 trait T_Entity {
-    public function gettoString() 
+    public function txtsql_getproperties() 
     {
-        $artoStr = array();
-        if ($this->head->getmditemname() == 'Sets') {
-            return $this->name;
-        }
-        foreach($this->properties as $prop)
-        {
-            if ($prop['ranktostring'] > 0) 
-            {
-              $artoStr[$prop['id']] = $prop['ranktostring'];
-            }
-        }
-        if (!count($artoStr)) {
-            foreach($this->properties as $prop) {
-                if ($prop['rank'] > 0) {
-                  $artoStr[$prop['id']] = $prop['rank'];
-                }  
-            }
-            if (count($artoStr)) {
-              asort($artoStr);
-              array_splice($artoStr,1);
-            }  
-        } else {
-            asort($artoStr);
-        }
-        if (count($artoStr)) {
-            $res = '';
-            foreach($artoStr as $prop => $rank)
-            {
-                if ($this->head->getmditemname() == 'Docs')
-                {
-                    if ($this->properties[$prop]['isenumber'])
-                    {
-                        continue;
-                    }    
-                    if ($this->properties[$prop]['isedate'])
-                    {
-                        continue;
-                    }    
-                }    
-                $name = $this->data[$prop]['name'];
-                if ($this->properties[$prop]['type'] == 'date')
-                {
-                    $name =substr($name,0,10);
-                }
-                $res .=' '.$name;
-            }
-            if ($this->head->getmditemname()=='Docs')
-            {
-                $datetime = new DateTime($this->edate);
-                $res = $this->head->getsynonym()." №".$this->enumber." от ".$datetime->format('d-m-y').$res;
-            }
-            else    
-            {
-                if ($res!='')
-                {
-                    $res = substr($res, 1);
-                }    
-            }    
-            return $res;
-        }
-        else 
-        {
-            return $this->name;
-        }
+        $sql = "SELECT mp.id, mp.propid, pr.name as name_propid, mp.name, 
+                       mp.synonym, pst.value as typeid, pt.name as type, 
+                       mp.length, mp.prec, mp.mdid, mp.rank, mp.ranktostring, 
+                       mp.ranktoset, mp.isedate, mp.isenumber, mp.isdepend, 
+                       pmd.value as valmdid, valmd.name AS name_valmdid, 
+                       valmd.synonym AS valmdsynonym, valmd.mditem as valmditem, 
+                       mi.name as valmdtypename, 1 as field FROM \"MDProperties\" AS mp
+		  LEFT JOIN \"CTable\" as pr
+		    LEFT JOIN \"CPropValue_mdid\" as pmd
+        		INNER JOIN \"MDTable\" as valmd
+                            INNER JOIN \"CTable\" as mi
+                            ON valmd.mditem = mi.id
+                        ON pmd.value = valmd.id
+		    ON pr.id = pmd.id
+		    LEFT JOIN \"CPropValue_cid\" as pst
+                        INNER JOIN \"CProperties\" as cprs
+                        ON pst.pid = cprs.id
+                        AND cprs.name='type'
+                        INNER JOIN \"CTable\" as pt
+                        ON pst.value = pt.id
+		    ON pr.id = pst.id
+		  ON mp.propid = pr.id
+		WHERE mp.mdid = :mdid 
+		ORDER BY rank";
+        return $sql;
     }
-    public function getDetails($entityid) 
+    public function loadProperties()
     {
-	$sql = "select et.id, '' as name, '' as synonym, 
-                et.mdid , md.mditem as mditem, md.name as mdname, md.synonym as mdsynonym, 
-                tp.name as mdtypename, tp.synonym as mdtypedescription 
-                FROM \"ETable\" as et
-		    INNER JOIN \"MDTable\" as md
-			INNER JOIN \"CTable\" as tp
-			ON md.mditem = tp.id
-		    ON et.mdid = md.id 
-		WHERE et.id=:entityid";  
-	$res = DataManager::dm_query($sql,array('entityid'=>$entityid));
-        $objs = $res->fetch(PDO::FETCH_ASSOC);
-	if(!$objs) {
-            $objs = array('id'=>'','mdid'=>'','mditem'=>'');
-	}
-        return $objs;
-    }
-    public function get_tt_sql_data()
-    {
-        $artemptable = array();
-        $sql = "SELECT max(it.dateupdate) AS dateupdate, it.entityid, it.propid "
-                . "FROM \"IDTable\" as it "
-                . "INNER JOIN \"MDProperties\" as mp "
-                . "ON it.propid = mp.id AND mp.mdid = :mdid "
-                . "WHERE it.entityid = :id "
-                . "GROUP BY it.entityid, it.propid";
-        $artemptable[] = DataManager::createtemptable($sql,'tt_id',array('mdid'=>$this->head->getid(),'id'=>$this->id));   
-        $sql = "SELECT t.id as tid, t.userid, ts.dateupdate, ts.entityid
-		FROM \"IDTable\" AS t 
-		INNER JOIN tt_id AS ts
-                ON t.entityid=ts.entityid
-		AND t.propid = ts.propid
-		AND t.dateupdate=ts.dateupdate";
-        $artemptable[] = DataManager::createtemptable($sql,'tt_tv');   
-        $str0_req='SELECT et.id';
-        $str_req='';
-        $str_p = '';
-        foreach($this->properties as $row) 
+        $sql = $this->txtsql_getproperties();
+        if ($sql === '')
         {
-            $rid = $row['id'];
-            $rowname = "$row[id]";
-            $rowname = str_replace("-","",$rowname);
-            $str0_t = ", tv_$rowname.propid as propid_$rowname, pv_$rowname.value as name_$rowname, '' as id_$rowname";
-            $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
-            if ($row['type']=='id') {
-                $str0_t = ", tv_$rowname.propid as propid_$rowname, '' as name_$rowname, pv_$rowname.value as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
-            } elseif ($row['type']=='cid') {
-                $str0_t = ", tv_$rowname.propid as propid_$rowname, ct_$rowname.synonym as name_$rowname, pv_$rowname.value as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname INNER JOIN \"CTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
-            } elseif ($row['type']=='mdid') {
-                $str0_t = ", tv_$rowname.propid as propid_$rowname, ct_$rowname.synonym as name_$rowname, pv_$rowname.value as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname INNER JOIN \"MDTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
-            } elseif ($row['type']=='date') {
-                $str0_t = ", tv_$rowname.propid as propid_$rowname, to_char(pv_$rowname.value,'DD.MM.YYYY') as name_$rowname, '' as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
-            }
-            $str0_req .= $str0_t;
-            $str_req .=$str_t;
-        }
-        $str0_req .=" FROM \"Entity\" as et";
-        $sql = $str0_req.$str_req." WHERE et.id=:id";
-        $artemptable[] = DataManager::createtemptable($sql,'tt_out',array('id'=>$this->id));   
-        return $artemptable;
-    }    
+            return 0;
+        }    
+        $params = array('mdid'=> $this->mdid);
+        $res = DataManager::dm_query($sql,$params);
+        $cnt = 0;
+        $this->properties = array();
+        while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
+            $this->properties[$row['id']] = $row;
+            $cnt++;
+        }    
+        return $cnt;
+    }        
+    public function get_EntitiesFromList($entities, $ttname) 
+    {
+//        if ($entities[0]=='') {
+//            die(var_dump($this));
+//        }
+        $str_entities = "('".implode("','", $entities)."')";
+        $sql = DataManager::get_select_entities($str_entities);
+        return DataManager::createtemptable($sql,$ttname);
+    }
     public function createtemptable_all($tt_entities,&$artemptable)
     {
         $sql = DataManager::get_select_properties(" WHERE mp.mdid=:mdid AND mp.rank>0 ");
-        $artemptable[]= DataManager::createtemptable($sql,'tt_pt',array('mdid'=>($this->head) ? $this->head->getid() : $this->id));   
+        $artemptable[]= DataManager::createtemptable($sql,'tt_pt',array('mdid'=>$this->mdid));   
         
         $sql=DataManager::get_select_maxupdate($tt_entities,'tt_pt');
         $artemptable[] = DataManager::createtemptable($sql,'tt_id');   
@@ -149,121 +70,192 @@ trait T_Entity {
         $sql=DataManager::get_select_lastupdate('tt_id','tt_pt');
         $artemptable[] = DataManager::createtemptable($sql,'tt_tv');   
     }
-    
-    public function createtemptable_allprop($entities)
+    public function createTempTableEntitiesToStr($entities,$count_req) 
     {
 	$artemptable=array();
-        $artemptable[] = self::get_EntitiesFromList($entities,'tt_et');   
-        $this->createtemptable_all('tt_et',$artemptable);
+        
+        $artemptable[] = self::get_EntitiesFromList($entities,'tt_t0');   
+        
+        $sql = DataManager::get_select_unique_mdid('tt_t0');
+        $artemptable[] = DataManager::createtemptable($sql,'tt_t1');   
+        
+        $sql = DataManager::get_select_properties(" WHERE mp.mdid in (SELECT mdid FROM tt_t1) AND mp.ranktostring>0 ");
+        $artemptable[] = DataManager::createtemptable($sql,'tt_t2');   
+        
+        $sql=DataManager::get_select_maxupdate('tt_t0','tt_t2');
+        $artemptable[] = DataManager::createtemptable($sql,'tt_t3');   
+        
+        $sql=DataManager::get_select_lastupdateForReq($count_req,'tt_t3','tt_t0');
+        $artemptable[] = DataManager::createtemptable($sql,'tt_t4');  
         
         return $artemptable;    
     }
-    public function get_findEntitiesByProp($ttname, $propid, $ptype, $access_prop, $filter ,$limit) 
+    public function getEntitiesToStr($entities,&$all_entities,&$data,&$count_req) 
     {
-        $mdid = ($this->head) ? $this->head->getid() : $this->id;
-        $params = array();
-        $rec_limit = $limit*2;
-        $prop_templ_id = '';
-        $strwhere = '';
-        $arprop = array();
-        if ($propid!='')
+        // entities - массив ссылок
+        $artemptable = $this->createTempTableEntitiesToStr($entities,$count_req);
+        $sql = "SELECT * FROM tt_t4";
+	$res = DataManager::dm_query($sql);
+        $objs = $res->fetchAll(PDO::FETCH_ASSOC);
+            
+        $data += $objs;
+        $all_entities +=$entities;
+          
+        $sql = "SELECT DISTINCT pv_id.value as entityid FROM tt_t4 AS ts INNER JOIN \"PropValue_id\" AS pv_id ON ts.tid = pv_id.id";
+	$res = DataManager::dm_query($sql);
+        $objs = array();
+        while ($row = $res->fetch(PDO::FETCH_ASSOC)) 
         {
-            if ($ptype<>'text')
+            if (!in_array($row['entityid'],$all_entities ))
             {
-                $prop_templ_id = $arprop['propid'];
-                $strwhere = DataManager::getstrwhere($filter,$ptype,'pv.value',$params);
+                $objs[] = $row['entityid'];
+            }
+
+        }
+      	DataManager::droptemptable($artemptable);
+        if (count($objs))
+        {
+            $add_entities = $objs;
+            if ($count_req<5) 
+            {//ограничим глубину рекурсии до посмотреть
+                ++$count_req;
+                $add_entities = $this->getEntitiesToStr($add_entities,$all_entities,$data,$count_req);
             }
         }
-        if ($strwhere!='')
-        {
-            $strjoin = "it.entityid";
-            $sql = "SELECT DISTINCT it.entityid as id FROM \"PropValue_$ptype\" as pv INNER JOIN \"IDTable\" as it ON pv.id=it.id AND it.propid=:propid"; 
-            $params['propid']=$propid;
-        }
-        else
-        {
-            $key_edate = array_search(true, array_column($this->properties, 'isedate','id'));
-            if ($key_edate !== FALSE)
-            {
-                //если есть реквизит с установленным флагом isedate сортируем по этому реквизиту по убыванию
-                $strjoin = "et.id";
-                $sql = "SELECT et.id, COALESCE(pv.value,'epoch'::timestamp) as value FROM \"ETable\" as et LEFT JOIN \"IDTable\" as it  INNER JOIN \"PropValue_date\" as pv ON pv.id=it.id AND it.propid=:propid ON et.id=it.entityid "; 
-                $strwhere = " et.mdid=:mdid";
-                $params['propid'] = $key_edate;
-                $params['mdid'] = $mdid;
-            }        
-            else 
-            {
-                $strwhere = " et.mdid=:mdid";
-                $strjoin = "et.id";
-                $sql = "SELECT et.id FROM \"ETable\" as et"; 
-                $params['mdid'] = $mdid;
-            }
-        }   
-        $sql_rls = '';
-        if (count($access_prop))
-        {
-            $arr_prop = array_unique(array_column($access_prop,'propid'));
-            foreach ($arr_prop as $prop)
-            {
-                if ($prop==$prop_templ_id)
-                {
-                    continue;
-                }    
-                $isprop = array_search($prop, array_column($this->properties, 'propid','id'));
-                if ($isprop===FALSE)
-                {
-                    //в текущем объекте нет реквизита с таким значением $prop
-                    continue;
-                }    
-                $str_val='';
-                $propname='';
-                $prop_id= '';
-                foreach ($access_prop as $ap)
-                {
-                    if ($prop<>$ap['propid'])
-                    {
-                        continue;
-                    }    
-                    $rls_type = $ap['type'];
-                    if (($ap['rd']===true)||($ap['wr']===true))
-                    {
-                        $str_val .= ",'"."$ap[value]"."'";
-                    }    
-                    $propname=$ap['propname'];
-                    $prop_id=$ap['propid'];                    
-                }    
-                if ($str_val=='')
-                {
-                    return '';
-                }    
-                $str_val = "(".substr($str_val,1).")";
-                $props_templ = new PropsTemplate($prop);
-                if ($props_templ->getvalmdentity()->getid()==$mdid)    
-                {
-                    $sql_rls .= " INNER JOIN \"ETable\" as et_$propname ON et_$propname.id=$strjoin AND et_$propname.id IN $str_val";
-                }    
-                else
-                {    
-                    if (!in_array($ap['propid'], $params))
-                    {        
-                        $sql_rls .= " INNER JOIN \"IDTable\" as it_$propname inner join \"MDProperties\" as mp_$propname on it_$propname.propid=mp_$propname.id AND mp_$propname.propid=:$propname inner join \"PropValue_$rls_type\" as pv_$propname ON pv_$propname.id=it_$propname.id AND pv_$propname.value in $str_val ON it_$propname.entityid=$strjoin";
-                        $params[$propname]=$prop_id;
-                    }    
-                }    
-            }    
-        }   
-        if ($sql_rls<>'')
-        {
-            $sql .= $sql_rls;
-        }    
-        if ($strwhere<>'')
-        {
-            $sql .= " WHERE $strwhere";
-        }    
-        $sql .= " LIMIT $rec_limit";
+        return $objs;
+    }
+    public function getAllEntitiesToStr($entities) 
+    {
+        $all_entities = array();
+        $count_req = 1;
+        $data = array();
+        $add_entities = $this->getEntitiesToStr($entities,$all_entities, $data,$count_req);
+        $str_entities = "('".implode("','", $all_entities)."')"; 
+    	$sql = "SELECT DISTINCT et.mdid, md.name, md.synonym FROM \"ETable\" as et INNER JOIN \"MDTable\" as md ON et.mdid=md.id WHERE et.id in $str_entities"; 
+	$res = DataManager::dm_query($sql);
+        $armd = $res->fetchAll(PDO::FETCH_ASSOC);
+        $str_md = "('".implode("','", array_column($armd,'mdid'))."')"; 
+        // соберем список ссылок в представлении (ranktostring>0) 
+    	$sql = "SELECT mp.rank, mp.id, mp.name, ct_type.name as type, mp.mdid, mp.synonym, mp.isenumber, mp.isedate FROM \"MDProperties\" as mp "
+                . "INNER JOIN \"CTable\" as pr "
+                . "INNER JOIN \"CPropValue_cid\" as pv_type "
+                . "INNER JOIN \"CProperties\" as cp_type "
+                . "ON pv_type.pid = cp_type.id "
+                . "AND cp_type.name='type' "
+                . "INNER JOIN \"CTable\" as ct_type "
+                . "ON pv_type.value = ct_type.id "
+                . "ON pr.id = pv_type.id "
+                . "ON mp.propid = pr.id "
+                . "WHERE mp.ranktostring>0 AND mp.mdid IN $str_md ORDER BY mp.ranktostring"; 
         
-        return DataManager::createtemptable($sql,$ttname,$params);
-    }    
+	$res = DataManager::dm_query($sql);
+        $props = array();
+        while ($row = $res->fetch(PDO::FETCH_ASSOC)) 
+        {
+            $props[$row['id']] = $row;
+        }
+        $arr_tid = array_unique(array_column($data,'tid'));
+        $str_tid = "('".implode("','", $arr_tid)."')"; 
+	$sql = "SELECT t.id as tid, t.propid, t.entityid,
+		       pv_str.value as str_value, 
+		       pv_int.value as int_value, 
+		       pv_id.value as id_value, 
+		       ct_cid.synonym as cid_value, 
+		       pv_date.value as date_value, 
+		       pv_float.value as float_value, 
+		       pv_file.value as file_value, 
+		       pv_bool.value as bool_value, 
+		       pv_text.value as text_value
+		FROM \"IDTable\" AS t 
+		LEFT JOIN \"PropValue_str\" AS pv_str
+		ON t.id = pv_str.id	
+		LEFT JOIN \"PropValue_id\" AS pv_id
+		ON t.id = pv_id.id	
+		LEFT JOIN \"PropValue_cid\" AS pv_cid
+                INNER JOIN \"CTable\" as ct_cid
+                ON pv_cid.value=ct_cid.id
+		ON t.id = pv_cid.id	
+		LEFT JOIN \"PropValue_int\" AS pv_int
+		ON t.id = pv_int.id	
+		LEFT JOIN \"PropValue_date\" AS pv_date
+		ON t.id = pv_date.id	
+		LEFT JOIN \"PropValue_bool\" AS pv_bool
+		ON t.id = pv_bool.id	
+		LEFT JOIN \"PropValue_file\" AS pv_file
+		ON t.id = pv_file.id	
+		LEFT JOIN \"PropValue_text\" AS pv_text
+		ON t.id = pv_text.id	
+		LEFT JOIN \"PropValue_float\" AS pv_float
+		ON t.id = pv_float.id  
+                WHERE t.id in $str_tid";
+        
+	$res = DataManager::dm_query($sql);
+        $vals = $res->fetchAll(PDO::FETCH_ASSOC);
+        $objs=array();
+        for ($i=$count_req;$i>0;$i--){
+            foreach ($armd as $mdrow) 
+            {
+                $mdid = $mdrow['mdid'];
+                $filtered_prop = array_filter ($props, function ($item) use ($mdid) { return ($item['mdid']==$mdid); });
+                $filtered_data = array_filter ($data, function ($item) use ($i, $mdid) { return (($item['creq']==$i)AND($item['mdid']==$mdid)); });
+
+                foreach ($filtered_data as $row_data)
+                {    
+                    $entityid = $row_data['entityid'];
+                    if (count($objs)) 
+                    {
+                        $filtered_objs = array_filter ($objs, function ($item) use ($entityid) { return ($item['id']==$entityid); });
+                        if (count($filtered_objs))
+                        {
+                            continue;
+                        }
+                    }    
+                    $objs[$entityid] = array();
+                    $objs[$entityid]['name']=''; 
+                    $objs[$entityid]['id']=$entityid; 
+                    foreach ($filtered_prop as $row_prop)
+                    {
+                        $propid = $row_prop['id'];
+                        $colname= "$row_prop[type]_value";
+                        $filtered_vals = array_filter ($vals, function ($item) use ($entityid,$propid) { return (($item['entityid']==$entityid)AND($item['propid']==$propid)); });
+                        if (count($filtered_vals))
+                        {
+                            foreach ($filtered_vals as $row_val)
+                            {
+                                if ($row_prop['type']=='id')
+                                {
+                                    $valid = $row_val[$colname];    
+                                    if (array_key_exists($valid, $objs))
+                                    {
+                                        $cname = $objs[$valid];
+                                        $objs[$entityid]['name'] .= " $cname[name]";
+                                    }
+                                }
+                                else
+                                {
+                                    $name = $row_val[$colname];
+                                    if ($row_prop['isenumber']===true)
+                                    {    
+                                        $name =$mdrow['synonym']." №$name";
+                                    }
+                                    elseif ($row_prop['isedate']===true)
+                                    {
+                                        $datetime = new DateTime($name);
+                                        $name = " от ".$datetime->format('d-m-y');
+                                    }    
+                                    $objs[$entityid]['name'].=" $name";
+                                }
+                            }
+                        }
+                    }    
+                    if ($objs[$entityid]['name']!='')
+                    {    
+                        $objs[$entityid]['name'] = trim($objs[$entityid]['name']);
+                    }    
+                }
+            }    
+        }
+        return $objs;
+    }
 }            
 

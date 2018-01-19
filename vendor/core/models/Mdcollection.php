@@ -4,56 +4,17 @@ namespace Dcs\Vendor\Core\Models;
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 
 use PDO;
-
-class Mdentity extends Head implements I_Head, I_Property
+class Mdcollection extends Head implements I_Head, I_Property
 {
-    use T_EProperty;
-    
-//    public function getProperties($byid = FALSE, $filter = '') 
-//    {
-//        
-//        $objs = array();
-//        if (is_callable($filter)) {
-//            $f = $filter;
-//        } else {
-//            if (strtolower($filter) == 'toset') {
-//                $f = function($item) {
-//                    return $item['ranktoset'] > 0;
-//                };
-//            } elseif (strtolower($filter) == 'tostring') {
-//                $f = function($item) {
-//                    return $item['ranktostring'] > 0;
-//                };
-//            } else {
-//                $f = NULL;
-//            }
-//        }
-//        $plist = $this->getplist();
-//        $key = -1;    
-//        foreach($plist as $prop) 
-//        {
-//            $rid = $prop['id'];
-//            if (($rid !== 'id')&&($f !== NULL)&&(!$f($prop))) {
-//                continue;
-//            }
-//            if ($byid) {    
-//                $key = $rid;
-//            } else {
-//                $key++;
-//            }    
-//            $objs[$key] = $prop;
-//            $objs[$key]['class'] = 'active';
-//            if ($key == 'id') {
-//                $objs[$key]['class'] = 'hidden';
-//            }
-//        }
-//        return $objs;
-//    }
-//    
+    use T_CProperty;
     
     public function item() 
     {
         return new Mdproperty($this->id);
+    }
+    public function head($mdid='') 
+    {
+        return NULL;
     }
     function getItemsByFilter($context, $filter)
     {
@@ -233,3 +194,4 @@ class Mdentity extends Head implements I_Head, I_Property
         return NULL;
     }
 }
+

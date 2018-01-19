@@ -7,16 +7,13 @@ use Exception;
 
 class CollectionSet extends Head implements I_Head, I_Property
 {
+    use T_Head;
     use T_Collection;
     use T_CProperty;
     
     public function item() 
     {
         return new CollectionItem($this->id);
-    }
-    public function head($mdid='') 
-    {
-        return NULL;
     }
     public function createtemptable_all($entities)
     {
@@ -27,13 +24,13 @@ class CollectionSet extends Head implements I_Head, I_Property
         
         return $artemptable;
     }
-    public function findCollByProp($filter) 
-    {
 //      $filter: array 
 //      id = property id (CProperties)
 //      val = filter value
 //      val_min = min filter value (optional)    
 //      val_max = max filter value (optional)    
+    public function findCollByProp($filter) 
+    {
         $ftype='';
         $dbtable = '';
         $propid = $filter['filter_id']['id'];

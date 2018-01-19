@@ -127,9 +127,9 @@ class Route {
                 UNION SELECT 2,'MdentitySet', 'Head', ct.name, ct.id, ct.synonym, md.name FROM \"CTable\" as ct INNER JOIN \"MDTable\" as md ON ct.mdid=md.id AND md.name='MDitems' WHERE ct.id=:itemid
                 UNION SELECT 1,'Entity', 'Head', et.name, et.id, et.name, md.name FROM \"ETable\" as et INNER JOIN \"MDTable\" as md ON et.mdid = md.id WHERE et.id=:itemid
                 UNION SELECT 5,'CollectionItem', 'Head', ct.name, ct.id, ct.synonym, md.name FROM \"CTable\" as ct INNER JOIN \"MDTable\" as md ON ct.mdid=md.id AND md.name<>'MDitems' WHERE ct.id=:itemid
-                UNION SELECT 3,'Mdproperty', 'Head', mp.name, mp.id, mp.synonym, md.name  FROM \"MDProperties\" as mp INNER JOIN \"MDTable\" as md ON mp.mdid=md.id WHERE mp.id=:itemid
-                UNION SELECT 6,'Cproperty', 'Head', cp.name, cp.id, cp.synonym, md.name FROM \"CProperties\" as cp INNER JOIN \"MDTable\" as md ON cp.mdid=md.id WHERE cp.id=:itemid 
-                UNION SELECT 8,'RegProperty', 'Head', mp.name, mp.id, mp.synonym, md.name  FROM \"RegProperties\" as mp INNER JOIN \"MDTable\" as md ON mp.mdid=md.id WHERE mp.id=:itemid";
+                UNION SELECT 3,'EProperty', 'Head', mp.name, mp.id, mp.synonym, md.name  FROM \"MDProperties\" as mp INNER JOIN \"MDTable\" as md ON mp.mdid=md.id WHERE mp.id=:itemid
+                UNION SELECT 6,'CProperty', 'Head', cp.name, cp.id, cp.synonym, md.name FROM \"CProperties\" as cp INNER JOIN \"MDTable\" as md ON cp.mdid=md.id WHERE cp.id=:itemid 
+                UNION SELECT 8,'RProperty', 'Head', mp.name, mp.id, mp.synonym, md.name  FROM \"RegProperties\" as mp INNER JOIN \"MDTable\" as md ON mp.mdid=md.id WHERE mp.id=:itemid";
 
         $artt = array();
 //        $artt[] = DataManager::createtemptable($sql, 'tt0', array('itemid' => $itemid, 'prefix' => $prefix));

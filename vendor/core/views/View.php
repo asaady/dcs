@@ -342,20 +342,20 @@ class View implements I_View
             echo "</div>";
             if ($this->context['ACTION'] !== 'CREATE')
             {    
-                for($i=0, $props=$data['PLIST'], $size=count($props); $i<$size; $i++)
+                for($i=0, $props = $data['PLIST'], $size = count($props); $i<$size; $i++)
                 {
                     $t=$props[$i];
-                    if ($t['valmdtypename']!=='Sets')
+                    if ($t['valmdtypename'] !== 'Sets')
                     {
                         continue;
                     }    
                     $dop='';
-                    if ($this->context['CURID']==$t['id'])
+                    if ($this->context['CURID'] == $t['id'])
                     {
                         $dop=" in active";
                     }    
                     echo "<div id=\"$t[id]\" class=\"tab-pane fade$dop\">";
-                    $this->set_view($data['sets'][$t['id']]);
+                    $this->set_view($data['SETS'][$t['id']]);
                     echo "</div>";
                 }
             }    

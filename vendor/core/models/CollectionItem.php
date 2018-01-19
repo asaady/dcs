@@ -5,7 +5,9 @@ use PDO;
 use DateTime;
 use Exception;
 
-class CollectionItem extends Head implements I_Head, I_Property {
+class CollectionItem extends Head implements I_Head, I_Property 
+{
+    use T_Head;
     use T_Item;
     use T_Collection;
     use T_CProperty;
@@ -13,9 +15,43 @@ class CollectionItem extends Head implements I_Head, I_Property {
     function item() {
         return NULL;
     }
-    function head($mdid='') {
-        return new CollectionSet($mdid);
-    }
+    public function get_tt_sql_data()
+    {
+        $sql = "SELECT ct.id, ct.name, ct.synonym, ct.mdid";
+        $join = " FROM \"CTable\" AS ct";
+        $params = array();
+        foreach ($this->properties as $row)
+        {
+            if ($row['field'] == 0) {
+                continue;
+            }
+            $rowname = str_replace("  ","",$row['name']);
+            $rowname = str_replace(" ","",$rowname);
+            $rowtype = $row['type'];
+            if ($rowtype=='cid')
+            {
+                $join .= " LEFT JOIN \"CPropValue_$rowtype\" as pv_$rowname INNER JOIN \"CTable\" as ct_$rowname ON pv_$rowname.value = ct_$rowname.id ON ct.id=pv_$rowname.id AND pv_$rowname.pid = :pv_$rowname";
+                $sql .= ", pv_$rowname.value as id_$rowname, ct_$rowname.synonym as name_$rowname";
+            }    
+            elseif ($rowtype=='mdid')
+            {
+                $join .= " LEFT JOIN \"CPropValue_$rowtype\" as pv_$rowname INNER JOIN \"MDTable\" as ct_$rowname ON pv_$rowname.value = ct_$rowname.id ON ct.id=pv_$rowname.id AND pv_$rowname.pid = :pv_$rowname";
+                $sql .= ", pv_$rowname.value as id_$rowname, ct_$rowname.synonym as name_$rowname";
+            }    
+            else 
+            {
+                $join .= " LEFT JOIN \"CPropValue_$rowtype\" as pv_$rowname ON ct.id=pv_$rowname.id AND pv_$rowname.pid = :pv_$rowname";
+                $sql .= ", pv_$rowname.value as name_$rowname, '' as id_$rowname";
+                
+            }
+            $params["pv_$rowname"]=$row['id'];
+        }        
+        $sql = $sql.$join." WHERE ct.id = :id";
+        $params['id'] = $this->id;
+        $artemptable = array();
+        $artemptable[] = DataManager::createtemptable($sql,'tt_out',$params);   
+        return $artemptable;
+   }        
     function update($data) 
     {
         if ($this->head->getname()=='Users')

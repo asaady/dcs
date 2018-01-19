@@ -7,8 +7,9 @@ use Exception;
 
 class Entity extends Head implements I_Head, I_Property 
 {
-    use T_Item;
+    use T_Head;
     use T_Entity;
+    use T_Item;
     use T_EProperty;
     
     protected $activity;
@@ -38,70 +39,139 @@ class Entity extends Head implements I_Head, I_Property
     {
         return NULL;
     }
-    function head($mdid) 
+    function __toString() 
     {
-        return new EntitySet($mdid);
+      return $this->name;
+    }
+    public function gettoString() 
+    {
+        $artoStr = array();
+        if ($this->head->get_head()->getname() == 'Sets') {
+            return $this->name;
+        }
+        foreach($this->properties as $prop)
+        {
+            if ($prop['ranktostring'] > 0) 
+            {
+              $artoStr[$prop['id']] = $prop['ranktostring'];
+            }
+        }
+        if (!count($artoStr)) {
+            foreach($this->properties as $prop) {
+                if ($prop['rank'] > 0) {
+                  $artoStr[$prop['id']] = $prop['rank'];
+                }  
+            }
+            if (count($artoStr)) {
+              asort($artoStr);
+              array_splice($artoStr,1);
+            }  
+        } else {
+            asort($artoStr);
+        }
+        $isDocs = $this->head->get_head()->getname() === 'Docs';
+        if (count($artoStr)) {
+            $res = '';
+            foreach($artoStr as $prop => $rank)
+            {
+                if ($isDocs)
+                {
+                    if ($this->properties[$prop]['isenumber'])
+                    {
+                        continue;
+                    }    
+                    if ($this->properties[$prop]['isedate'])
+                    {
+                        continue;
+                    }    
+                }    
+                $name = $this->data[$prop]['name'];
+                if ($this->properties[$prop]['type'] == 'date')
+                {
+                    $name =substr($name,0,10);
+                }
+                $res .=' '.$name;
+            }
+            if ($isDocs)
+            {
+                $datetime = new DateTime($this->edate);
+                $res = $this->head->getsynonym()." №".$this->enumber." от ".$datetime->format('d-m-y').$res;
+            }
+            else    
+            {
+                if ($res!='')
+                {
+                    $res = substr($res, 1);
+                }    
+            }    
+            return $res;
+        }
+        else 
+        {
+            return $this->name;
+        }
     }
     function getactivity()
     {
         return $this->activity;
     }
-    function get_data($prefix = '') 
+    //ret: array temp table names 
+    public function get_tt_sql_data()
     {
-        if ($this->head->getmditemname() != 'Items')
+        $artemptable = array();
+        $sql = "SELECT max(it.dateupdate) AS dateupdate, it.entityid, it.propid "
+                . "FROM \"IDTable\" as it "
+                . "INNER JOIN \"MDProperties\" as mp "
+                . "ON it.propid = mp.id AND mp.mdid = :mdid "
+                . "WHERE it.entityid = :id "
+                . "GROUP BY it.entityid, it.propid";
+        $artemptable[] = DataManager::createtemptable($sql,'tt_id',
+                array('mdid'=>$this->mdid,'id'=>$this->id));   
+        $sql = "SELECT t.id as tid, t.userid, 
+                ts.dateupdate, ts.entityid, ts.propid
+		FROM \"IDTable\" AS t 
+		INNER JOIN tt_id AS ts
+                ON t.entityid=ts.entityid
+		AND t.propid = ts.propid
+		AND t.dateupdate=ts.dateupdate";
+        $artemptable[] = DataManager::createtemptable($sql,'tt_tv');   
+        $str0_req='SELECT et.id';
+        $str_req='';
+        $str_p = '';
+        foreach($this->properties as $row) 
         {
-            $navlist = array(
-                    $this->mditem->getid() => 
-                                $this->mditem->getsynonym(),
-                    $this->head->getid() => $this->head->getsynonym(),
-                    $this->id => $this->getshortname()
-                );
-        }   
-        else
-        {
-            $setid = self::get_set_by_item($this->id); 
-            $entityid = self::get_entity_by_setid($setid);
-            $entity = new Entity($entityid);
-            $mdentity = $entity->head;
-            $navlist = array(
-                    $mdentity->getmditem()->getid() => $mdentity->getmditem()->getsynonym(),
-                    $mdentity->getid() => $mdentity->getsynonym(),
-                    $entity->getid() => $entity->getshortname(),
-                    $this->id => $this->name
-                );
-        }    
-        $sets = array();
-        foreach ($this->properties as $prop) {
-            if ($prop['valmdtypename'] != 'Sets') {
+            if ($row['id'] == 'id') {
                 continue;
             }
-            $mdprop = new EntitySet($prop['valmdid']);
-            $setprop = $mdprop->properties;
-            foreach ($setprop as $sprop) {    
-                if ($sprop['valmdtypename'] == 'Items') {
-                    $mdprop = new EntitySet($sprop['valmdid']);
-                    $sets[$prop['id']] = $mdprop->getProperties(true,'toset');
-                    break;
-                }    
+            if ($row['field'] == 0) {
+                continue;
             }
-        }  
-        return array(
-                'id'=>$this->id,
-                'version'=>$this->version,
-                'name'=>$this->name,
-                'activity'=>$this->activity,
-                'edate'=>$this->edate,
-                'enumber'=>$this->enumber,
-                'num'=>$this->num,
-                'mdsynonym'=>$this->head->getsynonym(),
-                'mdtypedescription'=>$this->mditem->getsynonym(),
-                'PLIST'=>$this->getProperties(FALSE),
-                'PSET'=>array(),
-                'sets' => $sets,
-                'navlist'=>$navlist
-        );        
-    }
-    
+            $rid = $row['id'];
+            $rowname = $this->rowname($rid);
+            $str0_t = ", tv_$rowname.propid as propid_$rowname, pv_$rowname.value as name_$rowname, '' as id_$rowname";
+            $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            if ($row['type']=='id') {
+                $str0_t = ", tv_$rowname.propid as propid_$rowname, '' as name_$rowname, pv_$rowname.value as id_$rowname";
+                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            } elseif ($row['type']=='cid') {
+                $str0_t = ", tv_$rowname.propid as propid_$rowname, ct_$rowname.synonym as name_$rowname, pv_$rowname.value as id_$rowname";
+                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname INNER JOIN \"CTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            } elseif ($row['type']=='mdid') {
+                $str0_t = ", tv_$rowname.propid as propid_$rowname, ct_$rowname.synonym as name_$rowname, pv_$rowname.value as id_$rowname";
+                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname INNER JOIN \"MDTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            } elseif ($row['type']=='date') {
+                $str0_t = ", tv_$rowname.propid as propid_$rowname, to_char(pv_$rowname.value,'DD.MM.YYYY') as name_$rowname, '' as id_$rowname";
+                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            }
+            $str0_req .= $str0_t;
+            $str_req .=$str_t;
+        }
+        $str0_req .=" FROM \"ETable\" as et";
+        $sql = $str0_req.$str_req." WHERE et.id=:id";
+        //die($sql.' id ='.$this->id);
+        $artemptable[] = DataManager::createtemptable($sql,'tt_out',array('id'=>$this->id));   
+        return $artemptable;
+    }    
     public static function get_set_by_item($itemid)
     {
         $sql = "SELECT parentid, childid, rank FROM \"SetDepList\" "
@@ -533,43 +603,50 @@ class Entity extends Head implements I_Head, I_Property
         return array('status'=>'OK', 'id'=>$this->id);
     }
     
-    public function getItemsByFilter($context, $filter)
+//    public function getItemsByFilter($context, $filter)
+//    {
+//        $prefix = $context['PREFIX'];
+//        $action = $context['ACTION'];
+//        $curid = $context['CURID'];
+//    	$objs = array();
+//	$objs['LDATA'] = array();
+//	$objs['SDATA'] = array();
+//        $objs['PSET'] = array();
+//        $objs['actionlist'] = DataManager::getActionsbyItem('Entity',$prefix,$action);
+//        $objs['PLIST'] = $this->getProperties(FALSE);
+//        $id = $this->id;
+//        if ($id == '') {
+//            $objs['SDATA'] = DataManager::getDefaultValue($objs['PLIST']);
+//            if ($curid != '')
+//            {
+//                $arr_e[] = $curid;
+//                $ent = new Entity($curid);
+//                foreach($objs['PLIST'] as $row) 
+//                {
+//                    if ($row['valmdid'] == $ent->head->getid())
+//                    {
+//                        $objs['SDATA'][DCS_EMPTY_ENTITY][$row['id']]['id'] = $curid;
+//                        $objs['SDATA'][DCS_EMPTY_ENTITY][$row['id']]['name'] = $ent->getname();
+//                    }    
+//                }    
+//            } 
+//        } else {
+//            $objs['SDATA'][$id] = $this->data;
+//            $objs['SDATA'][$id]['class'] ='active';               
+//            if (!$this->activity) {
+//                $objs['SDATA'][$id]['class'] ='erased';               
+//            }    
+//        }   
+//        return $objs;
+//    }        
+    public function createtemptable_allprop($entities)
     {
-        $prefix = $context['PREFIX'];
-        $action = $context['ACTION'];
-        $curid = $context['CURID'];
-    	$objs = array();
-	$objs['LDATA'] = array();
-	$objs['SDATA'] = array();
-        $objs['PSET'] = array();
-        $objs['actionlist'] = DataManager::getActionsbyItem('Entity',$prefix,$action);
-        $objs['PLIST'] = $this->getProperties(FALSE);
-        $id = $this->id;
-        if ($id == '') {
-            $objs['SDATA'] = DataManager::getDefaultValue($objs['PLIST']);
-            if ($curid != '')
-            {
-                $arr_e[] = $curid;
-                $ent = new Entity($curid);
-                foreach($objs['PLIST'] as $row) 
-                {
-                    if ($row['valmdid'] == $ent->head->getid())
-                    {
-                        $objs['SDATA'][DCS_EMPTY_ENTITY][$row['id']]['id'] = $curid;
-                        $objs['SDATA'][DCS_EMPTY_ENTITY][$row['id']]['name'] = $ent->getname();
-                    }    
-                }    
-            } 
-        } else {
-            $objs['SDATA'][$id] = $this->data;
-            $objs['SDATA'][$id]['class'] ='active';               
-            if (!$this->activity) {
-                $objs['SDATA'][$id]['class'] ='erased';               
-            }    
-        }   
-        return $objs;
-    }        
-    
+	$artemptable=array();
+        $artemptable[] = $this->get_EntitiesFromList($entities,'tt_et');   
+        $this->createtemptable_all('tt_et',$artemptable);
+        
+        return $artemptable;    
+    }
     public function get_entitydata()
     {
         $entities = array($this->id);
@@ -646,7 +723,7 @@ class Entity extends Head implements I_Head, I_Property
                             }
                             else
                             {
-                                if (($row[$rowid]!='')&&($row[$rowid]!=DCS_EMPTY_ENTITY))
+                                if (($row[$rowid])&&($row[$rowid]!=DCS_EMPTY_ENTITY))
                                 {
                                     if (!in_array($row[$rowid],$arr_e))
                                     {
@@ -674,7 +751,7 @@ class Entity extends Head implements I_Head, I_Property
         }  
         if (count($arr_e))
         {
-            $arr_entities = self::getAllEntitiesToStr($arr_e);
+            $arr_entities = $this->getAllEntitiesToStr($arr_e);
             foreach($arr_id as $rid=>$prow)
             {
                 if (array_key_exists($rid, $objs))
@@ -707,17 +784,10 @@ class Entity extends Head implements I_Head, I_Property
     {
 	$objs = array();
 	$objs['LDATA']=array();
-        $objs['PSET'] = array();
         $objs['actionlist'] = DataManager::getActionsbyItem('EntitySet',$prefix, $action);
-	$arSetItemProp = self::getMDSetItem($this->head->getid());
-	if (!$arSetItemProp)
-        {    
-            return $objs;
-        }    
-	$mdid = $arSetItemProp['valmdid'];
-        $mdprop = new EntitySet($mdid);
-	$objs['PSET'] = $mdprop->getProperties(true,'toset');
-        if ($this->id=='')
+        die(var_dump($this->properties));
+	$objs['PSET'] = $this->getProperties(true,'toset');
+        if ($this->id == '')
         {
             return $objs;
         }    
@@ -842,12 +912,10 @@ class Entity extends Head implements I_Head, I_Property
                        'id'=>$row[$row['type'].'_value'],
                        'name'=>$row['id_valuename']
                   );
-                if ($row['type']=='id')
+                if ($row['type'] == 'id')
                 {    
-                    if (isset($row['id_value']))
-                    {        
-                        if (!in_array($row['id_value'],$arr_e))
-                        {
+                    if (($row['id_value'])&&($row['id_value']!=DCS_EMPTY_ENTITY)) {        
+                        if (!in_array($row['id_value'],$arr_e)) {
                             $arr_e[] = $row['id_value'];
                         }
                     }    
@@ -888,7 +956,7 @@ class Entity extends Head implements I_Head, I_Property
         }
         if (count($arr_e))
         {
-            $arr_entities = self::getAllEntitiesToStr($arr_e);
+            $arr_entities = $this->getAllEntitiesToStr($arr_e);
             
             foreach($objs['PSET'] as $rid=>$prow)
             {

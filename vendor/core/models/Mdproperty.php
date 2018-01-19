@@ -5,113 +5,39 @@ use PDO;
 
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 
-class Mdproperty extends Property implements I_Property {
-    use T_Property;
+class Mdproperty extends Head implements I_Head, I_Property 
+{
+    use T_Head;
+    use T_Item;
     use T_EProperty;
     
-    protected $propstemplate;
-    protected $typeid;
-    protected $propid;
-    protected $name_propid;
-    protected $isedate;
-    protected $isenumber;
-    protected $isdepend;
-    
-    public function __construct($id) 
+    public function item() 
     {
-        if ($id=='')
-        {
-            throw new Exception("class.MDProperty constructor: id is empty");
-        }
-        
-        $arData = $this->getProperty($id);
-        if ($arData)
-        {
-            //передан id реального свойства метаданного
-            $mdid = $arData['mdid'];
-            $this->propstemplate = new PropsTemplate($arData['propid']);
-            $this->id = $id;
-            $this->name = $arData['name'];    
-            $this->synonym = $arData['synonym'];  
-            $this->propid = $arData['propid'];
-            $this->name_propid = $arData['name_propid'];
-            $this->type = $arData['type'];    
-            $this->typeid = $arData['typeid'];    
-            $this->length = $arData['length'];    
-            $this->prec = $arData['prec'];
-            $this->rank = $arData['rank'];        
-            $this->ranktostring = $arData['ranktostring'];
-            $this->ranktoset = $arData['ranktoset'];
-            $this->isedate = $arData['isedate'];
-            $this->isenumber = $arData['isenumber'];
-            $this->isdepend = $arData['isdepend'];
-            $this->valmdid = $arData['valmdid'];
-            $this->name_valmdid = $arData['valmdname'];
-            $this->valmdtypename = $arData['valmdtypename'];
-        } 
-        else 
-        {
-            //считаем что передан id реального метаданного и создаем пустое свойство
-            $mdid = $id;
-            $this->propstemplate = new PropsTemplate('');
-            $this->id = '';
-            $this->name = '';    
-            $this->synonym = '';    
-            $this->type = 'str';    
-            $this->length = 10;    
-            $this->prec = 0;    
-            $this->rank = 999;    
-            $this->ranktostring = 0;        
-            $this->ranktoset = 0;    
-            $this->isedate = false;        
-            $this->isenumber = false;        
-            $this->isdepend = false;
-        }
-        $this->head = new Mdentity($mdid);
-        $this->version=time();
+        return NULL;
     }
-    function getvalmdid()
+    public function loadProperties()
     {
-        return $this->valmdid;
-    }
-    function isdepend()
-    {
-        return $this->isdepend;
-    }
-    function getpropstemplate()
-    {
-        return $this->propstemplate;
-    }
-    function load_data($mode,$edit_mode) 
-    {
-        $objs = array();
-        $objs['PLIST']=$this->get_plist($mode);
-        $objs['actionlist']= DataManager::getActionsbyItem('Entity', $mode,$edit_mode);
-        $sql = DataManager::get_select_properties(" where mp.id = :id ");
-	$res = DataManager::dm_query($sql,array('id'=>$this->id));
-        $objs['SDATA'] = array();
-        $objs['SDATA'][$this->id] = array();
-        $row = $res->fetch(PDO::FETCH_ASSOC);
-        foreach ($objs['PLIST'] as $prow)
-        {
-            if ($prow['name']=='propid')
-            {
-                $objs['SDATA'][$this->id][$prow['id']] = array('id'=>$row['propid'],'name'=>$row['name_propid']);
-            }   
-            elseif ($prow['name']=='valmdid')
-            {
-                $objs['SDATA'][$this->id][$prow['id']] = array('id'=>$row['valmdid'],'name'=>$row['valmdname']);
-            }    
-            elseif ($prow['name']=='type')
-            {
-                $objs['SDATA'][$this->id][$prow['id']] = array('id'=>$row['typeid'],'name'=>$row['type']);
-            }    
-            else 
-            {
-                $objs['SDATA'][$this->id][$prow['id']] = array('id'=>'','name'=>$row[$prow['name']]);
-            }
-        }    
-        return $objs;
+        $this->properties = array(
+            'id'=>array('id'=>'id','name'=>'id','synonym'=>'ID','rank'=>0,'ranktoset'=>1,'ranktostring'=>0,'type'=>'str','valmdtypename'=>'','class'=>'hidden','field'=>1),
+            'name'=>array('id'=>'name','name'=>'name','synonym'=>'NAME','rank'=>1,'ranktoset'=>2,'ranktostring'=>1,'type'=>'str','valmdtypename'=>'','class'=>'active','field'=>1),
+            'synonym'=>array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM','rank'=>3,'ranktoset'=>3,'ranktostring'=>0,'type'=>'str','valmdtypename'=>'','class'=>'active','field'=>1),
+            'propid'=>array('id'=>'propid','name'=>'propid','synonym'=>'PROPID','rank'=>2,'ranktoset'=>0,'ranktostring'=>0,'type'=>'cid','valmdtypename'=>'','class'=>'active','field'=>1),
+            'name_propid'=>array('id'=>'name_propid','name'=>'name_propid','synonym'=>'NAME_PROPID','rank'=>2,'ranktoset'=>0,'ranktostring'=>0,'type'=>'str','valmdtypename'=>'','class'=>'hidden','field'=>0),
+            'type'=>array('id'=>'type','name'=>'type','synonym'=>'TYPE','rank'=>2,'ranktoset'=>5,'ranktostring'=>0,'type'=>'str','valmdtypename'=>'','class'=>'readonly','field'=>0),
+            'length'=>array('id'=>'length','name'=>'length','synonym'=>'LENGTH','rank'=>5,'ranktoset'=>0,'ranktostring'=>0,'type'=>'int','valmdtypename'=>'','class'=>'active','field'=>1),
+            'prec'=>array('id'=>'prec','name'=>'prec','synonym'=>'PREC','rank'=>6,'ranktoset'=>0,'ranktostring'=>0,'type'=>'int','valmdtypename'=>'','class'=>'active','field'=>1),
+            'rank'=>array('id'=>'rank','name'=>'rank','synonym'=>'RANK','rank'=>7,'ranktoset'=>0,'ranktostring'=>0,'type'=>'int','valmdtypename'=>'','class'=>'active','field'=>1),
+            'ranktoset'=>array('id'=>'ranktoset','name'=>'ranktoset','synonym'=>'RANKTOSET','rank'=>8,'ranktoset'=>0,'ranktostring'=>0,'type'=>'int','valmdtypename'=>'','class'=>'active','field'=>1),
+            'ranktostring'=>array('id'=>'ranktostring','name'=>'ranktostring','synonym'=>'RANKTOSTRING','rank'=>9,'ranktoset'=>0,'ranktostring'=>0,'type'=>'int','valmdtypename'=>'','class'=>'active','field'=>1),
+            'isedate'=>array('id'=>'isedate','name'=>'isedate','synonym'=>'ISEDATE','rank'=>13,'ranktoset'=>0,'ranktostring'=>0,'type'=>'bool','valmdtypename'=>'','class'=>'active','field'=>1),
+            'isenumber'=>array('id'=>'isenumber','name'=>'isenumber','synonym'=>'ISENUMBER','rank'=>14,'ranktoset'=>0,'ranktostring'=>0,'type'=>'bool','valmdtypename'=>'','class'=>'active','field'=>1),
+            'isdepend'=>array('id'=>'isdepend','name'=>'isdepend','synonym'=>'IS DEPENDENT','rank'=>15,'ranktoset'=>0,'ranktostring'=>0,'type'=>'bool','valmdtypename'=>'','class'=>'active','field'=>1),
+            'valmdid' => array('id'=>'valmdid','name'=>'VALMDID','synonym'=>'VALMDID','rank'=>19,'ranktoset'=>0,'ranktostring'=>0,'type'=>'mdid','valmdtypename'=>'','class'=>'readonly','field'=>0),
+            'name_valmdid' => array('id'=>'name_valmdid','name'=>'NAME_VALMDID','synonym'=>'NAME_VALMDID','rank'=>20,'ranktoset'=>8,'ranktostring'=>0,'type'=>'str','valmdtypename'=>'','class'=>'hidden','field'=>0),
+            'valmdtypename' => array('id'=>'valmdtypename','name'=>'VALMDTYPENAME','synonym'=>'VALMDTYPENAME','rank'=>21,'ranktoset'=>9,'ranktostring'=>0,'type'=>'str','valmdtypename'=>'','class'=>'readonly','field'=>0),
+            'field' => array('id'=>'field','name'=>'field','synonym'=>'FIELD','rank'=>25,'ranktoset'=>0,'ranktostring'=>0,'type'=>'int','valmdtypename'=>'','class'=>'hidden','field'=>0),
+             );
+        return count($this->properties);
     }
     function update($data) {
         $sql = '';

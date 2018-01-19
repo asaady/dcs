@@ -168,7 +168,6 @@ function loadset(data,$elist)
 }
 function onLoadValID(data)
 {
-    var cls;
     var action = $("input[name='action']").val();
     var curid = $("input[name='curid']").val();
     var arr_type = ['id','cid','mdid','propid'];
@@ -1195,7 +1194,8 @@ $(document).ready(function()
           type: 'get',
           dataType: 'json',
           data: $data,
-          success: onLoadValID
+          success: onLoadValID,
+          error: function() {console.log(data);}
           }
         );
     }

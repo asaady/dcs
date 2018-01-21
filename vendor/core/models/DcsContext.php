@@ -35,6 +35,7 @@ class DcsContext
         $this->context['LIMIT'] = DCS_COUNT_REC_BY_PAGE;
         $this->context['MENU'] = array();
         $this->context['USERNAME'] = 'Anonymous';
+        $this->context['DATA'] = array();
     } 
     
     public function getcontext()
@@ -95,8 +96,49 @@ class DcsContext
         }
         $validation = Common_data::check_uuid($curval);
         $this->setitems($data, $curval, $validation, $indx, $indd);
+        $this->get_context_data();
     }   
-    
+    public function get_context_data()
+    {        
+        foreach($_POST as $key=>$val)
+        {
+            if (strpos($key,'name_')===false){
+                $pval = filter_input(INPUT_POST, $key, FILTER_SANITIZE_SPECIAL_CHARS);
+                $this->context['DATA'][$key]=array('id' => $pval,'name' => $pval);
+            }
+        }
+        foreach($_POST as $key=>$val)
+        {
+            if (strpos($key,'name_')===false){
+                continue;
+            }
+            $pval = filter_input(INPUT_POST, $key, FILTER_SANITIZE_SPECIAL_CHARS);
+            $curkey = substr($key,5);
+            $this->context['DATA'][$curkey]['name']=$pval;
+            if ($pval==DCS_EMPTY_ENTITY) {
+                $this->context['DATA'][$key]['name']='';
+            }
+        }
+        foreach($_GET as $key=>$val)
+        {
+            if (strpos($key,'name_')===false){
+                $pval = filter_input(INPUT_GET, $key, FILTER_SANITIZE_SPECIAL_CHARS);
+                $this->context['DATA'][$key]=array('id' => $pval,'name' => $pval);
+            }
+        }
+        foreach($_GET as $key=>$val)
+        {
+            if (strpos($key,'name_')===false){
+                continue;
+            }
+            $pval = filter_input(INPUT_POST, $key, FILTER_SANITIZE_SPECIAL_CHARS);
+            $curkey = substr($key,5);
+            $this->context['DATA'][$curkey]['name']=$pval;
+            if ($pval==DCS_EMPTY_ENTITY) {
+                $this->context['DATA'][$key]['name']='';
+            }
+        }
+    }
     public function setattr($attrname, $attrval)
     {
         if (array_key_exists($attrname, $this->context)) {

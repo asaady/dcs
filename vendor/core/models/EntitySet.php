@@ -225,6 +225,7 @@ class EntitySet extends Head implements I_Head, I_Property
 	$objs['LDATA'] = array();
 	$objs['PSET'] = array();
         $objs['actionlist'] = DataManager::getActionsbyItem('EntitySet',$prefix,$action);
+        $objs['navlist'] = $this->get_navlist($context);
         $propid = $filter['filter_id']['id']; //это уид реквизита отбора для выборки
         $docid = (array_key_exists('docid', $filter) ? $filter['docid']['id'] : '');  
         $curid = (array_key_exists('curid', $filter) ? $filter['curid']['id'] : '');  

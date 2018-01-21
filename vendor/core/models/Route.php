@@ -100,10 +100,10 @@ class Route {
             $this->ErrorPage404();        
         }
         $action = $this->action_name;
-//        die($controllername." ".$this->action_name);
         if(method_exists($controller, $action)) {
             $controller->$action($this->context->getcontext());
         } else {
+        die($controllername." ".$this->action_name." classname=".$this->context->getattr('CLASSNAME'));
             $this->ErrorPage404();
         }
     }    

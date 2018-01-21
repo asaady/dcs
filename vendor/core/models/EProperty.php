@@ -42,4 +42,8 @@ class EProperty extends Head implements I_Head, I_Property
         $artemptable[] = DataManager::createtemptable($sql,'tt_out',array('id'=>$this->mdid));   
         return $artemptable;
     }
+    public function txtsql_getproperties()
+    {
+        return "";
+    }
 }

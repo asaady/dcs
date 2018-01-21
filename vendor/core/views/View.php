@@ -436,16 +436,8 @@ class View implements I_View
         }            
         echo "<div class=\"navbar-inner\">
                <div class=\"col-xs-12 col-sm-12 col-md-12\">
-                <ol class=\"breadcrumb\">";
-                    echo "<li><a href=\"/\"><i class=\"material-icons\">home</i></a></li>";
-                    foreach($data['navlist'] as $key=>$val)
-                    {    
-                      echo "<li><a href=\"$prefix/$key\">$val</a></li>";
-                    }
-                echo "</ol>
-                    </div>
-                </div> 
-            </div> <!-- /.container -->
+                <ol class=\"breadcrumb\"><li></li></ol></div></div>";
+        echo "</div> <!-- /.container -->
         </div> <!-- /.navbar -->";
     }    
 }

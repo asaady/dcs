@@ -773,19 +773,11 @@ class Entity extends Head implements I_Head, I_Property
         }   
 	return $objs;
     }
-    public static function getMDSetItem($mdid) 
-    {
-	$sql = DataManager::get_select_properties(" WHERE mi.name='Items' and mp.mdid = :mdid");
-	$res = DataManager::dm_query($sql,array('mdid'=>$mdid));
-        
-	return $res->fetch(PDO::FETCH_ASSOC);
-    }
     function getSetData($prefix, $action='') 
     {
 	$objs = array();
 	$objs['LDATA']=array();
         $objs['actionlist'] = DataManager::getActionsbyItem('EntitySet',$prefix, $action);
-        die(var_dump($this->properties));
 	$objs['PSET'] = $this->getProperties(true,'toset');
         if ($this->id == '')
         {

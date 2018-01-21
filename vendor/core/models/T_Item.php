@@ -20,6 +20,7 @@ trait T_Item
             $objs['SDATA'][$this->id] = $this->data;
         }    
         $objs['actionlist']= DataManager::getActionsbyItem($context['CLASSNAME'],$prefix,$action);
+        $objs['navlist'] = $this->get_navlist($context);
         return $objs;
     }
     public function getItemsByName($name) 

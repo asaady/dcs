@@ -32,14 +32,16 @@ class Controller_Ajax extends Controller
     function action_set_view($context)
     {
         $cur_item = \Dcs\Vendor\Core\Models\Route::getContentByID($context['CURID']);
+        $arData = array('status'=>'ERROR', 'msg'=>"нет обработчика для ".$cur_item['classname']);
         if ($cur_item['classname'] == 'EProperty') {
+            //die(var_dump($this->model));
             $setid = $this->model->getattrid($context['CURID']);
 //            die(var_dump($this->model->getDetails($setid)));
             $set = new Entity($setid);
-            $set->set_head($this); 
+            $set->set_head($this->model); 
             $arData = $set->getSetData($context['PREFIX'],$context['ACTION']);
-            echo json_encode($arData);
         }
+        echo json_encode($arData);
     }
     function action_history($context)
     {

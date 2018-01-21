@@ -16,6 +16,19 @@ function actionlist(data)
         $navtab.append(a_html); 
     }
 }
+function navlist(data)
+{
+    var $navtab = $('ol.breadcrumb');
+    $navtab.empty();
+    var a_html = "<li><a href=\"/\"><i class=\"material-icons\">home</i></a></li>";
+    console.log(data);
+    $.each(data, function(key, val) 
+    {
+      a_html = a_html+"<li><a href=\""+getprefix()+"/"+key+"\">"+val+"</a></li>";
+    });
+    $navtab.append(a_html); 
+}
+
 function onchoice(data)
 {
     var curinp = $("div#ivalue input.form-control");
@@ -49,14 +62,14 @@ $('a').on('show.bs.tab', function (e) {
             data: $data,
             error: function(xhr, error){
                     console.debug(xhr); console.debug(error);
+                window.history.pushState({},null, getprefix()+'/'+itemid+'/'+activeid+'/'+action);            
             },                
-            success: function(result) {
-                onLoadValID(result);
+            success: function(response) {
+                onLoadValID(response);
+                window.history.pushState({},null, getprefix()+'/'+itemid+'/'+activeid+'/'+action);            
             }
         });      
-    }
-    else
-    {
+    } else {
         if ((action=='SET_EDIT')||(action=='SET_VIEW'))
         {
             action = action.substring(4);
@@ -66,13 +79,15 @@ $('a').on('show.bs.tab', function (e) {
         $("input[name='command']").val('load'); 
         $data = $('.ajax').serializeArray();
         $.ajax({
-          url: getprefix()+'/ajax/'+itemid+'/'+action,
-          type: 'get',
-          dataType: 'json',
-          data: $data,
-          success: onLoadValID
-          }
-        );
+            url: getprefix()+'/ajax/'+itemid+'/'+action,
+            type: 'get',
+            dataType: 'json',
+            data: $data,
+            success: function(response) {
+                onLoadValID(response);
+                window.history.pushState({},null, getprefix()+'/'+itemid+'/'+action);            
+            }
+        });
     }    
 });
 
@@ -209,6 +224,7 @@ function onLoadValID(data)
         loadset(data,$elist);
     }    
     actionlist(data['actionlist']);
+    navlist(data['navlist']);
 }
 function onLoadGetData(data) {
     var $curinp = $(":input.form-control[st='info']");
@@ -314,7 +330,8 @@ $('input.form-control[it=bool]').dblclick(function(e) {
 $('body').on('dblclick','#entitylist tr',function () 
 {
     var action = $("input[name='action']").val();
-    var mode = $("input[name='mode']").val();
+    var docid = $("input[name='itemid']").val();
+    var curid = $("input[name='curid']").val();
     var itemid = this.id;
     if (getprefix() === 'CONFIG') {
         action = "edit";
@@ -322,7 +339,7 @@ $('body').on('dblclick','#entitylist tr',function ()
     if (action.substring(0,4) === 'SET_') {
         action = action.substring(4);
     } 
-    location.href=getprefix()+'/'+itemid+'/'+action;
+    location.href=getprefix()+'/'+itemid+'/'+action+'?docid='+docid+'\&propid='+curid;
 });
 $('body').on('dblclick','#modallist tr',function (e) 
 {
@@ -1195,8 +1212,11 @@ $(document).ready(function()
           dataType: 'json',
           data: $data,
           success: onLoadValID,
-          error: function() {console.log(data);}
+          error: function(data) {console.log(data);}
           }
         );
     }
+    window.onpopstate = function(event) {
+        location.href = document.location;
+    };
 });

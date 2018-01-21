@@ -68,6 +68,7 @@ class MdentitySet extends Head implements I_Head
         $objs['SDATA'][$this->id]['name'] = array('id'=>'','name'=>$this->name);
         $objs['SDATA'][$this->id]['synonym'] = array('id'=>'','name'=>$this->synonym);
         $objs['actionlist'] = DataManager::getActionsbyItem('EntitySet',$prefix,$action);          
+        $objs['navlist'] = $this->get_navlist($context);
         $objs['LDATA'] = array();
         while($row = $sth->fetch(PDO::FETCH_ASSOC)) 
         {

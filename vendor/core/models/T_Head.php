@@ -5,25 +5,35 @@ use PDO;
 use DateTime;
 use Exception;
 
+use Dcs\Vendor\Core\Models\Entity;
+
 trait T_Head {
     function get_data($context) 
     {
-        $navlist = array();
-        $this->add_navlist($navlist);
-        if ($this->id) {
-            $navlist[$this->id] = sprintf("%s",$this);
-        } else {
-            $navlist['new'] = 'Новый';
-        }    
+        if  ($this->getmdtypename() == 'Items') {
+            if ((array_key_exists('docid',$context['DATA']) !== FALSE)&&
+                ($context['DATA']['docid']['id'] !== '')&&
+                (array_key_exists('propid',$context['DATA']) !== FALSE)&&
+                ($context['DATA']['propid']['id'] !== '')) {
+                $prop = new EProperty($context['DATA']['propid']['id']);
+                //die(var_dump($prop));
+                $this->set_head($prop);
+                $doc = new Entity($context['DATA']['docid']['id']);
+                $prop->set_head($doc);
+            }    
+        }
         $objs = array(
           'id'=>$this->id,
           'name'=>$this->name,
           'synonym'=>$this->synonym,
-          'version'=>$this->version,
-          'navlist' => $navlist
+          'version'=>$this->version
           );
         $this->prop_to_Data($objs);
         return $objs;
+    }
+    public function get_navid() 
+    {
+        return $this->id;
     }
     function create($data) 
     {
@@ -40,7 +50,7 @@ trait T_Head {
         if ($this->head) {
             $phead = $this->head;
             $phead->add_navlist($navlist); 
-            $navlist[$this->head->getid()] = $this->head->getsynonym();
+            $navlist[$this->head->getid()] = sprintf("%s",$this->head);
         }
     }
     // byid - bool - true : return indexed array by id
@@ -233,6 +243,26 @@ trait T_Head {
                             . "ON mc.mditem = tp.id "
                         . "ON ct.mdid = mc.id "
                     . "WHERE ct.id=:id";
+        } elseif (strpos(__CLASS__,'CollectionItem') !== FALSE) {
+            $sql = "SELECT ct.id, ct.mdid, ct.name, ct.synonym, "
+                    . "mc.name as mdname, mc.synonym as mdsynonym, mc.mditem, "
+                    . "tp.name as mdtypename, tp.synonym as mdtypedescription "
+                    . "FROM \"CTable\" as ct "
+                        . "INNER JOIN \"MDTable\" as mc "
+                            . "INNER JOIN \"CTable\" as tp "
+                            . "ON mc.mditem = tp.id "
+                        . "ON ct.mdid = mc.id "
+                    . "WHERE ct.id=:id";
+        } elseif (strpos(__CLASS__,'EProperty') !== FALSE) {
+            $sql = "SELECT mp.id, mp.mdid, mp.name, mp.synonym, "
+                    . "mc.name as mdname, mc.synonym as mdsynonym, mc.mditem, "
+                    . "tp.name as mdtypename, tp.synonym as mdtypedescription "
+                    . "FROM \"MDProperties\" as mp "
+                        . "INNER JOIN \"MDTable\" as mc "
+                            . "INNER JOIN \"CTable\" as tp "
+                            . "ON mc.mditem = tp.id "
+                        . "ON mp.mdid = mc.id "
+                    . "WHERE mp.id=:id";
         } else {
             return $objs;
         }
@@ -298,18 +328,15 @@ trait T_Head {
         if (strpos($this->get_classname(),'Set') === FALSE) {
             $plist = $this->getProperties(FALSE);
             foreach ($this->properties as $prop) {
-                if ($prop['valmdtypename'] != 'Sets') {
+                if ($prop['valmdtypename'] !== 'Sets') {
                     continue;
                 }
-                $mdprop = new EntitySet($prop['valmdid']);
-                $setprop = $mdprop->properties;
-                foreach ($setprop as $sprop) {    
-                    if ($sprop['valmdtypename'] === 'Items') {
-                        $mdprop = new EntitySet($sprop['valmdid']);
-                        $sets[$prop['id']] = $mdprop->getProperties(true,'toset');
-                        break;
-                    }    
-                }
+                if (!$this->getattrid($prop['id'])) {
+                    $set = new Mdentity($prop['valmdid']);
+                } else {
+                    $set = new Entity($this->getattrid($prop['id']));
+                }    
+                $sets[$prop['id']] = $set->getProperties(true,'toset');
             }  
         } else {
             $pset = $this->getProperties(TRUE,'toset');
@@ -317,5 +344,22 @@ trait T_Head {
         $objs['PLIST'] = $plist;
         $objs['PSET'] = $pset;
         $objs['SETS'] = $sets;
-    }    
+    } 
+    public function get_navlist($context)
+    {
+        $navlist = array();
+        $this->add_navlist($navlist);
+        if ($this->id) {
+            $navlist[$this->id] = sprintf("%s",$this);
+            if (($context['PREFIX'] !== 'CONFIG')&&
+                ($context['CLASSNAME'] === 'Entity')&&
+                ($context['CURID'] !== '')) {
+                    $navlist[$this->id."/$context[CURID]"] = 
+                            $this->getattr($context['CURID']);
+                }
+        } else {
+            $navlist['new'] = 'Новый';
+        }    
+        return $navlist;
+    }        
 }

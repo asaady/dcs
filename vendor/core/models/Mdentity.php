@@ -7,6 +7,9 @@ use PDO;
 
 class Mdentity extends Head implements I_Head, I_Property
 {
+    use T_Head;
+    use T_Item;
+    use T_Entity;
     use T_EProperty;
     
 //    public function getProperties($byid = FALSE, $filter = '') 
@@ -55,28 +58,34 @@ class Mdentity extends Head implements I_Head, I_Property
     {
         return new Mdproperty($this->id);
     }
-    function getItemsByFilter($context, $filter)
+//    function getItemsByFilter($context, $filter)
+//    {
+//        $mode = $context['MODE'];
+//        $action = $context['ACTION'];
+//        $objs = array();
+//        $objs['id'] = $this->id;
+//        $objs['name'] = $this->name;
+//        $objs['synonym'] = $this->synonym;
+//        $objs['version'] = $this->version;
+//        $objs['LDATA']=array();
+//        $objs['PSET'] = $this->getProperties(TRUE,'toset');
+////        die(var_dump($objs['PSET']).var_dump($this->properties));
+//        $objs['actionlist'] = DataManager::getActionsbyItem('Mdentity',$mode,$action);
+//        foreach ($this->properties as $row) {
+//            $objs['LDATA'][$row['id']] = array();
+//            foreach ($objs['PSET'] as $pkey=>$prow)
+//            {
+//                $objs['LDATA'][$row['id']][$pkey]=array('name'=>$row[$prow['id']],'id'=>'');
+//            }    
+//        }
+//        return $objs;
+//    }
+    public function load_data()
     {
-        $mode = $context['MODE'];
-        $action = $context['ACTION'];
-        $objs = array();
-        $objs['id'] = $this->id;
-        $objs['name'] = $this->name;
-        $objs['synonym'] = $this->synonym;
-        $objs['version'] = $this->version;
-        $objs['LDATA']=array();
-        $objs['PSET'] = $this->getProperties(TRUE,'toset');
-//        die(var_dump($objs['PSET']).var_dump($this->properties));
-        $objs['actionlist'] = DataManager::getActionsbyItem('Mdentity',$mode,$action);
         foreach ($this->properties as $row) {
-            $objs['LDATA'][$row['id']] = array();
-            foreach ($objs['PSET'] as $pkey=>$prow)
-            {
-                $objs['LDATA'][$row['id']][$pkey]=array('name'=>$row[$prow['id']],'id'=>'');
-            }    
+            $this->data[$row['id']] = array('id'=>'','name'=>$row['name']);
         }
-        return $objs;
-    }
+    }        
     function update($data) 
     {
         $sql = '';

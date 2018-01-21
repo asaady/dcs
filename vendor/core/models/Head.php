@@ -38,6 +38,11 @@ abstract class Head extends Model implements I_Head
             $this->mdtypename = $arData['mdtypename'];
             $this->head = $this->create_head($arData['mditem']);
         }    
+        if (strpos(__CLASS__,'Set') === FALSE) {
+            if (strpos(__CLASS__,'Mdentity') !== FALSE) {
+                //die(var_dump($this));
+            }
+        }    
         $this->loadProperties();
         $this->load_data();
         $this->version = time();
@@ -145,6 +150,10 @@ abstract class Head extends Model implements I_Head
     }
     public function rowname($param) {
         return str_replace("-","",$param);
+    }
+    function getmdtypename() 
+    {
+        return $this->mdtypename;
     }
 }
 

@@ -42,12 +42,26 @@ trait T_Entity {
         }    
         $params = array('mdid'=> $this->mdid);
         $res = DataManager::dm_query($sql,$params);
+        $properties = array();
         $cnt = 0;
-        $this->properties = array();
         while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
-            $this->properties[$row['id']] = $row;
+            $properties[$row['id']] = $row;
             $cnt++;
         }    
+        if ($this->mdtypename === 'Sets') {
+            $key = array_search('Items', array_column($properties,'valmdtypename','id'));
+            if ($key !== FALSE) {
+                $params = array('mdid'=> $properties[$key]['valmdid']);
+                $res = DataManager::dm_query($sql,$params);
+                $properties = array();
+                $cnt = 0;
+                while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
+                    $properties[$row['id']] = $row;
+                    $cnt++;
+                }    
+            }
+        }
+        $this->properties = $properties;
         return $cnt;
     }        
     public function get_EntitiesFromList($entities, $ttname) 

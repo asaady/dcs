@@ -76,6 +76,7 @@ class CollectionSet extends Head implements I_Head, I_Property
 	$objs['LDATA'] = array();
 	$objs['PSET'] = array();
         $objs['actionlist'] = DataManager::getActionsbyItem('CollectionSet',$prefix,$action);
+        $objs['navlist'] = $this->get_navlist($context);
         if ($this->name == 'user_settings') {
             if (!User::isAdmin())
             {

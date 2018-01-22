@@ -1,9 +1,10 @@
 <?php
 namespace Dcs\Vendor\Core\Models;
 
-use PDO;
-
-trait T_Property {
+trait T_Mdproperty {
+    public function loadProperties() {
+        return $this->getplist();
+    }
     public function getProperties($byid = FALSE, $filter = '') 
     {
         
@@ -27,7 +28,6 @@ trait T_Property {
                 $f = NULL;
             }
         }
-        $plist = $this->getplist();
         $key = -1;   
         foreach($this->properties as $prop) 
         {
@@ -40,15 +40,29 @@ trait T_Property {
             } else {
                 $key++;
             }    
-            $objs[$key] = array();
-            foreach ($plist as $pkey => $prow) {    
-                $objs[$key][$pkey] = $prop[$pkey];
-            }
-            $objs[$key]['class'] = 'active';
-            if ($key === 'id') {
-                $objs[$key]['class'] = 'hidden';
-            }
+            $objs[$key] = $prop;
         }
         return $objs;
+    }
+    public function getItemsByFilter($context, $filter)
+    {
+        $prefix = $context['PREFIX'];
+        $action = $context['ACTION'];
+        $objs = array();
+        $objs['actionlist']= DataManager::getActionsbyItem($context['CLASSNAME'],$prefix,$action);
+        $objs['navlist'] = $this->get_navlist($context);
+        $objs['PSET'] = $this->getProperties(TRUE,'toset');
+        $objs['LDATA'] = array();
+        foreach ($this->Properties() as $row) {
+            $objs['LDATA'][$row['id']] = array();
+            foreach ($objs['PSET'] as $pkey=>$prow) {
+                $objs['LDATA'][$row['id']][$pkey]=array('name'=>$row[$prow['id']],'id'=>'');
+            }    
+        }
+        return $objs;
+    }
+    public function getItemsByName($name) 
+    {
+        return NULL;
     }
 }

@@ -8,8 +8,8 @@ use Exception;
 class CollectionItem extends Head implements I_Head, I_Property 
 {
     use T_Head;
-    use T_Item;
     use T_Collection;
+    use T_Item;
     use T_CProperty;
     
     function item() {
@@ -25,8 +25,7 @@ class CollectionItem extends Head implements I_Head, I_Property
             if ($row['field'] == 0) {
                 continue;
             }
-            $rowname = str_replace("  ","",$row['name']);
-            $rowname = str_replace(" ","",$rowname);
+            $rowname = $this->rowname($row['id']);
             $rowtype = $row['type'];
             if ($rowtype=='cid')
             {

@@ -99,11 +99,23 @@ class Route {
         } else {
             $this->ErrorPage404();        
         }
+        if ($this->context->getattr('CURID') !== '') {
+            $prop = $controller->model->get_property($this->context->getattr('CURID'));
+            if ($prop['valmdtypename'] == 'Sets') {
+                // это запрос на табличную часть сущности
+                $setaction = 'view';
+                if ($this->context->getattr('ACTION') == 'EDIT') {
+                    $setaction = 'edit';
+                }    
+                $this->action_name = 'action_set_'.$setaction;
+                $this->context->setattr('ACTION', 'SET_'.strtoupper($setaction));
+            }
+        }
         $action = $this->action_name;
         if(method_exists($controller, $action)) {
             $controller->$action($this->context->getcontext());
         } else {
-        die($controllername." ".$this->action_name." classname=".$this->context->getattr('CLASSNAME'));
+//            die($controllername." ".$this->action_name." classname=".$this->context->getattr('CLASSNAME'));
             $this->ErrorPage404();
         }
     }    

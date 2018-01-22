@@ -330,16 +330,18 @@ $('input.form-control[it=bool]').dblclick(function(e) {
 $('body').on('dblclick','#entitylist tr',function () 
 {
     var action = $("input[name='action']").val();
-    var docid = $("input[name='itemid']").val();
-    var curid = $("input[name='curid']").val();
     var itemid = this.id;
+    var dop = '';
     if (getprefix() === 'CONFIG') {
         action = "edit";
     } 
     if (action.substring(0,4) === 'SET_') {
+        var docid = $("input[name='itemid']").val();
+        var curid = $("input[name='curid']").val();
         action = action.substring(4);
-    } 
-    location.href=getprefix()+'/'+itemid+'/'+action+'?docid='+docid+'\&propid='+curid;
+        dop = '?docid='+docid+'\&propid='+curid;
+    }
+    location.href=getprefix()+'/'+itemid+'/'+action+dop;
 });
 $('body').on('dblclick','#modallist tr',function (e) 
 {

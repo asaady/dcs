@@ -7,23 +7,11 @@ use PDO;
 class MdentitySet extends Head implements I_Head
 {
     use T_Head;
+    use T_Property;
     
-//    public function __construct($id = '') 
-//    {
-//	if ($id == '') 
-//        {
-//            throw new Exception("empty mditem");
-//	}
-//        $res = self::getMDitem($id);
-//        $this->id = $id; 
-//        $this->name = $res['name']; 
-//        $this->synonym = $res['synonym']; 
-//        $this->version = time();
-//        $this->loadProperties();
-//    }
     public function loadProperties() 
     {
-        $this->properties = array(
+        return array(
             'id'=>array('id'=>'id','name'=>'id','synonym'=>'ID','rank'=>0,'ranktoset'=>1,'ranktostring'=>0,'type'=>'str','valmdtypename'=>'','class'=>'hidden','field'=>1),
             'name'=>array('id'=>'name','name'=>'name','synonym'=>'NAME','rank'=>1,'ranktoset'=>2,'ranktostring'=>1,'type'=>'str','valmdtypename'=>'','class'=>'active','field'=>1),
             'synonym'=>array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM','rank'=>3,'ranktoset'=>3,'ranktostring'=>0,'type'=>'str','valmdtypename'=>'','class'=>'active','field'=>1),
@@ -37,15 +25,6 @@ class MdentitySet extends Head implements I_Head
     function load_data() {
         return NULL;
     }
-//    function getProperties($mode = '') 
-//    {
-//        if ($mode == 'CONFIG')
-//        {
-//            $this->properties['id']['class'] = 'readonly';
-//        }    
-//        return $this->properties;
-//    }
-    
     public function getItemsByFilter($context, $filter) 
     {
         $prefix = $context['PREFIX'];
@@ -80,50 +59,6 @@ class MdentitySet extends Head implements I_Head
         }
         return $objs;
     }
-//    public function create($data)
-//    {
-//        $objs = array();
-//        $params = array();
-//        $props= array('name','synonym');
-//        $sql='';
-//        $fname ='';
-//        $fval = '';
-//        foreach ($props as $prop)
-//        {    
-//            if (array_key_exists($prop, $data))
-//            {
-//                $fname .=", $prop";
-//                $fval .=", :$prop";
-//                $params[$prop]=$data[$prop]['name'];
-//            }    
-//        }
-//        $fname = substr($fname,1);
-//        $fval  = substr($fval,1);
-//        $objs['status']='NONE';
-//        if ($fname!='')
-//        {
-//            $objs['status']='OK';
-//            $sql ="INSERT INTO \"MDTable\" ($fname, mditem) VALUES ($fval,:mditem) RETURNING \"id\"";
-//            $params['mditem']=$this->id;
-//            $res = DataManager::dm_query($sql,$params);
-//            if(!$res) 
-//            {
-//                $objs['status']='ERROR';
-//                $objs['msg']=$sql;
-//            }
-//            else 
-//            {
-//                $row = $res->fetch(PDO::FETCH_ASSOC); 
-//                $objs['id'] = $row['id'];
-//            }
-//        }
-//        if ($objs['status']=='OK')
-//        {
-//            Mdproperty::CreateMustBeProperty($this->id,$objs['id']);
-//        }
-//            
-//        return $objs;
-//    }       
     public function getItemsByName($name)
     {
         

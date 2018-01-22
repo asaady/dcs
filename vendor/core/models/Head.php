@@ -16,12 +16,12 @@ abstract class Head extends Model implements I_Head
     public function __construct($id)
     {
         if ($id == '') {
-            throw new Exception("Class ".__CLASS__." constructor: id is empty");
+            throw new Exception("Class ".get_called_class()." constructor: id is empty");
         }
         $arData = $this->getDetails($id);
         $this->mdid = $id;
         if ($arData['id'] === '') {
-            throw new Exception("Class ".__CLASS__." constructor: id not found ");
+            throw new Exception("Class ".get_called_class()." constructor: id not found ");
         }    
         $this->id = $arData['id']; 
         $this->name = $arData['name']; 
@@ -38,12 +38,12 @@ abstract class Head extends Model implements I_Head
             $this->mdtypename = $arData['mdtypename'];
             $this->head = $this->create_head($arData['mditem']);
         }    
-        if (strpos(__CLASS__,'Set') === FALSE) {
-            if (strpos(__CLASS__,'Mdentity') !== FALSE) {
-                //die(var_dump($this));
+        $this->properties = $this->loadProperties();
+        if (strpos(get_called_class(),'Set') === FALSE) {
+            if (strpos(get_called_class(),'Entity') !== FALSE) {
+//                die(var_dump($this->properties));
             }
         }    
-        $this->loadProperties();
         $this->load_data();
         $this->version = time();
     }

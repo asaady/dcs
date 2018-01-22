@@ -28,7 +28,7 @@ trait T_Head {
           'synonym'=>$this->synonym,
           'version'=>$this->version
           );
-        $this->prop_to_Data($objs);
+        $this->prop_to_Data($context, $objs);
         return $objs;
     }
     public function get_navid() 
@@ -53,60 +53,18 @@ trait T_Head {
             $navlist[$this->head->getid()] = sprintf("%s",$this->head);
         }
     }
+    public function get_property($propid)
+    {
+        if (array_key_exists($propid, $this->properties) === FALSE) {
+            return NULL;
+        }
+        return $this->properties[$propid];
+    }        
+
     // byid - bool - true : return indexed array by id
     // filter - function returning bool 
     //          or string 'toset' / 'tostring'
     //
-    public function getProperties($byid = FALSE, $filter = '') 
-    {
-        
-        $objs = array();
-        if (is_callable($filter)) {
-            $f = $filter;
-        } else {
-            if (strtolower($filter) == 'toset') {
-                $f = function($item) {
-                    return $item['ranktoset'] > 0;
-                };
-            } elseif (strtolower($filter) == 'tostring') {
-                $f = function($item) {
-                    return $item['ranktostring'] > 0;
-                };
-            } elseif (strtolower($filter) == 'sets') {
-                $f = function($item) {
-                    return $item['valmdtypename'] === 'Sets';
-                };
-            } else {
-                $f = NULL;
-            }
-        }
-        $plist = $this->getplist();
-        //die(var_dump($plist));
-        //die(var_dump($this->properties));
-        $key = -1;   
-        foreach($this->properties as $prop) 
-        {
-            $rid = $prop['id'];
-            if (($rid !== 'id')&&($f !== NULL)&&(!$f($prop))) {
-                continue;
-            }
-            if ($byid) {    
-                $key = $rid;
-            } else {
-                $key++;
-            }    
-            $objs[$key] = array();
-            foreach ($plist as $pkey => $prow) {    
-                $objs[$key][$pkey] = $prop[$pkey];
-            }
-            $objs[$key]['class'] = 'active';
-            if ($key === 'id') {
-                $objs[$key]['class'] = 'hidden';
-            }
-        }
-        //die(var_dump($objs)."  byid = ".$byid);
-        return $objs;
-    }
     public function load_data()
     {
         $artemptable = $this->get_tt_sql_data();
@@ -123,7 +81,7 @@ trait T_Head {
                 if (array_key_exists('id_'.$rowname, $row)) {
                     $this->data[$prow['id']] = array('id'=>$row["id_$rowname"],'name'=>$row["name_$rowname"]);
                     if ($prow['type'] === 'id') {
-                        if (($row["id_$rowname"])&&($row["id_$rowname"]!=DCS_EMPTY_ENTITY)) {
+                        if (($row["id_$rowname"])&&($row["id_$rowname"] != DCS_EMPTY_ENTITY)) {
                             if (!in_array($row["id_$rowname"],$arr_e)){
                                 $arr_e[]=$row["id_$rowname"];
                             }
@@ -200,14 +158,15 @@ trait T_Head {
     public function getDetails($id) 
     {
         $objs = array('id'=>'','mdid'=>'','mditem'=>'');
-        if (strpos( __CLASS__,'MdentitySet') !== FALSE) {
+        $classname = get_called_class();
+        if (strpos( $classname,'MdentitySet') !== FALSE) {
             $sql = "SELECT ct.id, ct.name, ct.synonym, 
                     NULL as mdid, '' as mdname, '' as mdsynonym,
                     NULL as mditem, '' as mdtypename, '' as mdtypedescription
                     FROM \"CTable\" as ct 
                     LEFT JOIN \"MDTable\" as md
                     ON ct.mdid=md.id AND md.name='MDitems' WHERE ct.id=:id";
-       } elseif (strpos(__CLASS__,'Mdentity') !== FALSE) {
+       } elseif (strpos($classname,'Mdentity') !== FALSE) {
             $sql = "SELECT mdt.id, mdt.name, mdt.synonym, mdt.mditem, "
                     . "NULL as mdid, mdi.name as mdtypename, "
                     . "mdi.synonym as mdtypedescription "
@@ -215,7 +174,7 @@ trait T_Head {
                         . "INNER JOIN \"CTable\" AS mdi "
                         . "ON mdt.mditem=mdi.id "
                     . "WHERE mdt.id= :id";
-        } elseif (strpos(__CLASS__,'Set') !== FALSE) {
+        } elseif (strpos($classname,'Set') !== FALSE) {
             $sql = "SELECT mdt.id, mdt.name, mdt.synonym, "
                     . "NULL as mdid, mdi.name as mdtypename, "
                     . "mdt.mditem, mdi.synonym as mdtypedescription "
@@ -223,7 +182,7 @@ trait T_Head {
                         . "INNER JOIN \"CTable\" AS mdi "
                         . "ON mdt.mditem=mdi.id "
                     . "WHERE mdt.id= :id";
-        } elseif (strpos(__CLASS__,'Entity') !== FALSE) {
+        } elseif (strpos($classname,'Entity') !== FALSE) {
             $sql = "select et.id, '' as name, '' as synonym, 
                     et.mdid , md.name as mdname, md.synonym as mdsynonym, 
                     md.mditem, tp.name as mdtypename, tp.synonym as mdtypedescription 
@@ -233,7 +192,7 @@ trait T_Head {
                             ON md.mditem = tp.id
                         ON et.mdid = md.id 
                     WHERE et.id = :id";  
-        } elseif (strpos(__CLASS__,'CollectionItem') !== FALSE) {
+        } elseif (strpos($classname,'CollectionItem') !== FALSE) {
             $sql = "SELECT ct.id, ct.mdid, ct.name, ct.synonym, "
                     . "mc.name as mdname, mc.synonym as mdsynonym, mc.mditem, "
                     . "tp.name as mdtypename, tp.synonym as mdtypedescription "
@@ -243,7 +202,7 @@ trait T_Head {
                             . "ON mc.mditem = tp.id "
                         . "ON ct.mdid = mc.id "
                     . "WHERE ct.id=:id";
-        } elseif (strpos(__CLASS__,'CollectionItem') !== FALSE) {
+        } elseif (strpos($classname,'CollectionItem') !== FALSE) {
             $sql = "SELECT ct.id, ct.mdid, ct.name, ct.synonym, "
                     . "mc.name as mdname, mc.synonym as mdsynonym, mc.mditem, "
                     . "tp.name as mdtypename, tp.synonym as mdtypedescription "
@@ -253,11 +212,21 @@ trait T_Head {
                             . "ON mc.mditem = tp.id "
                         . "ON ct.mdid = mc.id "
                     . "WHERE ct.id=:id";
-        } elseif (strpos(__CLASS__,'EProperty') !== FALSE) {
+        } elseif (strpos($classname,'EProperty') !== FALSE) {
             $sql = "SELECT mp.id, mp.mdid, mp.name, mp.synonym, "
                     . "mc.name as mdname, mc.synonym as mdsynonym, mc.mditem, "
                     . "tp.name as mdtypename, tp.synonym as mdtypedescription "
                     . "FROM \"MDProperties\" as mp "
+                        . "INNER JOIN \"MDTable\" as mc "
+                            . "INNER JOIN \"CTable\" as tp "
+                            . "ON mc.mditem = tp.id "
+                        . "ON mp.mdid = mc.id "
+                    . "WHERE mp.id=:id";
+        } elseif (strpos($classname,'CProperty') !== FALSE) {
+            $sql = "SELECT mp.id, mp.mdid, mp.name, mp.synonym, "
+                    . "mc.name as mdname, mc.synonym as mdsynonym, mc.mditem, "
+                    . "tp.name as mdtypename, tp.synonym as mdtypedescription "
+                    . "FROM \"CProperties\" as mp "
                         . "INNER JOIN \"MDTable\" as mc "
                             . "INNER JOIN \"CTable\" as tp "
                             . "ON mc.mditem = tp.id "
@@ -275,12 +244,12 @@ trait T_Head {
     }
     public function get_classname() 
     {
-        $s_class = explode('\\', __CLASS__);
+        $s_class = explode('\\',get_called_class());
         return end($s_class);
     }
     public function get_head_class() 
     {
-        $s_class = explode('\\', __CLASS__);
+        $s_class = explode('\\', get_called_class());
         $classname = array_pop($s_class);
         switch ($classname) {
             case 'MdentitySet': $head = NULL; break;
@@ -320,26 +289,36 @@ trait T_Head {
         }    
         return $res;
     }
-    public function prop_to_Data(&$objs)
+    public function prop_to_Data($context,&$objs)
     {        
         $plist = array();
         $sets = array();
         $pset = array();
-        if (strpos($this->get_classname(),'Set') === FALSE) {
-            $plist = $this->getProperties(FALSE);
-            foreach ($this->properties as $prop) {
-                if ($prop['valmdtypename'] !== 'Sets') {
-                    continue;
-                }
-                if (!$this->getattrid($prop['id'])) {
-                    $set = new Mdentity($prop['valmdid']);
-                } else {
-                    $set = new Entity($this->getattrid($prop['id']));
-                }    
-                $sets[$prop['id']] = $set->getProperties(true,'toset');
-            }  
+        $classname = $this->get_classname();
+        $prefix = $context['PREFIX'];
+        if ($prefix == 'CONFIG') {
+            if (strpos($classname,'Property') === FALSE) {
+                $pset = $this->getProperties(TRUE,'toset');
+            } else {
+                $plist = $this->getProperties(FALSE);
+            }
         } else {
-            $pset = $this->getProperties(TRUE,'toset');
+            if (strpos($classname,'Set') === FALSE) {
+                $plist = $this->getProperties(FALSE);
+                foreach ($this->properties as $prop) {
+                    if ($prop['valmdtypename'] !== 'Sets') {
+                        continue;
+                    }
+                    if (!$this->getattrid($prop['id'])) {
+                        $set = new Mdentity($prop['valmdid']);
+                    } else {
+                        $set = new Entity($this->getattrid($prop['id']));
+                    }    
+                    $sets[$prop['id']] = $set->getProperties(true,'toset');
+                }  
+            } else {
+                $pset = $this->getProperties(TRUE,'toset');
+            }
         }
         $objs['PLIST'] = $plist;
         $objs['PSET'] = $pset;
@@ -350,13 +329,15 @@ trait T_Head {
         $navlist = array();
         $this->add_navlist($navlist);
         if ($this->id) {
-            $navlist[$this->id] = sprintf("%s",$this);
             if (($context['PREFIX'] !== 'CONFIG')&&
                 ($context['CLASSNAME'] === 'Entity')&&
                 ($context['CURID'] !== '')) {
-                    $navlist[$this->id."/$context[CURID]"] = 
-                            $this->getattr($context['CURID']);
-                }
+                    //die(var_dump($this->id));
+                    $prop = $this->head->get_property($context['CURID']);
+                    $navlist["$context[ITEMID]/$context[CURID]"] = $prop['synonym'];
+            } else {
+                $navlist[$this->id] = sprintf("%s",$this);
+            }
         } else {
             $navlist['new'] = 'Новый';
         }    

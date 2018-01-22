@@ -10,6 +10,7 @@ class Entity extends Head implements I_Head, I_Property
     use T_Head;
     use T_Entity;
     use T_Item;
+    use T_Property;
     use T_EProperty;
     
     protected $activity;
@@ -35,6 +36,10 @@ class Entity extends Head implements I_Head, I_Property
             $this->activity = TRUE;
         }
     }
+    public function loadProperties()
+    {
+        return $this->properties();
+    }        
     function item() 
     {
         return NULL;
@@ -773,12 +778,15 @@ class Entity extends Head implements I_Head, I_Property
         }   
 	return $objs;
     }
-    function getSetData($prefix, $action='') 
+    function getSetData($context)
     {
+        $prefix = $context['PREFIX'];
+        $action = $context['ACTION'];
 	$objs = array();
 	$objs['LDATA']=array();
         $objs['actionlist'] = DataManager::getActionsbyItem('EntitySet',$prefix, $action);
 	$objs['PSET'] = $this->getProperties(true,'toset');
+        $objs['navlist'] = $this->get_navlist($context);
         if ($this->id == '')
         {
             return $objs;

@@ -9,6 +9,7 @@ class EntitySet extends Head implements I_Head, I_Property
 {
     use T_Head;
     use T_Entity;
+    use T_Property;
     use T_EProperty;
     
     public function item() 
@@ -19,6 +20,10 @@ class EntitySet extends Head implements I_Head, I_Property
     {
         return NULL;
     }    
+    public function loadProperties()
+    {
+        return $this->properties();
+    }        
     public static function fill_ent_name($arr_e,$arr_id,&$ldata)
     {
         $arr_entities = $this->getAllEntitiesToStr($arr_e);

@@ -8,83 +8,17 @@ use PDO;
 class Mdentity extends Head implements I_Head, I_Property
 {
     use T_Head;
-    use T_Item;
     use T_Entity;
+    use T_Mdproperty;
     use T_EProperty;
-    
-//    public function getProperties($byid = FALSE, $filter = '') 
-//    {
-//        
-//        $objs = array();
-//        if (is_callable($filter)) {
-//            $f = $filter;
-//        } else {
-//            if (strtolower($filter) == 'toset') {
-//                $f = function($item) {
-//                    return $item['ranktoset'] > 0;
-//                };
-//            } elseif (strtolower($filter) == 'tostring') {
-//                $f = function($item) {
-//                    return $item['ranktostring'] > 0;
-//                };
-//            } else {
-//                $f = NULL;
-//            }
-//        }
-//        $plist = $this->getplist();
-//        $key = -1;    
-//        foreach($plist as $prop) 
-//        {
-//            $rid = $prop['id'];
-//            if (($rid !== 'id')&&($f !== NULL)&&(!$f($prop))) {
-//                continue;
-//            }
-//            if ($byid) {    
-//                $key = $rid;
-//            } else {
-//                $key++;
-//            }    
-//            $objs[$key] = $prop;
-//            $objs[$key]['class'] = 'active';
-//            if ($key == 'id') {
-//                $objs[$key]['class'] = 'hidden';
-//            }
-//        }
-//        return $objs;
-//    }
-//    
     
     public function item() 
     {
         return new Mdproperty($this->id);
     }
-//    function getItemsByFilter($context, $filter)
-//    {
-//        $mode = $context['MODE'];
-//        $action = $context['ACTION'];
-//        $objs = array();
-//        $objs['id'] = $this->id;
-//        $objs['name'] = $this->name;
-//        $objs['synonym'] = $this->synonym;
-//        $objs['version'] = $this->version;
-//        $objs['LDATA']=array();
-//        $objs['PSET'] = $this->getProperties(TRUE,'toset');
-////        die(var_dump($objs['PSET']).var_dump($this->properties));
-//        $objs['actionlist'] = DataManager::getActionsbyItem('Mdentity',$mode,$action);
-//        foreach ($this->properties as $row) {
-//            $objs['LDATA'][$row['id']] = array();
-//            foreach ($objs['PSET'] as $pkey=>$prow)
-//            {
-//                $objs['LDATA'][$row['id']][$pkey]=array('name'=>$row[$prow['id']],'id'=>'');
-//            }    
-//        }
-//        return $objs;
-//    }
     public function load_data()
     {
-        foreach ($this->properties as $row) {
-            $this->data[$row['id']] = array('id'=>'','name'=>$row['name']);
-        }
+        return NULL;
     }        
     function update($data) 
     {
@@ -236,9 +170,5 @@ class Mdentity extends Head implements I_Head, I_Property
             }    
         }    
 	return $objs;
-    }
-    public function getItemsByName($name) 
-    {
-        return NULL;
     }
 }

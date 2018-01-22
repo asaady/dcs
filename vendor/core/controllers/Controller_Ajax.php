@@ -39,7 +39,7 @@ class Controller_Ajax extends Controller
 //            die(var_dump($this->model->getDetails($setid)));
             $set = new Entity($setid);
             $set->set_head($this->model); 
-            $arData = $set->getSetData($context['PREFIX'],$context['ACTION']);
+            $arData = $set->getSetData($context);
         }
         echo json_encode($arData);
     }

@@ -15,6 +15,10 @@ class CollectionSet extends Head implements I_Head, I_Property
     {
         return new CollectionItem($this->id);
     }
+    public function load_data()
+    {
+        return NULL;
+    }    
     public function createtemptable_all($entities)
     {
         $str_entities = "('".implode("','", $entities)."')";
@@ -31,6 +35,7 @@ class CollectionSet extends Head implements I_Head, I_Property
 //      val_max = max filter value (optional)    
     public function findCollByProp($filter) 
     {
+        
         $ftype='';
         $dbtable = '';
         $propid = $filter['filter_id']['id'];
@@ -44,6 +49,7 @@ class CollectionSet extends Head implements I_Head, I_Property
         }
         $params = array();
         $strwhere = DataManager::getstrwhere($filter,$ftype,'pv.value',$params);
+        
         if ($strwhere != '')
         {
             $sql = "SELECT DISTINCT pv.id as cid FROM \"$dbtable\" as pv WHERE $strwhere and pv.pid=:propid"; 

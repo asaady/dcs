@@ -33,37 +33,6 @@ trait T_Entity {
 		ORDER BY rank";
         return $sql;
     }
-    public function loadProperties()
-    {
-        $sql = $this->txtsql_getproperties();
-        if ($sql === '')
-        {
-            return 0;
-        }    
-        $params = array('mdid'=> $this->mdid);
-        $res = DataManager::dm_query($sql,$params);
-        $properties = array();
-        $cnt = 0;
-        while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
-            $properties[$row['id']] = $row;
-            $cnt++;
-        }    
-        if ($this->mdtypename === 'Sets') {
-            $key = array_search('Items', array_column($properties,'valmdtypename','id'));
-            if ($key !== FALSE) {
-                $params = array('mdid'=> $properties[$key]['valmdid']);
-                $res = DataManager::dm_query($sql,$params);
-                $properties = array();
-                $cnt = 0;
-                while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
-                    $properties[$row['id']] = $row;
-                    $cnt++;
-                }    
-            }
-        }
-        $this->properties = $properties;
-        return $cnt;
-    }        
     public function get_EntitiesFromList($entities, $ttname) 
     {
 //        if ($entities[0]=='') {

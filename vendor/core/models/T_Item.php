@@ -14,7 +14,7 @@ trait T_Item
         $prefix = $context['PREFIX'];
         $action = $context['ACTION'];
         $objs = array();
-        $this->prop_to_Data($objs);
+        $this->prop_to_Data($context, $objs);
         if ($this->data) {
             $objs['SDATA'] = array();
             $objs['SDATA'][$this->id] = $this->data;

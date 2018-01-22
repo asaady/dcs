@@ -23,6 +23,12 @@ class Controller_Head extends Controller
 	{
             $this->action_index($context);
         }
+	function action_set_view($context)
+	{
+            $data = $this->model->get_data($context);
+            $this->view->setcontext($context);
+            $this->view->generate($data);
+        }
 	function action_edit($context)
 	{
             $this->action_index($context);

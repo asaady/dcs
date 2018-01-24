@@ -1,6 +1,8 @@
 <?php
 namespace Dcs\Vendor\Core\Views;
 
+use Exception;
+
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING) . "/app/dcs_const.php");
 
 class View implements I_View
@@ -59,6 +61,7 @@ class View implements I_View
     }
     public function outfield($t,$hclass,$mode)
     {        
+        $type = $t['name_type'];
         echo "<div class=\"$hclass\">";
             echo "<div class=\"form-group\">";
                 if ($mode!='PRINT')
@@ -86,15 +89,15 @@ class View implements I_View
                     }
                     else
                     {    
-                        if($t['type']=='int') 
+                        if($type=='int') 
                         {    
                             $itype = 'number';
                         } 
-                        elseif($t['type']=='float') 
+                        elseif($type=='float') 
                         {
                             $itype = 'number\" step=\"any';
                         }    
-                        elseif($t['type']=='date') 
+                        elseif($type=='date') 
                         {    
                             $itype = 'date';
                         }
@@ -107,10 +110,10 @@ class View implements I_View
                             $readonly = ' readonly';
                         }
                     }    
-                    if (($t['type']=='id')||($t['type']=='cid')||($t['type']=='mdid'))
+                    if (($type=='id')||($type=='cid')||($type=='mdid'))
                     {
-                        echo "<input type=\"hidden\" class=\"form-control\" id=\"$t[id]\" name=\"$t[id]\" it=\"$t[type]\" vt=\"$t[valmdid]\" value=\"\">\n";
-                        echo "<input type=\"$itype\" class=\"form-control\" st=\"active\" id=\"name_$t[id]\" name=\"name_$t[id]\" it=\"$t[type]\" vt=\"$t[valmdid]\" value=\"\"$readonly>\n";
+                        echo "<input type=\"hidden\" class=\"form-control\" id=\"$t[id]\" name=\"$t[id]\" it=\"$type\" vt=\"$t[valmdid]\" value=\"\">\n";
+                        echo "<input type=\"$itype\" class=\"form-control\" st=\"active\" id=\"name_$t[id]\" name=\"name_$t[id]\" it=\"$type\" vt=\"$t[valmdid]\" value=\"\"$readonly>\n";
                         if (($itype != 'hidden')||($readonly == ''))
                         {
                             echo "<ul class=\"types_list\">";
@@ -122,15 +125,15 @@ class View implements I_View
                     {
                         if (($itype != 'hidden')||($readonly == ''))
                         {
-                            if ($t['type']=='date')  
+                            if ($type=='date')  
                             {
-                                echo "<input type=\"$itype\" class=\"form-control datepicker\" st=\"active\" id=\"$t[id]\" name=\"$t[id]\" it=\"$t[type]\" valid=\"\" vt=\"\" value=\"\"$readonly>\n";
+                                echo "<input type=\"$itype\" class=\"form-control datepicker\" st=\"active\" id=\"$t[id]\" name=\"$t[id]\" it=\"$type\" valid=\"\" vt=\"\" value=\"\"$readonly>\n";
                             }
                             else
                             {
-                                echo "<input type=\"$itype\" class=\"form-control\" st=\"active\" id=\"$t[id]\" name=\"$t[id]\" it=\"$t[type]\" valid=\"\" vt=\"\" value=\"\"$readonly>\n";
+                                echo "<input type=\"$itype\" class=\"form-control\" st=\"active\" id=\"$t[id]\" name=\"$t[id]\" it=\"$type\" valid=\"\" vt=\"\" value=\"\"$readonly>\n";
                             }    
-                            if ($t['type']=='bool') 
+                            if ($type=='bool') 
                             {    
                                 echo "<ul class=\"types_list\">";
                                     echo "<li id=\"true\">true</li>";
@@ -249,19 +252,30 @@ class View implements I_View
     {
         $show_tab = FALSE;
         $show_head = FALSE;
+        $show_tabheader = FALSE;
+        $key_set = '';
         if (array_key_exists('PLIST', $data) === TRUE) {
             $show_head = TRUE;
-            if (array_search('Sets', array_column($data['PLIST'], 'valmdtypename')) !== FALSE)
-            {
-                $show_tab = TRUE;
+            $key_set = array_search('Sets', array_column($data['PLIST'], 'valmdtypename'));
+            if ($key_set !== FALSE) {
+                if (count($data['SETS']) > 0) {
+                    $show_tab = TRUE;
+                } else {
+                    $show_tabheader = TRUE;
+                }    
             }   
         }    
         if ($show_tab) {
             echo "<ul id=\"dcsTab\" class=\"nav nav-tabs\">";
-                $dop=" class=\"active\"";
-                if (($this->context['ACTION']=='SET_EDIT')||($this->context['ACTION']=='SET_VIEW'))
-                {
-                    $dop='';
+                $dop = " class=\"active\"";
+                $dopfade = " in active";
+                $propid = '';
+                if (isset($this->context['DATA']['propid'])) {
+                    if ($this->context['DATA']['propid']['id'] !== '') {
+                        $dop = '';
+                        $dopfade = '';
+                        $propid = $this->context['DATA']['propid']['id'];
+                    }    
                 }    
                 echo "<li$dop><a href=\"#entityhead\">Заголовок</a></li>";
                 if ($this->context['ACTION'] !== 'CREATE')
@@ -269,13 +283,11 @@ class View implements I_View
                     for($i=0, $props = $data['PLIST'], $size = count($props); $i<$size; $i++)
                     {
                         $t=$props[$i];
-                        if ($t['valmdtypename'] !== 'Sets')
-                        {
+                        if ($t['valmdtypename'] !== 'Sets') {
                             continue;
                         }  
                         $dop='';
-                        if ($this->context['CURID']==$t['id'])
-                        {
+                        if (($propid !== '')&&($propid == $t['id'])) {
                             $dop=" class=\"active\"";
                         }    
                         echo "<li$dop><a href=\"#$t[id]\">$t[synonym]</a></li>";
@@ -283,30 +295,29 @@ class View implements I_View
                 }    
             echo "</ul>";
             echo "<div class=\"tab-content\">";
-            $dop=" in active";
-            if (($this->context['ACTION'] == 'SET_EDIT')||($this->context['ACTION'] == 'SET_VIEW'))
-            {
-                $dop='';
-            }    
-            echo "<div id=\"entityhead\" class=\"tab-pane fade$dop\">";
+            echo "<div id=\"entityhead\" class=\"tab-pane fade$dopfade\">";
         }   
         if ($show_head) {
             echo "<form class=\"form-inline\" role=\"form\">\n";
+
             for($i=0, $props=$data['PLIST'], $size=count($props); $i<$size; $i++)
             {
               $t=$props[$i];
-              if ($t['valmdtypename']==='Sets')
-              {
+              if ($t['valmdtypename'] === 'Sets') {
                   continue;
               }    
-              if ($t['type']=='text')
+              if ($t['rank'] == 0) {
+                  continue;
+              }    
+              $type = $t['name_type'];
+              if ($type=='text')
               {
                   echo "<div class=\"row\">";
                       echo "<div class=\"col-md-12\">";      
                           echo "<div class=\"form-group\">";
                               echo "<label for=\"$t[id]\" class=\"control-label col-md-2\">$t[synonym]</label>";
                               echo "<div class=\"col-md-10\">";
-                                  echo "<textarea class=\"form-control\" rows=\"2\" st=\"active\" id=\"$t[id]\" name=\"$t[id]\" it=$t[type]></textarea>";
+                                  echo "<textarea class=\"form-control\" rows=\"2\" st=\"active\" id=\"$t[id]\" name=\"$t[id]\" it=$type></textarea>";
                               echo "</div>";
                           echo "</div>";
                       echo "</div>";
@@ -318,10 +329,10 @@ class View implements I_View
                       $this->outfield($t,'col-md-6',$this->context['ACTION']);
                           if (($i+1) < $size)
                           {
-                              if(($props[$i+1]['rank']%2)==0)
-                              {
+                              if (($props[$i+1]['rank']%2 == 0)&&($props[$i+1]['rank'] > 0)) {
                                   $i++;
                                   $t=$props[$i];
+                                  $type = $t['name_type'];
                                   $this->outfield($t,'col-md-6',$this->context['ACTION']);
                               }
                           }
@@ -336,6 +347,13 @@ class View implements I_View
             echo "</form>";
         }    
         if (count($data['PSET'])>0) {
+            if ($show_tabheader) {
+                $title = $data['PLIST'][$key_set]['synonym'];
+                echo "<p class=\"dcs-tabtitle\">$title</p>";
+                if ($data['PLIST'][$key_set]['id'] !== $this->context['SETID']) {
+                    throw new Exception("ERROR: SETID not equal data[PLIST]");
+                }
+            }
             $this->set_view($data['PSET']);
         }
         if ($show_tab) {
@@ -350,9 +368,8 @@ class View implements I_View
                         continue;
                     }    
                     $dop='';
-                    if ($this->context['CURID'] == $t['id'])
-                    {
-                        $dop=" in active";
+                    if (($propid !== '')&&($propid == $t['id'])) {
+                        $dop=" class=\"active\"";
                     }    
                     echo "<div id=\"$t[id]\" class=\"tab-pane fade$dop\">";
                     $this->set_view($data['SETS'][$t['id']]);

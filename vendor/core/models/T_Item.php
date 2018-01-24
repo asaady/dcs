@@ -9,19 +9,9 @@ trait T_Item
     {
         return NULL;
     }
-    public function getItemsByFilter($context, $filter)
+    public function getItems($context) 
     {
-        $prefix = $context['PREFIX'];
-        $action = $context['ACTION'];
-        $objs = array();
-        $this->prop_to_Data($context, $objs);
-        if ($this->data) {
-            $objs['SDATA'] = array();
-            $objs['SDATA'][$this->id] = $this->data;
-        }    
-        $objs['actionlist']= DataManager::getActionsbyItem($context['CLASSNAME'],$prefix,$action);
-        $objs['navlist'] = $this->get_navlist($context);
-        return $objs;
+        return array();
     }
     public function getItemsByName($name) 
     {

@@ -5,7 +5,7 @@ use PDO;
 use DateTime;
 use Exception;
 
-abstract class Head extends Model implements I_Head
+abstract class Sheet extends Model implements I_Sheet
 {
     protected $head;     
     protected $data;
@@ -32,18 +32,17 @@ abstract class Head extends Model implements I_Head
             $this->mdid = $arData['mdid'];
             $this->mditem = $arData['mditem'];
             $this->mdtypename = $arData['mdtypename'];
-            $this->head = $this->create_head($arData['mdid']);
+            $this->head = $this->head($arData['mdid']);
         } elseif ($arData['mditem']) {
             $this->mditem = $arData['mditem'];
             $this->mdtypename = $arData['mdtypename'];
-            $this->head = $this->create_head($arData['mditem']);
+            $this->head = $this->head($arData['mditem']);
         }    
         $this->properties = $this->loadProperties();
-        if (strpos(get_called_class(),'Set') === FALSE) {
-            if (strpos(get_called_class(),'Entity') !== FALSE) {
+//        if (strpos(get_called_class(),'Set') === FALSE) {
+//            if (strpos(get_called_class(),'Entity') !== FALSE) {
 //                die(var_dump($this->properties));
-            }
-        }    
+//        }    
         $this->load_data();
         $this->version = time();
     }
@@ -148,8 +147,9 @@ abstract class Head extends Model implements I_Head
         $res = DataManager::dm_query($sql,$params); 
         return $res->fetchAll(PDO::FETCH_ASSOC);
     }
-    public function rowname($param) {
-        return str_replace("-","",$param);
+    public function rowname($arr) {
+        $param = str_replace("-","", strtolower($arr['name']));
+        return str_replace(" ","", $param);
     }
     function getmdtypename() 
     {

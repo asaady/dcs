@@ -118,17 +118,25 @@ trait T_View {
         echo "<input class=\"form-control\" name=\"prefix\" type=\"hidden\" value=\"".$this->context['PREFIX']."\">";
         echo "<input class=\"form-control\" name=\"mode\" type=\"hidden\" value=\"".$this->context['MODE']."\">";
         echo "<input class=\"form-control\" name=\"itemid\" type=\"hidden\" value=\"".$this->context['ITEMID']."\">";
-        echo "<input class=\"form-control\" name=\"curid\" type=\"hidden\" value=\"".$this->context['CURID']."\">";
-        echo "<input class=\"form-control\" name=\"action\" type=\"hidden\" value=\"".$this->context['ACTION']."\">";
+        echo "<input class=\"form-control ajax\" name=\"setid\" type=\"hidden\" value=\"".$this->context['SETID']."\">";
+        echo "<input class=\"form-control ajax\" name=\"curid\" type=\"hidden\" value=\"".$this->context['CURID']."\">";
+        echo "<input class=\"form-control ajax\" name=\"action\" type=\"hidden\" value=\"".$this->context['ACTION']."\">";
         echo "<input class=\"form-control ajax\" name=\"version\" type=\"hidden\" value=\"".$data['version']."\">";
         echo "<input class=\"form-control ajax\" name=\"page\" type=\"hidden\" value=\"".$this->context['PAGE']."\">";
         echo "<input class=\"form-control ajax\" name=\"command\" type=\"hidden\" value=\"\">";
-        echo "<input class=\"form-control ajax\" name=\"filter_id\" type=\"hidden\" value=\"\">";
-        echo "<input class=\"form-control ajax\" name=\"filter_val\" type=\"hidden\" value=\"".$this->context['PARAM']."\">";
-        echo "<input class=\"form-control ajax\" name=\"filter_min\" type=\"hidden\" value=\"\">";
-        echo "<input class=\"form-control ajax\" name=\"filter_max\" type=\"hidden\" value=\"\">";
-        echo "<input class=\"form-control ajax\" name=\"sort_id\" type=\"hidden\" value=\"\">";
-        echo "<input class=\"form-control ajax\" name=\"sort_dir\" type=\"hidden\" value=\"\">";
+        echo "<input class=\"form-control ajax\" name=\"param_id\" type=\"hidden\" value=\"\">";
+        echo "<input class=\"form-control ajax\" name=\"param_val\" type=\"hidden\" value=\"\">";
+        echo "<input class=\"form-control ajax\" name=\"param_type\" type=\"hidden\" value=\"\">";
+        $docid = '';
+        if (array_key_exists('docid', $this->context['DATA']) !== FALSE) {
+            $docid = $this->context['DATA']['docid']['id'];
+        }   
+        echo "<input class=\"form-control ajax\" name=\"docid\" type=\"hidden\" value=\"$docid\">";
+        $propid = '';
+        if (array_key_exists('propid', $this->context['DATA']) !== FALSE) {
+            $propid = $this->context['DATA']['propid']['id'];
+        }   
+        echo "<input class=\"form-control ajax\" name=\"propid\" type=\"hidden\" value=\"$propid\">";
         $this->item_view($data);
         echo "<br class=\"clearfix\" />";
         echo "</div>"; 

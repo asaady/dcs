@@ -4,13 +4,26 @@ namespace Dcs\Vendor\Core\Models;
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 
 use PDO;
-class Mdcollection extends Head implements I_Head, I_Property
+class Mdcollection extends Sheet implements I_Sheet, I_Set, I_Property
 {
-    use T_Head;
-    use T_Collection;
+    use T_Sheet;
+    use T_MdSet;
     use T_Mdproperty;
     use T_CProperty;
-    
+    public function txtsql_forDetails() 
+    {
+        return "SELECT mdt.id, mdt.name, mdt.synonym, mdt.mditem, "
+                    . "NULL as mdid, mdi.name as mdtypename, "
+                    . "mdi.synonym as mdtypedescription "
+                    . "FROM \"MDTable\" AS mdt "
+                        . "INNER JOIN \"CTable\" AS mdi "
+                        . "ON mdt.mditem=mdi.id "
+                    . "WHERE mdt.id= :id";
+    }
+    public function head() 
+    {
+        return new MdentitySet($this->mditem);
+    }
     public function item() 
     {
         return new CProperty($this->id);

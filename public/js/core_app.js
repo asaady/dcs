@@ -40,55 +40,33 @@ $('a').on('show.bs.tab', function (e) {
     var action = $("input[name='action']").val(); 
     var itemid = $("input[name='itemid']").val(); 
     var activeid = $(e.target).attr('href').substring(1);
+    dop = '';
     if (activeid != 'entityhead')
     {   
-        if ((action=='EDIT')||(action=='VIEW'))
-        {
-            action = 'SET_'+action; 
-        }    
-        var $x = $('div#ivalue');
-        
-        $x.empty();
-        $x.hide();
-        $("input[name='action']").val(action); 
-        $("input[name='curid']").val(activeid); 
-        $("input[name='command']").val('load'); 
-        $data = $('.ajax').serializeArray();
-        $.ajax(
-        {
-            url: getprefix()+'/ajax/'+itemid+'/'+activeid+'/'+action,
-            type: 'get',
-            dataType: 'json',
-            data: $data,
-            error: function(xhr, error){
-                    console.debug(xhr); console.debug(error);
-                window.history.pushState({},null, getprefix()+'/'+itemid+'/'+activeid+'/'+action);            
-            },                
-            success: function(response) {
-                onLoadValID(response);
-                window.history.pushState({},null, getprefix()+'/'+itemid+'/'+activeid+'/'+action);            
-            }
-        });      
+        $("input[name='propid']").val(activeid); 
+        dop = '?propid='+activeid;
     } else {
-        if ((action=='SET_EDIT')||(action=='SET_VIEW'))
-        {
-            action = action.substring(4);
-        }    
-        $("input[name='curid']").val(''); 
-        $("input[name='action']").val(action); 
-        $("input[name='command']").val('load'); 
-        $data = $('.ajax').serializeArray();
-        $.ajax({
-            url: getprefix()+'/ajax/'+itemid+'/'+action,
-            type: 'get',
-            dataType: 'json',
-            data: $data,
-            success: function(response) {
-                onLoadValID(response);
-                window.history.pushState({},null, getprefix()+'/'+itemid+'/'+action);            
-            }
-        });
+        $("input[name='propid']").val(''); 
     }    
+    var $x = $('div#ivalue');
+    $x.empty();
+    $x.hide();
+    $("input[name='command']").val('load'); 
+    $data = $('.ajax').serializeArray();
+    $.ajax(
+    {
+        url: getprefix()+'/ajax/'+itemid,
+        type: 'get',
+        dataType: 'json',
+        data: $data,
+        error: function(xhr, error){
+                console.debug(xhr); console.debug(error);
+        },                
+        success: function(response) {
+            onLoadValID(response);
+            window.history.pushState({},null, getprefix()+'/'+itemid+dop);            
+        }
+    });      
 });
 
 function onGetMdData(data)
@@ -327,32 +305,33 @@ $('input.form-control[it=bool]').dblclick(function(e) {
         $("#"+curid+"~.types_list").slideToggle('fast');
     }    
 });
+function tr_dblclick($e)
+{
+    var itemid = $e.attr('id');
+    if (itemid === undefined || itemid === null) 
+    {
+        return;
+    } 
+    var dop = '';
+    var propid = $("input[name='propid']").val();
+    if (propid !== '') {
+        dop = '?propid='+propid;
+    } 
+    location.href=getprefix()+'/'+itemid+dop;
+}
 $('body').on('dblclick','#entitylist tr',function () 
 {
-    var action = $("input[name='action']").val();
-    var itemid = this.id;
-    var dop = '';
-    if (getprefix() === 'CONFIG') {
-        action = "edit";
-    } 
-    if (action.substring(0,4) === 'SET_') {
-        var docid = $("input[name='itemid']").val();
-        var curid = $("input[name='curid']").val();
-        action = action.substring(4);
-        dop = '?docid='+docid+'\&propid='+curid;
-    }
-    location.href=getprefix()+'/'+itemid+'/'+action+dop;
+    tr_dblclick($(this));
 });
 $('body').on('dblclick','#modallist tr',function (e) 
 {
     e.preventDefault();
     var itemid = $("input[name='itemid']").val(); 
-    var action = $("input[name='action']").val(); 
     $("input[name='curid']").val(this.id); 
     $("input[name='command']").val('choice'); 
     $data = $('.ajax').serializeArray();
     $.ajax({
-      url: getprefix()+'/ajax/'+itemid+'/'+this.id+'/'+action,
+      url: getprefix()+'/ajax/'+itemid,
       type: 'get',
       dataType: 'json',
       data: $data,
@@ -417,7 +396,6 @@ function submitModalForm(e)
     e.preventDefault();
     var $x = $('div#ivalue');
     var $ci = $x.find('input');
-    var action = $("input[name='action']").val();
     var itemid = $("input[name='itemid']").val();
     var $pan = $('.tab-pane.fade.in.active');
     var $curcol = $pan.find('#tablehead th.info');
@@ -462,20 +440,25 @@ function submitModalForm(e)
             success: show_uploadfile
         });
     }   
-    var $data = {action:action, propid: propid, id: cid, type:typ, name:cnm, itemid:$currow.attr('id'), command:'save', prefix:'field'};
-    $.getJSON(
-         getprefix()+'/ajax/'+itemid+'/'+propid+'/'+action,
-         $data,
-         setvals
-     );
+    $("input[name='propid']").val(propid);
+    $("input[name='curid']").val($currow.attr('id'));
+    $("input[name='command']").val('field_save');
+    $("input[name='param_id']").val(cid);
+    $("input[name='param_val']").val(cnm);
+    $("input[name='param_type']").val(typ);
+    $data = $('.ajax').serializeArray();
+    $.ajax({
+      url: getprefix()+'/ajax/'+itemid,
+      type: 'get',
+      dataType: 'json',
+      data: $data,
+      success: setvals
+    });
 }
 
 $('body').on('dblclick','#entitylist td',function () 
 {
     var action = $("input[name='action']").val();
-    if ($("input[name='prefix']").val() === 'CONFIG') {
-        return;
-    }
     if ($(this).parent().attr('st') === 'erased') {
         return;
     }
@@ -484,21 +467,16 @@ $('body').on('dblclick','#entitylist td',function ()
     var vt = this.vt;
     var dname = $(this).html();
     var arr_type = ['id','cid','mdid','propid'];
-    if ((action !== 'SET_EDIT')&&(action !== 'SET_VIEW'))
-    {
+    if ((action !== 'EDIT')&&(action !== 'VIEW')) {
         return;
     }
-    if (action === 'SET_VIEW')
-    {
-        if (vt !== 'file')
-        {
+    if (action === 'VIEW') {
+        if (vt !== 'file') {
             return;
         }    
-        if (dname === '')
-        {
+        if (dname === '') {
             return;
         }    
-        
     }    
     var tdwidth = $(this).width();
     var $x = $('div#ivalue');
@@ -526,30 +504,49 @@ $('body').on('dblclick','#entitylist td',function ()
     if (arr_type.indexOf(vt)>=0)
     {
         ov = it;
-        s_html = "<input type=\""+itype+"\" class=\"form-control ajax\" vt=\""+vt+"\" it=\""+it+"\" ov=\""+ov+"\" value=\""+dname+"\"><span class=\"input-group-btn\" style=\"width:0;\"><button id=\"list\" class=\"form-value\"><i class=\"material-icons\">list</i></a></button><button id=\"done\" class=\"form-value\"><i class=\"material-icons\">done</i></button></span>";
+        s_html = "<input type=\""+itype+"\" class=\"form-control ajax\" \n\
+                        vt=\""+vt+"\" it=\""+it+"\" ov=\""+ov+"\" \n\
+                        value=\""+dname+"\"><span class=\"input-group-btn\" \n\
+                        style=\"width:0;\">\n\
+                        <button id=\"list\" class=\"form-value\">\n\
+                          <i class=\"material-icons\">list</i></a>\n\
+                        </button>\n\
+                        <button id=\"done\" class=\"form-value\">\n\
+                          <i class=\"material-icons\">done</i>\n\
+                        </button></span>";
         bwidth +=90; 
     }    
     else if (vt=='file')
     {
-        if (action === 'SET_VIEW')
-        {
+        if (action === 'VIEW') {
             s_html = "<a href=\""+it+"\" download=\""+dname+"\">"+dname+"</a>";
-        }   
-        else
-        {    
-            if (dname === '')
-            {    
-                s_html = "<input id=\"dcsFileInput\" type=\"file\" accept=\"image/*;capture=camera\" class=\"form-value\" vt=\""+vt+"\" it=\"\" ov=\""+ov+"\" value=\""+dname+"\"><span class=\"input-group-btn\" style=\"width:0;\"><button id=\"done\" class=\"form-value\"><i class=\"material-icons\">done</i></button></span>";
-            }    
-            else
-            {
-                s_html = "<a href=\""+it+"\" download=\""+dname+"\">"+dname+"</a><span class=\"input-group-btn\" style=\"width:0;\"><button id=\"delete_ivalue\" class=\"form-value\"><i class=\"material-icons\">delete</i></button></span>";
+        } else {    
+            if (dname === '') {    
+                s_html = "<input id=\"dcsFileInput\" type=\"file\" \n\
+                             accept=\"image/*;capture=camera\" \n\
+                        class=\"form-value\" vt=\""+vt+"\" it=\"\" ov=\""+ov+"\" \n\
+                        value=\""+dname+"\">\n\
+                          <span class=\"input-group-btn\" \n\
+                           style=\"width:0;\">\n\
+                           <button id=\"done\" class=\"form-value\">\n\
+                              <i class=\"material-icons\">done</i>\n\
+                           </button></span>";
+            } else {
+                s_html = "<a href=\""+it+"\" download=\""+dname+"\">"+dname+"</a>\n\
+                         <span class=\"input-group-btn\" style=\"width:0;\">\n\
+                         <button id=\"delete_ivalue\" class=\"form-value\">\n\
+                           <i class=\"material-icons\">delete</i>\n\
+                         </button>\n\
+                         </span>";
             }
         }    
-    }    
-    else
-    {
-        s_html = "<input type=\""+itype+"\" class=\"form-control ajax\" vt=\""+vt+"\" it=\"\" ov=\""+ov+"\" value=\""+dname+"\"><span class=\"input-group-btn\" style=\"width:0;\"><button id=\"done\" class=\"form-value\"><i class=\"material-icons\">done</i></button></span>";       
+    } else {
+        s_html = "<input type=\""+itype+"\" class=\"form-control ajax\" \n\
+                           vt=\""+vt+"\" it=\"\" ov=\""+ov+"\" value=\""+dname+"\">\n\
+                          <span class=\"input-group-btn\" style=\"width:0;\">\n\
+                          <button id=\"done\" class=\"form-value\">\n\
+                            <i class=\"material-icons\">done</i>\n\
+                          </button></span>";       
         bwidth +=50; 
     }
     $x.append(s_html);
@@ -582,7 +579,7 @@ $('body').on('click','button.form-value#list', function(e)
     $("input[name='command']").val('list'); 
     $data = $('.ajax').serializeArray();
     $.ajax({
-      url: getprefix()+'/ajax/'+itemid+'/'+$tr.attr('id')+'/'+action,
+      url: getprefix()+'/ajax/'+itemid,
       type: 'get',
       dataType: 'json',
       data: $data,
@@ -593,7 +590,6 @@ $('body').on('click','button.form-value#list', function(e)
 $('body').on('click','button.form-value#delete_ivalue', function(e)
 {
     e.preventDefault();
-    var action = $("input[name='action']").val();
     var itemid = $("input[name='itemid']").val();
     var $x = $('div#ivalue');
     var $ci = $x.find('input');
@@ -605,12 +601,20 @@ $('body').on('click','button.form-value#delete_ivalue', function(e)
     $etd.html('');
     $etd.attr('it','');
     $x.hide();
-    var $data = {action:action, propid: propid, id: '', type:typ, name:'', itemid:$currow.attr('id'), command:'save', prefix:'field'};
-    $.getJSON(
-         getprefix()+'/ajax/'+itemid+'/'+propid+'/'+action,
-         $data
-
-     );
+    $("input[name='propid']").val(propid); 
+    $("input[name='curid]").val($currow.attr('id')); 
+    $("input[name='filter_id']").val(''); 
+    $("input[name='filter_val']").val(''); 
+    $("input[name='filter_type']").val(typ); 
+    $("input[name='command']").val('field_save'); 
+    $data = $('.ajax').serializeArray();
+    $.ajax({
+      url: getprefix()+'/ajax/'+itemid,
+      type: 'get',
+      dataType: 'json',
+      data: $data,
+      success: setvals
+    });    
 });
 
 $(':input.form-control').click(function () {
@@ -624,7 +628,6 @@ $(':input.form-control').click(function () {
 
 $('body').on('click', 'ul.types_list li', function(){
     
-    var action = $("input[name='action']").val();
     var itemid = $("input[name='itemid']").val();
     var tx = $(this).html(); 
     var lid = this.id; 
@@ -632,39 +635,43 @@ $('body').on('click', 'ul.types_list li', function(){
     var $curinp = $curdiv.find("input[type='text']");
     var curname = $curinp.attr('name');
     var curtype = $curinp.attr('it');
-    var curid = '';
+    var propid = '';
+    var func;
     if((curname.indexOf('name_') + 1)>0)
     {
-        curid = curname.substring(5);
-        $curinpid = $('div.form-group').find('input#'+curid);
+        propid = curname.substring(5);
+        $curinpid = $('div.form-group').find('input#'+propid);
         $curinpid.val(lid); 
     }    
     $curinp.val(tx); 
     $(".types_list").slideUp('fast'); 
-    if ((curname=='name_propid')||(curname=='name_valmdid'))
-    {
-        $.getJSON(
-            getprefix()+'/ajax/'+itemid+curid+'/'+action,
-            {action:action, id:lid, type:curname, name:tx, command:'get', prefix:'mdname'},
-            onGetMdData
-        );
-    }    
-    else
-    {
-        if ((curtype=='id')||(curtype=='cid'))
-        {
-            var scurid = '';
-            if (curid != '')
-            {
-                scurid = '/'+curid;
-            }    
-            $.getJSON(
-                getprefix()+'/ajax/'+itemid+scurid+'/'+action,
-                {action:action, id:itemid, type:curtype, name:lid, command:'Choice', prefix:'After', propid:curid},
-                onGetData
-            );    
+    if ((curname == 'name_propid')||(curname == 'name_valmdid')) {
+        $("input[name='propid']").val(''); 
+        $("input[name='filter_id']").val(lid); 
+        $("input[name='filter_type']").val(curname); 
+        $("input[name='filter_val']").val(tx); 
+        $("input[name='command']").val('get_mdname'); 
+        func = onGetMdData;
+    } else {
+        if ((curtype == 'id')||(curtype == 'cid')) {
+            $("input[name='propid']").val(propid); 
+            $("input[name='filter_id']").val(lid); 
+            $("input[name='filter_type']").val(curtype); 
+            $("input[name='filter_val']").val(''); 
+            $("input[name='command']").val('after_choice'); 
+            func = onGetData;
+        } else {
+            return;
         }    
     }    
+    $data = $('.ajax').serializeArray();
+    $.ajax({
+      url: getprefix()+'/ajax/'+itemid,
+      type: 'get',
+      dataType: 'json',
+      data: $data,
+        success: func
+    });    
     
 });
 $('body').on('click','#entitylist tr',function () 
@@ -696,53 +703,37 @@ $("#dcsTab a").click(function(e){
 $('body').on('click','a#create', function () 
 {
     var itemid = $("input[name='itemid']").val();    
-    var action = $("input[name='action']").val();    
-    $("input[name='command']").val('create'); 
-    if (itemid != '') 
-    {
-        if (action == 'SET_EDIT')
+    if (itemid === '') {
+        return;
+    }    
+    var curid = $("ul#dcsTab").find("li.active a").attr('href').substring(1);
+    if (curid === undefined || curid === null) {
+        location.href=getprefix()+'/'+itemid+"/create";
+    } else {
+        $("input[name='curid']").val(curid);    
+        $("input[name='command']").val('create'); 
+        $data = $('.ajax').serializeArray();
+        $.ajax(
         {
-            var curid = $("ul#dcsTab").find("li.active a").attr('href').substring(1);
-            $("input[name='curid']").val(curid);    
-            $data = $('.ajax').serializeArray();
-            $.ajax(
-            {
-                url: getprefix()+'/ajax/'+itemid+'/'+curid+'/'+action,
-                type: 'get',
-                dataType: 'json',
-                data: $data,
-                error: function(xhr, error){
-                        console.debug(xhr); console.debug(error);
-                },                
-                success: function(result) {
-                    onLoadValID(result);
-                }
-            });
-        }   
-        else
-        {
-            var curid = $("input[name='curid']").val();    
-            dop='';
-            if (curid !== '')
-            {
-                dop +='/'+curid; 
-            }   
-            location.href=getprefix()+'/'+itemid+dop+"/create";
-        }    
-    }  
+            url: getprefix()+'/ajax/'+itemid,
+            type: 'get',
+            dataType: 'json',
+            data: $data,
+            error: function(xhr, error){
+                    console.debug(xhr); console.debug(error);
+            },                
+            success: function(result) {
+                onLoadValID(result);
+            }
+        });
+    }   
 });
 $('body').on('click', '#edit', function () {
     var action = $("input[name='action']").val();    
-    if ((action === 'EDIT')||(action === 'SET_EDIT'))
+    if (action === 'EDIT')
     {    
-        var id = $('tr.info').attr('id');
-        if (id !== '') 
-        {
-          location.href=getprefix()+'/'+id+"/edit";
-        }  
-    }
-    else
-    {
+        tr_dblclick($('tr.info'));
+    } else {
         var itemid = $("input[name='itemid']").val();    
         var curid = $("input[name='curid']").val();    
         url = getprefix()+'/'+itemid;
@@ -754,12 +745,7 @@ $('body').on('click', '#edit', function () {
     }    
 });
 $('body').on('click', '#view', function () {
-    var id = $('tr.info').attr('id');
-    if (id === undefined || id === null) 
-    {
-        return;
-    } 
-    location.href=getprefix()+'/'+id+'/view';
+    tr_dblclick($('tr.info'));
 });
 function erase_success (result)
 {
@@ -784,13 +770,8 @@ function erase() {
     $cid.val($('tr.info').attr('id')); 
     $data = $('.ajax').serializeArray();
     $cid.val(curid); 
-    dop='';
-    if (curid != '')
-    {
-        dop +='/'+curid; 
-    }   
     $.ajax({
-      url: getprefix()+'/ajax/'+itemid+dop+'/'+action,
+      url: getprefix()+'/ajax/'+itemid,
       type: 'get',
       dataType: 'json',
       data: $data,
@@ -846,13 +827,8 @@ $('body').on('click', '#delete', function ()
     $("input[name='command']").val('before_delete'); 
     $data = $('.ajax').serializeArray();
     $cid.val(curid); 
-    var dop='';
-    if (curid != '')
-    {
-        dop +='/'+curid; 
-    }   
     $.ajax({
-      url: getprefix()+'/ajax/'+itemid+dop+'/'+action,
+      url: getprefix()+'/ajax/'+itemid,
       type: 'get',
       dataType: 'json',
       data: $data,
@@ -868,12 +844,12 @@ $('body').on('click', '#filter', function (e)
     e.preventDefault();
     var $data;
     var $el_cur  = $("tr#"+curid).find("td#"+curcol);
-    var $el_fval = $("input[name='filter_val']");
+    var $el_fval = $("input[name='param_val']");
     var filter_val=$el_fval.val();
     var curval='';
     var fval  = $el_cur.html();
     var fid   = $el_cur.attr("it");
-    $("input[name='filter_id']").val(curcol); 
+    $("input[name='param_id']").val(curcol); 
     if (fid !== '')
     {
         $el_fval.val(fid); 
@@ -905,57 +881,8 @@ $('body').on('click', '#filter', function (e)
     curval = $el_fval.val();
     $("input[name='command']").val('load'); 
     $data = $('.ajax').serializeArray();
-    var dop='';
-    if (curid != '')
-    {
-        dop +='/'+curid; 
-    }   
     $.ajax({
-      url: getprefix()+'/ajax/'+itemid+dop+'/'+action,
-      type: 'get',
-      dataType: 'json',
-      data: $data,
-      success: function(result) {
-            onLoadValID(result);
-        }  
-      }
-    );
-});
-$('body').on('click', '#sort', function (e) 
-{
-    var itemid = $("input[name='itemid']").val(); 
-    var action = $("input[name='action']").val();  
-    e.preventDefault();
-    var $data;
-    var $el_sort_id = $("input[name='sort_id']");
-    var $el_sort_dir = $("input[name='sort_dir']");
-    var curcol = $('th.info').attr('id');
-    var cur_sort_dir =$el_sort_dir.val();
-    var cur_sort_id =$el_sort_id.val();
-    if (cur_sort_id != curcol)
-    {
-        $el_sort_id.val(curcol); 
-    }
-    else
-    {
-        if (cur_sort_dir != '')
-        {
-            $el_sort_dir.val(''); 
-        }
-        else
-        {
-            $el_sort_dir.val('1'); 
-        }    
-    }
-    $("input[name='command']").val('load'); 
-    $data = $('.ajax').serializeArray();
-    var dop='';
-    if (curcol != '')
-    {
-        dop +='/'+curcol; 
-    }   
-    $.ajax({
-      url: getprefix()+'/ajax/'+itemid+dop+'/'+action,
+      url: getprefix()+'/ajax/'+itemid,
       type: 'get',
       dataType: 'json',
       data: $data,
@@ -1028,7 +955,7 @@ $('body').on('click', '#history', function (e)
             $("input[name='command']").val('history'); 
             $data = $('.ajax').serializeArray();
             $.ajax({
-              url: getprefix()+'/ajax/'+itemid+'/'+tcurid+'/HISTORY',
+              url: getprefix()+'/ajax/'+itemid,
               type: 'get',
               dataType: 'json',
               data: $data,
@@ -1042,7 +969,6 @@ $('body').on('click', '#submit', function (e)
 {
     var itemid = $("input[name='itemid']").val(); 
     var mode = $("input[name='mode']").val();  
-    var action = $("input[name='action']").val();  
     var act = $("input[name='act']").val();  
     var $data;
     var curl = '/';
@@ -1050,7 +976,7 @@ $('body').on('click', '#submit', function (e)
     if (mode == 'AUTH') {
         curl = '/auth/'+act;
     } else {
-        curl = getprefix()+'/ajax/'+itemid+'/'+action;
+        curl = getprefix()+'/ajax/'+itemid;
     }
     $.ajax({
       url: curl,
@@ -1077,17 +1003,11 @@ $('body').on('click', '#print', function (e)
 function before_save() 
 {
     var itemid = $("input[name='itemid']").val(); 
-    var action = $("input[name='action']").val();  
-    var curid = $("input[name='curid']").val();  
     var $data;
-    var dop='';
-    if (curid !== '') {
-        dop +='/'+curid; 
-    }   
     $("input[name='command']").val('before_save'); 
     $data = $('.ajax').serializeArray();
     $.ajax({
-      url: getprefix()+'/ajax/'+itemid+dop+'/'+action,
+      url: getprefix()+'/ajax/'+itemid,
       type: 'get',
       dataType: 'json',
       data: $data,
@@ -1097,17 +1017,11 @@ function before_save()
 function save() 
 {
     var itemid = $("input[name='itemid']").val(); 
-    var action = $("input[name='action']").val();  
-    var curid = $("input[name='curid']").val();  
     var $data;
-    var dop='';
-    if (curid !== '') {
-        dop +='/'+curid; 
-    }   
     $("input[name='command']").val('save'); 
     $data = $('.ajax').serializeArray();
     $.ajax({
-      url: getprefix()+'/ajax/'+itemid+dop+'/'+action,
+      url: getprefix()+'/ajax/'+itemid,
       type: 'get',
       dataType: 'json',
       data: $data,
@@ -1183,7 +1097,7 @@ function logout()
         }
     })      
 };
-function activate_pickadate(action)
+function activate_pickadate()
 {
     var action = $("input[name='action']").val();
     if ((action === 'EDIT')||
@@ -1197,19 +1111,14 @@ function activate_pickadate(action)
 };
 $(document).ready(function() 
 { 
-    var curid = $("input[name='curid']").val(); 
     var itemid = $("input[name='itemid']").val(); 
     var mode = $("input[name='mode']").val();
-    activate_pickadate(action);
-    if (curid !== '') {
-        itemid = itemid + '/' + curid;
-    }
+    activate_pickadate();
     if ((mode !== 'AUTH')&&(itemid !== '')) {
         $("input[name='command']").val('load'); 
-        var action = $("input[name='action']").val();
         var $data = $('.ajax').serializeArray();
         $.ajax({
-          url: getprefix()+'/ajax/'+itemid+'/'+action,
+          url: getprefix()+'/ajax/'+itemid,
           type: 'get',
           dataType: 'json',
           data: $data,

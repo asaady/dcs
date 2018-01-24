@@ -30,7 +30,7 @@ class DcsContext
         $this->context['PREFIX'] = '';
         $this->context['ITEMID'] = '';
         $this->context['CURID'] = '';
-        $this->context['PARAM'] = '';
+        $this->context['SETID'] = '';
         $this->context['PAGE'] = 1;
         $this->context['LIMIT'] = DCS_COUNT_REC_BY_PAGE;
         $this->context['MENU'] = array();
@@ -100,15 +100,17 @@ class DcsContext
     }   
     public function get_context_data()
     {        
-        foreach($_POST as $key=>$val)
+        foreach($_POST as $pkey=>$val)
         {
+            $key = strtolower($pkey);
             if (strpos($key,'name_')===false){
                 $pval = filter_input(INPUT_POST, $key, FILTER_SANITIZE_SPECIAL_CHARS);
-                $this->context['DATA'][$key]=array('id' => $pval,'name' => $pval);
+                $this->context['DATA'][strtolower($key)]=array('id' => $pval,'name' => $pval);
             }
         }
-        foreach($_POST as $key=>$val)
+        foreach($_POST as $pkey=>$val)
         {
+            $key = strtolower($pkey);
             if (strpos($key,'name_')===false){
                 continue;
             }
@@ -119,15 +121,17 @@ class DcsContext
                 $this->context['DATA'][$key]['name']='';
             }
         }
-        foreach($_GET as $key=>$val)
+        foreach($_GET as $pkey=>$val)
         {
+            $key = strtolower($pkey);
             if (strpos($key,'name_')===false){
                 $pval = filter_input(INPUT_GET, $key, FILTER_SANITIZE_SPECIAL_CHARS);
                 $this->context['DATA'][$key]=array('id' => $pval,'name' => $pval);
             }
         }
-        foreach($_GET as $key=>$val)
+        foreach($_GET as $pkey=>$val)
         {
+            $key = strtolower($pkey);
             if (strpos($key,'name_')===false){
                 continue;
             }

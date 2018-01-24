@@ -5,12 +5,28 @@ use PDO;
 use DateTime;
 use Exception;
 
-class CollectionSet extends Head implements I_Head, I_Property
+class CollectionSet extends Sheet implements I_Sheet, I_Property
 {
-    use T_Head;
+    use T_Sheet;
+    use T_Set;
     use T_Collection;
+    use T_Property;
     use T_CProperty;
     
+    public function txtsql_forDetails() 
+    {
+        return "SELECT mdt.id, mdt.name, mdt.synonym, "
+                    . "NULL as mdid, mdi.name as mdtypename, "
+                    . "mdt.mditem, mdi.synonym as mdtypedescription "
+                    . "FROM \"MDTable\" AS mdt "
+                        . "INNER JOIN \"CTable\" AS mdi "
+                        . "ON mdt.mditem=mdi.id "
+                    . "WHERE mdt.id= :id";
+    }        
+    public function head() 
+    {
+        return new MdentitySet($this->mditem);
+    }
     public function item() 
     {
         return new CollectionItem($this->id);
@@ -38,15 +54,18 @@ class CollectionSet extends Head implements I_Head, I_Property
         
         $ftype='';
         $dbtable = '';
-        $propid = $filter['filter_id']['id'];
-        if ($propid != '') {
-            $arprop = $this->properties[$propid];
-            if ($arprop['type'] == 'text') {
-                return array();
+        $propid = '';
+        if (count($filter)>0) {
+            $propid = $filter['filter_id']['id'];
+            if ($propid != '') {
+                $arprop = $this->properties[$propid];
+                $ftype = $arprop['name_type'];
+                if ($ftype == 'text') {
+                    return array();
+                }
+                $dbtable = "CPropValue_$ftype";
             }
-            $dbtable = "CPropValue_$arprop[type]";
-            $ftype = $arprop['type'];
-        }
+        }    
         $params = array();
         $strwhere = DataManager::getstrwhere($filter,$ftype,'pv.value',$params);
         
@@ -71,31 +90,33 @@ class CollectionSet extends Head implements I_Head, I_Property
         }
         return $objs;
     }    
-    public function getItemsByFilter($context, $filter) 
+    public function getItems($context) 
     {
         $prefix = $context['PREFIX'];
         $action = $context['ACTION'];
         $limit = $context['LIMIT'];
         $page = $context['PAGE'];
+        $filter = $context['DATA'];
         $mdid = $this->id;
     	$objs = array();
-	$objs['LDATA'] = array();
-	$objs['PSET'] = array();
-        $objs['actionlist'] = DataManager::getActionsbyItem('CollectionSet',$prefix,$action);
-        $objs['navlist'] = $this->get_navlist($context);
+        $filter_id = '';
+        $filter_val =  '';
         if ($this->name == 'user_settings') {
             if (!User::isAdmin())
             {
                 //это уид реквизита user в таблице user_settings
-                $filter['filter_id']['id']='94f6b075-1536-4d16-a548-bc8128791127';
-                $filter['filter_val']['id']=$_SESSION['user_id'];
-                $filter['filter_val']['name']= User::getUserName($_SESSION['user_id']);
+                $filter['filter_id'] = array('id' => '94f6b075-1536-4d16-a548-bc8128791127','name'=>'');
+                $filter['filter_val'] = array('id' => $_SESSION['user_id'],'name' => User::getUserName($_SESSION['user_id']));
             }    
-        }    
+        } else {
+            if (count($filter) > 0) {
+                $filter_id = $filter['filter_id']['id'];
+                $filter_val = $filter['filter_val']['id'];
+            }
+        }   
         $entities = $this->findCollByProp($filter);
         if (!count($entities))
         {
-            $objs['RES']='list entities is empty';
             return $objs;
         }
 	$offset=(int)($page-1)*$limit;
@@ -113,19 +134,20 @@ class CollectionSet extends Head implements I_Head, I_Property
                 continue;
             }
             $rid = $row['id'];
-            $rowname = str_replace("  ","",$row['name']);
-            $rowname = str_replace(" ","",$rowname);
-            if ($row['type']=='cid')
+            $rowname = $this->rowname($row);
+            $rowtype = $row['name_type'];
+            
+            if ($rowtype=='cid')
             {
                 $str0_req .= ", '$rid' as pid_$rowname, pv_$rowname.value as id_$rowname, ct_$rowname.synonym as name_$rowname";
                 $str_req .=" LEFT JOIN \"CPropValue_cid\" as pv_$rowname INNER JOIN \"CTable\" as ct_$rowname ON pv_$rowname.value = ct_$rowname.id ON et.id = pv_$rowname.id AND pv_$rowname.pid=:$rowname";
             }   
-            elseif ($row['type']=='id')
+            elseif ($rowtype=='id')
             {
                 $str0_req .= ", '$rid' as pid_$rowname, pv_$rowname.value as id_$rowname, ct_$rowname.name as name_$rowname";
                 $str_req .=" LEFT JOIN \"CPropValue_id\" as pv_$rowname INNER JOIN \"ETable\" as ct_$rowname ON pv_$rowname.value = ct_$rowname.id ON et.id = pv_$rowname.id AND pv_$rowname.pid=:$rowname";
             }   
-            elseif ($row['type']=='mdid')
+            elseif ($rowtype=='mdid')
             {
                 $str0_req .= ", '$rid' as pid_$rowname, pv_$rowname.value as id_$rowname, ct_$rowname.synonym as name_$rowname";
                 $str_req .=" LEFT JOIN \"CPropValue_mdid\" as pv_$rowname INNER JOIN \"MDTable\" as ct_$rowname ON pv_$rowname.value = ct_$rowname.id ON et.id = pv_$rowname.id AND pv_$rowname.pid=:$rowname";
@@ -133,14 +155,14 @@ class CollectionSet extends Head implements I_Head, I_Property
             else
             {
                 $str0_req .= ", '$rid' as pid_$rowname, '' as id_$rowname, pv_$rowname.value as name_$rowname";
-                $str_req .=" LEFT JOIN \"CPropValue_$row[type]\" as pv_$rowname ON et.id = pv_$rowname.id AND pv_$rowname.pid=:$rowname";
+                $str_req .=" LEFT JOIN \"CPropValue_$rowtype\" as pv_$rowname ON et.id = pv_$rowname.id AND pv_$rowname.pid=:$rowname";
             }    
-            if ($filter['filter_id']!='')
+            if ($filter_id != '')
             {
-                if ($rid==$filter['filter_id'])
+                if ($rid == $filter_id)
                 {
                     $filtername = "pv_$rowname.value";
-                    $filtertype = "$row[type]";
+                    $filtertype = $rowtype;
                 }    
             }
             $params[$rowname]=$rid;
@@ -168,38 +190,25 @@ class CollectionSet extends Head implements I_Head, I_Property
         }    
 	$res = DataManager::dm_query($sql,$params);
         while($row = $res->fetch(PDO::FETCH_ASSOC)) {
-            $objs['LDATA'][$row['id']]=array();
-            $objs['LDATA'][$row['id']]['id']=array('name'=>$row['id'],'id'=>'');
-            $objs['LDATA'][$row['id']]['name']=array('name'=>$row['name'],'id'=>'');
-            $objs['LDATA'][$row['id']]['synonym']=array('name'=>$row['synonym'],'id'=>'');
+            $objs[$row['id']]=array();
+            $objs[$row['id']]['id']=array('name'=>$row['id'],'id'=>'');
+            $objs[$row['id']]['name']=array('name'=>$row['name'],'id'=>'');
+            $objs[$row['id']]['synonym']=array('name'=>$row['synonym'],'id'=>'');
             foreach($plist as $row_plist) 
             {
                 if (!$row_plist['field']) {
                     continue;
                 }
                 $rid = $row_plist['id'];    
-                $field_val = str_replace(" ","",strtolower($row_plist['name']));
+                $field_val = $this->rowname($row_plist);
                 $field_id = "pid_$field_val";
-                $objs['LDATA'][$row['id']][$row[$field_id]] = array('id'=>$row['id_'.$field_val],'name'=>$row['name_'.$field_val]);
-                if ($row_plist['type']=='date')
+                $objs[$row['id']][$row[$field_id]] = array('id'=>$row['id_'.$field_val],'name'=>$row['name_'.$field_val]);
+                if ($row_plist['name_type']=='date')
                 {
-                    $objs['LDATA'][$row['id']][$row[$field_id]] = array('id'=>'','name'=>substr($row['name_'.$field_val],0,10));
+                    $objs[$row['id']][$row[$field_id]] = array('id'=>'','name'=>substr($row['name_'.$field_val],0,10));
                 }    
             }
         }
-        $objs['PSET'] = $this->getProperties(TRUE,'toset');
-   	$sql = "SELECT count(*) as countrec FROM tt_et";
-	$res = DataManager::dm_query($sql);	
-	$objs['CNT_REC']=0;
-        $row = $res->fetch(PDO::FETCH_ASSOC);
-        $objs['CNT_REC']=$row['countrec'];
-	$objs['TOP_REC']=$offset+1;
-	if ($objs['CNT_REC']<$objs['TOP_REC'])
-	  $objs['TOP_REC']=$objs['CNT_REC'];
-	$objs['BOT_REC']=$offset+DCS_COUNT_REC_BY_PAGE;
-	if ($objs['CNT_REC']<$objs['BOT_REC'])
-	  $objs['BOT_REC'] = $objs['CNT_REC'];
-	
 	DataManager::droptemptable($artemptable);
 	return $objs;
     }
@@ -268,7 +277,7 @@ class CollectionSet extends Head implements I_Head, I_Property
                        continue;
                     }    
                     $propname = $ap['propname'];
-                    $rls_type = $ap['type'];
+                    $rls_type = $ap['name_type'];
                     if (($ap['rd']===true)||($ap['wr']===true))
                     {
                         $str_val .= ",'"."$ap[value]"."'";

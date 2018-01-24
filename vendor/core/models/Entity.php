@@ -5,9 +5,9 @@ use PDO;
 use DateTime;
 use Exception;
 
-class Entity extends Head implements I_Head, I_Property 
+class Entity extends Sheet implements I_Sheet, I_Property 
 {
-    use T_Head;
+    use T_Sheet;
     use T_Entity;
     use T_Item;
     use T_Property;
@@ -36,10 +36,22 @@ class Entity extends Head implements I_Head, I_Property
             $this->activity = TRUE;
         }
     }
-    public function loadProperties()
+    public function txtsql_forDetails() 
     {
-        return $this->properties();
-    }        
+        return "select et.id, '' as name, '' as synonym, 
+                    et.mdid , md.name as mdname, md.synonym as mdsynonym, 
+                    md.mditem, tp.name as mdtypename, tp.synonym as mdtypedescription 
+                    FROM \"ETable\" as et
+                        INNER JOIN \"MDTable\" as md
+                            INNER JOIN \"CTable\" as tp
+                            ON md.mditem = tp.id
+                        ON et.mdid = md.id 
+                    WHERE et.id = :id";  
+    }
+    function head() 
+    {
+        return new EntitySet($this->mdid);
+    }
     function item() 
     {
         return NULL;
@@ -91,7 +103,7 @@ class Entity extends Head implements I_Head, I_Property
                     }    
                 }    
                 $name = $this->data[$prop]['name'];
-                if ($this->properties[$prop]['type'] == 'date')
+                if ($this->properties[$prop]['name_type'] == 'date')
                 {
                     $name =substr($name,0,10);
                 }
@@ -152,21 +164,22 @@ class Entity extends Head implements I_Head, I_Property
                 continue;
             }
             $rid = $row['id'];
-            $rowname = $this->rowname($rid);
+            $rowname = $this->rowname($row);
+            $rowtype = $row['name_type'];
             $str0_t = ", tv_$rowname.propid as propid_$rowname, pv_$rowname.value as name_$rowname, '' as id_$rowname";
-            $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
-            if ($row['type']=='id') {
+            $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            if ($rowtype=='id') {
                 $str0_t = ", tv_$rowname.propid as propid_$rowname, '' as name_$rowname, pv_$rowname.value as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
-            } elseif ($row['type']=='cid') {
+                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            } elseif ($rowtype=='cid') {
                 $str0_t = ", tv_$rowname.propid as propid_$rowname, ct_$rowname.synonym as name_$rowname, pv_$rowname.value as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname INNER JOIN \"CTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
-            } elseif ($row['type']=='mdid') {
+                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname INNER JOIN \"CTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            } elseif ($rowtype=='mdid') {
                 $str0_t = ", tv_$rowname.propid as propid_$rowname, ct_$rowname.synonym as name_$rowname, pv_$rowname.value as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname INNER JOIN \"MDTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
-            } elseif ($row['type']=='date') {
+                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname INNER JOIN \"MDTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            } elseif ($rowtype=='date') {
                 $str0_t = ", tv_$rowname.propid as propid_$rowname, to_char(pv_$rowname.value,'DD.MM.YYYY') as name_$rowname, '' as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
             }
             $str0_req .= $str0_t;
             $str_req .=$str_t;
@@ -272,7 +285,7 @@ class Entity extends Head implements I_Head, I_Property
                         }
                         if ($cur_val_dep_ent != $this->data[$pid]['id']) {
                             //значение не совпало - сбрасываем значение зависимого реквизита
-                            $res[$dep_pid] = array('value'=>DCS_EMPTY_ENTITY,'type'=>$dep_prop['type'], 'name'=>'');
+                            $res[$dep_pid] = array('value'=>DCS_EMPTY_ENTITY,'type'=>$dep_prop['name_type'], 'name'=>'');
                         }
                     }    
                     
@@ -303,12 +316,12 @@ class Entity extends Head implements I_Head, I_Property
                             if ($fname != '') {
                                 $fname = trim($fname);
                             }
-                            $res[$dep_pid] = array('value'=>$dep_entid,'id'=>$dep_entid,'type'=>$dep_prop['type'], 'name'=>$fname);
+                            $res[$dep_pid] = array('value'=>$dep_entid,'id'=>$dep_entid,'type'=>$dep_prop['name_type'], 'name'=>$fname);
                             break;
                         }
                     }
                     if (count($res) == 0) {
-                        $res[$dep_pid] = array('value'=>DCS_EMPTY_ENTITY,'type'=>$dep_prop['type'], 'name'=>'');                    
+                        $res[$dep_pid] = array('value'=>DCS_EMPTY_ENTITY,'type'=>$dep_prop['name_type'], 'name'=>'');                    
                     }
                 }
             }
@@ -332,7 +345,7 @@ class Entity extends Head implements I_Head, I_Property
             if(!array_key_exists($propid,$this->properties)) {
                 continue;
             }
-            $type = $this->properties[$propid]['type'];
+            $type = $this->properties[$propid]['name_type'];
             if ($type == 'id') {
                 $n_name = '';
                 $n_id = DCS_EMPTY_ENTITY;
@@ -343,7 +356,7 @@ class Entity extends Head implements I_Head, I_Property
                     //заполним пересекающиеся реквизиты ссылочного типа
                     $tpropid = $this->properties[$propid]['propid'];
                     foreach($this->properties as $prop) {
-                        if ($prop['type'] != 'id') {
+                        if ($prop['name_type'] != 'id') {
                             continue;
                         }    
                         $ctpropid = $prop['propid'];
@@ -384,7 +397,7 @@ class Entity extends Head implements I_Head, I_Property
             {
                 continue;
             }
-            $type = $this->properties[$propid]['type'];
+            $type = $this->properties[$propid]['name_type'];
             $params = array();
             $params['userid'] = $_SESSION['user_id'];
             $params['id'] = $id;
@@ -462,7 +475,7 @@ class Entity extends Head implements I_Head, I_Property
 	    $res = DataManager::dm_query($sql,$params);
 	    if(!$res) {
                 $res = DataManager::dm_query("ROLLBACK");
-                return array('status'=>'ERROR','msg'=>"Невозможно добавить в таблицу PropValue_$type запись ".$sql);
+                return array('status'=>'ERROR','msg'=>"Невозможно добавить в таблицу PropValue_bool запись ".$sql);
 	    }
             $res = DataManager::dm_query("COMMIT");	
             return array('status'=>'OK', 'id'=>$this->id);
@@ -503,6 +516,7 @@ class Entity extends Head implements I_Head, I_Property
         {
             $propid = $prop['id'];
             if ($propid=='id') continue;
+            $type = $prop['name_type'];
             $valname = $this->data[$propid]['name'];
             $valid  = $this->data[$propid]['id'];
             if ($prop['isenumber'])
@@ -512,7 +526,7 @@ class Entity extends Head implements I_Head, I_Property
                     $valname = DataManager::getNumber($prop['id'])+1;
                 }    
             }
-            if ($prop['type']=='id')
+            if ($type=='id')
             {
                 if (($valid!=DCS_EMPTY_ENTITY)&&($valid!=''))  
                 {
@@ -538,7 +552,7 @@ class Entity extends Head implements I_Head, I_Property
                     continue;
                 }
             }
-            elseif (($prop['type']=='cid')||($prop['type']=='mdid'))
+            elseif (($type=='cid')||($type=='mdid'))
             {
                 if (($valid!=DCS_EMPTY_ENTITY)&&($valid!=''))  
                 {
@@ -551,7 +565,7 @@ class Entity extends Head implements I_Head, I_Property
             }    
             else 
             {
-                if ($prop['type']=='bool')
+                if ($type=='bool')
                 {
                     if ($valname=='') 
                     {
@@ -569,7 +583,7 @@ class Entity extends Head implements I_Head, I_Property
                          $valname ='false';
                      }
                  }
-                elseif (($prop['type']=='int')||($prop['type']=='float'))
+                elseif (($type=='int')||($type=='float'))
                 {
                     if ($valname=='') 
                     {
@@ -593,14 +607,14 @@ class Entity extends Head implements I_Head, I_Property
                 return array('status'=>'ERROR','msg'=>"Невозможно добавить в таблицу IDTable запись ".$sql);
             }
             $row = $res->fetch(PDO::FETCH_ASSOC);
-            $sql = "INSERT INTO \"PropValue_$prop[type]\" (id, value) VALUES ( :id, :value)";
+            $sql = "INSERT INTO \"PropValue_$type\" (id, value) VALUES ( :id, :value)";
             $params = array();
             $params['id']=$row['id'];
             $params['value']=$valname;
             $res = DataManager::dm_query($sql,$params);
             if(!$res) {
                 $res = DataManager::dm_query("ROLLBACK");
-                return array('status'=>'ERROR','msg'=>"Невозможно добавить в таблицу PropValue_$prop[type] запись ".$sql);
+                return array('status'=>'ERROR','msg'=>"Невозможно добавить в таблицу PropValue_$type запись ".$sql);
             }
 	}
 	$res = DataManager::dm_query("COMMIT");
@@ -663,37 +677,37 @@ class Entity extends Head implements I_Head, I_Property
         foreach($this->properties as $row) 
         {
             $rid = $row['id'];
-            if ($row['type'] == 'id')
+            $rowtype = $row['name_type'];
+            if ($rowtype == 'id')
             {
                 if ($row['valmdtypename'] != 'Sets')
                 {
                     $arr_id[$rid]=$row;
                 }
             }
-            $rowname = "$row[id]";
-            $rowname = str_replace("-","",$rowname);
+            $rowname = $this->rowname($row);
             $str0_t = ", tv_$rowname.propid as propid_$rowname, pv_$rowname.value as name_$rowname, '' as id_$rowname";
-            $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
-            if ($row['type']=='id')
+            $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            if ($rowtype=='id')
             {
                 $arr_id[$rid]=$row;
                 $str0_t = ", tv_$rowname.propid as propid_$rowname, '' as name_$rowname, pv_$rowname.value as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
             }
-            elseif ($row['type']=='cid') 
+            elseif ($rowtype=='cid') 
             {
                 $str0_t = ", tv_$rowname.propid as propid_$rowname, ct_$rowname.synonym as name_$rowname, pv_$rowname.value as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname INNER JOIN \"CTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname INNER JOIN \"CTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
             }
-            elseif ($row['type']=='mdid') 
+            elseif ($rowtype=='mdid') 
             {
                 $str0_t = ", tv_$rowname.propid as propid_$rowname, ct_$rowname.synonym as name_$rowname, pv_$rowname.value as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname INNER JOIN \"MDTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname INNER JOIN \"MDTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
             }
-            elseif ($row['type']=='date') 
+            elseif ($rowtype=='date') 
             {
                 $str0_t = ", tv_$rowname.propid as propid_$rowname, to_char(pv_$rowname.value,'DD.MM.YYYY') as name_$rowname, '' as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
             }
                 
             $str0_req .= $str0_t;
@@ -710,16 +724,17 @@ class Entity extends Head implements I_Head, I_Property
             foreach($this->properties as $row_properties) 
             {
                 $rid = $row_properties['id'];
-                $rowname = str_replace("-","",$row_properties['id']);
-                $field_id = "propid_$rowname";
+                $name = $this->rowname($row_properties);
+                $field_id = "propid_$name";
                 $rowid = "id_$rowname";
                 $rowname = "name_$rowname";
+                $type = $row_properties['name_type'];
                 $objs[$row[$field_id]] = array();                
                 if (array_key_exists($rowname,$row))
                 {   
                     if ($row[$field_id])
                     {    
-                        if ($row_properties['type']=='id')
+                        if ($type=='id')
                         {
                             if ($row_properties['valmdtypename']=='Sets')
                             {    
@@ -739,7 +754,7 @@ class Entity extends Head implements I_Head, I_Property
                                 $objs[$row[$field_id]]['name']='';
                             }
                         }
-                        elseif ($row_properties['type']=='cid')
+                        elseif ($type=='cid')
                         {
                             $objs[$row[$field_id]]['id']=$row[$rowid];
                             $objs[$row[$field_id]]['name']=$row[$rowname];
@@ -756,20 +771,7 @@ class Entity extends Head implements I_Head, I_Property
         }  
         if (count($arr_e))
         {
-            $arr_entities = $this->getAllEntitiesToStr($arr_e);
-            foreach($arr_id as $rid=>$prow)
-            {
-                if (array_key_exists($rid, $objs))
-                {
-                    $crow = $objs[$rid];
-                    if (array_key_exists($crow['id'], $arr_entities)){
-                        if ($arr_entities[$crow['id']]['name']!='')
-                        {    
-                            $objs[$rid]['name']=$arr_entities[$crow['id']]['name'];
-                        }    
-                    }    
-                }        
-            }
+            $this->fill_entsetname($objs,$arr_e);
         }
 	$msg = DataManager::droptemptable($artemptable);
         if ($msg!='')
@@ -780,13 +782,8 @@ class Entity extends Head implements I_Head, I_Property
     }
     function getSetData($context)
     {
-        $prefix = $context['PREFIX'];
-        $action = $context['ACTION'];
 	$objs = array();
-	$objs['LDATA']=array();
-        $objs['actionlist'] = DataManager::getActionsbyItem('EntitySet',$prefix, $action);
-	$objs['PSET'] = $this->getProperties(true,'toset');
-        $objs['navlist'] = $this->get_navlist($context);
+	$pset = $this->getProperties(true,'toset');
         if ($this->id == '')
         {
             return $objs;
@@ -821,7 +818,7 @@ class Entity extends Head implements I_Head, I_Property
 			pv_text.value as text_value, 
 			pv_file.value as file_value, 
 			mp.synonym,
-			cv_name.name as type,
+			cv_name.name as name_type,
 			mp.ranktostring,
 			mp.isedate,
 			mp.isenumber,
@@ -869,7 +866,7 @@ class Entity extends Head implements I_Head, I_Property
 		ON t.id = pv_file.id";
         
         $artemptable[]= DataManager::createtemptable($sql, 'tt_lv');
-        $rank_id = array_search('rank', array_column($objs['PSET'],'name','id'));
+        $rank_id = array_search('rank', array_column($pset,'name','id'));
         if ($rank_id!==FALSE)
         {
             $sql = "SELECT et.id, COALESCE(lv.int_value,999) as rank FROM tt_et AS et left join tt_lv as lv on et.id=lv.entityid and lv.id=:rankid order by rank"; 
@@ -886,19 +883,19 @@ class Entity extends Head implements I_Head, I_Property
         
         $sql = "SELECT * FROM tt_lv"; 
 	$res = DataManager::dm_query($sql);
-        $activity_id = array_search('activity', array_column($objs['PSET'],'name','id'));
+        $activity_id = array_search('activity', array_column($pset,'name','id'));
         $arr_e=array();
         foreach ($sobjs['rows'] as $row)
         {
-            $objs['LDATA'][$row['id']]=array();
-            foreach ($objs['PSET'] as $prop)
+            $objs[$row['id']]=array();
+            foreach ($pset as $prop)
             {
-                $objs['LDATA'][$row['id']][$prop['id']]= array('id'=>'', 'name'=>'');
+                $objs[$row['id']][$prop['id']]= array('id'=>'', 'name'=>'');
                 if ($activity_id!==FALSE)
                 {
                     if ($prop['id']==$activity_id)
                     {
-                        $objs['LDATA'][$row['id']]['class']= 'active';
+                        $objs[$row['id']]['class']= 'active';
                     }    
                 }    
             }
@@ -906,13 +903,14 @@ class Entity extends Head implements I_Head, I_Property
         $destPath = $_SERVER['DOCUMENT_ROOT'] . '/upload/';
         while($row = $res->fetch(PDO::FETCH_ASSOC)) 
         {
-            if (($row['type']=='id')||($row['type']=='cid'))
+            $rowtype = $row['name_type'];
+            if (($rowtype=='id')||($rowtype=='cid'))
             {
-                $objs['LDATA'][$row['entityid']][$row['id']] = array(
-                       'id'=>$row[$row['type'].'_value'],
+                $objs[$row['entityid']][$row['id']] = array(
+                       'id'=>$row[$rowtype.'_value'],
                        'name'=>$row['id_valuename']
                   );
-                if ($row['type'] == 'id')
+                if ($rowtype == 'id')
                 {    
                     if (($row['id_value'])&&($row['id_value']!=DCS_EMPTY_ENTITY)) {        
                         if (!in_array($row['id_value'],$arr_e)) {
@@ -920,34 +918,32 @@ class Entity extends Head implements I_Head, I_Property
                         }
                     }    
                 }    
-            }
-            else
-            {
-                if ($row['type']=='file')
+            } else {
+                if ($rowtype == 'file')
                 {
-                    $name = $row[$row['type'].'_value'];
+                    $name = $row[$rowtype.'_value'];
                     $ext = strrchr($name,'.');
                     
                     $curm = date("Ym",strtotime($row['dateupdate']));
-                    $objs['LDATA'][$row['entityid']][$row['id']] = array(
+                    $objs[$row['entityid']][$row['id']] = array(
                       'name'=>$name,
-                      'id'=>"/download/".$row['entityid']."/".$row['id']
+                      'id'=>"/download/".$row['entityid']."?propid=".$row['id']
                     );
                 }   
                 else
                 {
-                    $objs['LDATA'][$row['entityid']][$row['id']] = array(
-                      'name'=>$row[$row['type'].'_value'],
+                    $objs[$row['entityid']][$row['id']] = array(
+                      'name'=>$row[$rowtype.'_value'],
                       'id'=>''
                       );
                 }    
-                if ($activity_id!==FALSE)
+                if ($activity_id !== FALSE)
                 {
-                    if ($row['id']==$activity_id)
+                    if ($row['id'] == $activity_id)
                     {
-                        if ($row['bool_value']===FALSE)
+                        if ($row['bool_value'] === FALSE)
                         {    
-                            $objs['LDATA'][$row['entityid']]['class']= 'erased';
+                            $objs[$row['entityid']]['class']= 'erased';
                         }    
                     }    
                 }    
@@ -956,29 +952,7 @@ class Entity extends Head implements I_Head, I_Property
         }
         if (count($arr_e))
         {
-            $arr_entities = $this->getAllEntitiesToStr($arr_e);
-            
-            foreach($objs['PSET'] as $rid=>$prow)
-            {
-                if ($prow['type']!='id')
-                {
-                    continue;
-                }    
-                if ($prow['valmdtypename']=='Sets')
-                {
-                    continue;
-                }
-                foreach($objs['LDATA'] as $id=>$row) 
-                {
-                    if (array_key_exists($rid, $row))
-                    {
-                        $crow = $row[$rid];
-                        if (array_key_exists($crow['id'], $arr_entities)){
-                            $objs['LDATA'][$id][$rid]['name']=$arr_entities[$crow['id']]['name'];
-                        }    
-                    }        
-                }
-            }    
+            $this->fill_entsetname($objs,$arr_e);
         }    
         
 	DataManager::droptemptable($artemptable);
@@ -999,7 +973,8 @@ class Entity extends Head implements I_Head, I_Property
     public static function CopyEntityProp($id, $prop, $user) 
     {
             $propid = $prop['id'];
-            $val = $prop[$prop['type'].'_value'];
+            $type = $prop['name_type'];
+            $val = $prop[$type.'_value'];
             $sql = "INSERT INTO \"IDTable\" (userid,entityid, propid) VALUES ('$user', '$id', '$propid) RETURNING \"id\"";
             $res = pg_query(self::_getConnection(), $sql);
             if(!$res) 
@@ -1009,13 +984,13 @@ class Entity extends Head implements I_Head, I_Property
               die("Невозможно добавить в таблицу IDTable запись ".$sql);
             }
             $row = pg_fetch_assoc($res);
-            $sql = "INSERT INTO \"PropValue_{$prop['type']}\" (id, value) VALUES ('{$row['id']}','$val')";
+            $sql = "INSERT INTO \"PropValue_{$type}\" (id, value) VALUES ('{$row['id']}','$val')";
             $res = pg_query(self::_getConnection(), $sql);
             if(!$res) 
             {
               $sql_rb = "ROLLBACK";
               $res = pg_query(self::_getConnection(), $sql_rb);
-              die("Невозможно добавить в таблицу PropValue_{$prop['type']} запись ".$sql);
+              die("Невозможно добавить в таблицу PropValue_{$type} запись ".$sql);
             }
 
     }	
@@ -1095,6 +1070,16 @@ class Entity extends Head implements I_Head, I_Property
             }    
         }    
     }        
+    public function getItems($context) 
+    {
+        if ($context['SETID'] === '') {
+            return array();
+        }
+        $setid = $this->getattrid($context['SETID']);
+        $set = new Entity($setid);
+        $set->set_head($this); 
+        return $set->getSetData($context);
+    }
     public function getItemsByName($name) 
     {
         return NULL;

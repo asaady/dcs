@@ -168,10 +168,14 @@ class DataManager {
         return $sth->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public static function getstrwhere($filter, $type, $name, &$params) {
+    public static function getstrwhere($filter, $type, $name, &$params) 
+    {
         $strwhere = '';
-        $fval = $filter['filter_val']['name'];
-        $fvalid = $filter['filter_val']['id'];
+        if (count($filter) == 0) {
+            return $strwhere;
+        }
+        $fval = $filter['param_val']['name'];
+        $fvalid = $filter['param_val']['id'];
         if ($fval != '') {
             switch ($type) {
                 case 'date': $filterval = "$name>='" . substr($fval, 0, 10) . " 00:00:00+3' AND $name<='" . substr($fval, 0, 10) . " 23:59:59+3'";
@@ -190,18 +194,6 @@ class DataManager {
                     break;
             }
             $strwhere .= " $filterval";
-        } else {
-            $fmin = $filter['filter_min']['name'];
-            $fmax = $filter['filter_max']['name'];
-            if (($fmin != '') || ($fmax != '')) {
-                if ($fmin) {
-                    $strwhere .= " AND $name>=$fmin";
-                }
-                if ($fmax) {
-                    $strwhere .= " AND $name<=$fmax";
-                }
-                $strwhere = substr($strwhere, 4);
-            }
         }
         return $strwhere;
     }

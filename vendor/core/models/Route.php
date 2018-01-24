@@ -61,8 +61,14 @@ class Route {
                 $this->context->setattr('CLASSTYPE', $item['classtype']);
             }
         );
-        $routes = str_replace("&","/",filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_SANITIZE_STRING));
-        $routes = str_replace("?","/",$routes);
+        $url = filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_SANITIZE_STRING);
+        $pos = strpos($url,'?');
+        $routes = $url;
+        $data = '';
+        if ($pos !== FALSE) {
+            $routes = substr($url, 0,$pos);
+            $data = substr($url, $pos);
+        }
         $routes = explode('/', $routes);
         $this->context = new DcsContext;
         $this->context->setcontext($routes);

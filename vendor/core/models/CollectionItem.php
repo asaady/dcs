@@ -5,13 +5,30 @@ use PDO;
 use DateTime;
 use Exception;
 
-class CollectionItem extends Head implements I_Head, I_Property 
+class CollectionItem extends Sheet implements I_Sheet, I_Property 
 {
-    use T_Head;
+    use T_Sheet;
     use T_Collection;
     use T_Item;
+    use T_Property;
     use T_CProperty;
     
+    public function txtsql_forDetails() 
+    {
+        return "SELECT ct.id, ct.mdid, ct.name, ct.synonym, "
+                . "mc.name as mdname, mc.synonym as mdsynonym, mc.mditem, "
+                . "tp.name as mdtypename, tp.synonym as mdtypedescription "
+                . "FROM \"CTable\" as ct "
+                    . "INNER JOIN \"MDTable\" as mc "
+                        . "INNER JOIN \"CTable\" as tp "
+                        . "ON mc.mditem = tp.id "
+                    . "ON ct.mdid = mc.id "
+                . "WHERE ct.id=:id";
+    }        
+    function head() 
+    {
+        return new CollectionSet($this->mdid);
+    }
     function item() {
         return NULL;
     }
@@ -25,8 +42,8 @@ class CollectionItem extends Head implements I_Head, I_Property
             if ($row['field'] == 0) {
                 continue;
             }
-            $rowname = $this->rowname($row['id']);
-            $rowtype = $row['type'];
+            $rowname = $this->rowname($row);
+            $rowtype = $row['name_type'];
             if ($rowtype=='cid')
             {
                 $join .= " LEFT JOIN \"CPropValue_$rowtype\" as pv_$rowname INNER JOIN \"CTable\" as ct_$rowname ON pv_$rowname.value = ct_$rowname.id ON ct.id=pv_$rowname.id AND pv_$rowname.pid = :pv_$rowname";
@@ -108,6 +125,7 @@ class CollectionItem extends Head implements I_Head, I_Property
             {
                 $key = $row['name'];
                 $id = $row['id'];
+                $type = $row['name_type'];
                 if (($key=='id')||($key=='name')||($key=='synonym'))
                 {
                     continue;
@@ -119,7 +137,7 @@ class CollectionItem extends Head implements I_Head, I_Property
                     $valname = $prow[$id]['name'];
                     $dataid = $data[$id]['id'];
                     $valid = $prow[$id]['id'];
-                    if (($row['type']=='id')||($row['type']=='cid')||($row['type']=='mdid')) 
+                    if (($type=='id')||($type=='cid')||($type=='mdid')) 
                     {
                         if ($dataid!='')
                         {
@@ -161,18 +179,18 @@ class CollectionItem extends Head implements I_Head, I_Property
                         }    
                     }    
                     $params = array();
-                    $sql = "SELECT value FROM \"CPropValue_$row[type]\" WHERE id=:id and pid=:pid";
+                    $sql = "SELECT value FROM \"CPropValue_$type\" WHERE id=:id and pid=:pid";
                     $params['id'] = $this->id;
                     $params['pid'] = $id;
                     $res = DataManager::dm_query($sql,$params);
                     $rw = $res->fetch(PDO::FETCH_ASSOC);
                     if ($rw)
                     {    
-                        $sql = "UPDATE \"CPropValue_$row[type]\" SET value=:val, userid=:userid, dateupdate=DEFAULT WHERE id=:id and pid=:pid returning \"id\"";
+                        $sql = "UPDATE \"CPropValue_$type\" SET value=:val, userid=:userid, dateupdate=DEFAULT WHERE id=:id and pid=:pid returning \"id\"";
                     }
                     else
                     {
-                        $sql = "INSERT INTO \"CPropValue_$row[type]\" (id, pid, value, userid) VALUES (:id, :pid, :val, :userid) returning \"id\"";
+                        $sql = "INSERT INTO \"CPropValue_$type\" (id, pid, value, userid) VALUES (:id, :pid, :val, :userid) returning \"id\"";
                     }    
                     $params['val'] = $val;
                     $params['userid']=$_SESSION["user_id"];
@@ -214,6 +232,7 @@ class CollectionItem extends Head implements I_Head, I_Property
             {
                 $key = $row['name'];
                 $id = $row['id'];
+                $type = $row['name_type'];
                 if ($key=='id') 
                 {
                     continue;
@@ -224,7 +243,7 @@ class CollectionItem extends Head implements I_Head, I_Property
                     $valname = $prow[$id]['name'];
                     $dataid = $data[$id]['id'];
                     $valid = $prow[$id]['id'];
-                    if (($row['type']=='id')||($row['type']=='cid')||($row['type']=='mdid')) 
+                    if (($type=='id')||($type=='cid')||($type=='mdid')) 
                     {
                         if ($dataid==$valid)
                         {
@@ -267,14 +286,12 @@ class CollectionItem extends Head implements I_Head, I_Property
                 $row = $res ->fetch(PDO::FETCH_ASSOC);
                 $id = $row['id'];
                 $ares = array('status'=>'OK', 'id'=>$id);
-                $sql = "SELECT pt.id, pt.name, pt.synonym, pt.mdid, pt.type FROM \"CProperties\" AS pt WHERE pt.mdid = :mdid";
-                $res = DataManager::dm_query($sql,array('mdid'=>$this->head->getid()));        
-                $plist = $res ->fetchAll(PDO::FETCH_ASSOC);
+                $plist = $this->properties;
                 foreach ($plist as $f)
                 {   
                     if (!array_key_exists($f['id'],$data)) continue;
                     $dataname= $data[$f['id']];
-                    $type= $f['type'];
+                    $type= $f['name_type'];
                     if ($dataname['name']=='')
                     {
                         continue;
@@ -286,12 +303,12 @@ class CollectionItem extends Head implements I_Head, I_Property
                         {
                             $val = 'true';
                         }
-                        if ($val!='true')
+                        if ($val != 'true')
                         {
-                            $val ='false';
+                            $val = 'false';
                         }
                     } 
-                    elseif (($type=='id')||($type=='cid')||($type=='mdid'))
+                    elseif (($type == 'id')||($type == 'cid')||($type == 'mdid'))
                     {
                         $val = $dataname['id'];
                     }    

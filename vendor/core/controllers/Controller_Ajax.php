@@ -34,9 +34,7 @@ class Controller_Ajax extends Controller
         $cur_item = \Dcs\Vendor\Core\Models\Route::getContentByID($context['CURID']);
         $arData = array('status'=>'ERROR', 'msg'=>"нет обработчика для ".$cur_item['classname']);
         if ($cur_item['classname'] == 'EProperty') {
-            //die(var_dump($this->model));
             $setid = $this->model->getattrid($context['CURID']);
-//            die(var_dump($this->model->getDetails($setid)));
             $set = new Entity($setid);
             $set->set_head($this->model); 
             $arData = $set->getSetData($context);

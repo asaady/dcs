@@ -1,9 +1,19 @@
 <?php
 namespace Dcs\Vendor\Core\Models;
 
+use PDO;
+
 trait T_Mdproperty {
-    public function loadProperties() {
+    public function loadProperties() 
+    {
         return $this->getplist();
+    }
+    public function get_tt_sql_data() 
+    {
+        $artemptable = array();
+        $sql = $this->txtsql_getproperty();
+        $artemptable[] = DataManager::createtemptable($sql,'tt_out',array('id'=>$this->id));   
+        return $artemptable;
     }
     public function getProperties($byid = FALSE, $filter = '') 
     {
@@ -43,26 +53,5 @@ trait T_Mdproperty {
             $objs[$key] = $prop;
         }
         return $objs;
-    }
-    public function getItemsByFilter($context, $filter)
-    {
-        $prefix = $context['PREFIX'];
-        $action = $context['ACTION'];
-        $objs = array();
-        $objs['actionlist']= DataManager::getActionsbyItem($context['CLASSNAME'],$prefix,$action);
-        $objs['navlist'] = $this->get_navlist($context);
-        $objs['PSET'] = $this->getProperties(TRUE,'toset');
-        $objs['LDATA'] = array();
-        foreach ($this->Properties() as $row) {
-            $objs['LDATA'][$row['id']] = array();
-            foreach ($objs['PSET'] as $pkey=>$prow) {
-                $objs['LDATA'][$row['id']][$pkey]=array('name'=>$row[$prow['id']],'id'=>'');
-            }    
-        }
-        return $objs;
-    }
-    public function getItemsByName($name) 
-    {
-        return NULL;
     }
 }

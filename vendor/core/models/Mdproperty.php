@@ -5,12 +5,16 @@ use PDO;
 
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 
-class Mdproperty extends Head implements I_Head, I_Property 
+class Mdproperty extends Sheet implements I_Sheet, I_Property 
 {
-    use T_Head;
+    use T_Sheet;
     use T_Item;
     use T_EProperty;
     
+    public function head() 
+    {
+        return new Mdentity($this->mdid);
+    }
     public function item() 
     {
         return NULL;

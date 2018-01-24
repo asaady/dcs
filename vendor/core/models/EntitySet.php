@@ -5,13 +5,27 @@ use PDO;
 use DateTime;
 use Exception;
 
-class EntitySet extends Head implements I_Head, I_Property
+class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
 {
-    use T_Head;
+    use T_Sheet;
+    use T_Set;
     use T_Entity;
     use T_Property;
     use T_EProperty;
-    
+    public function txtsql_forDetails() 
+    {
+        return "SELECT mdt.id, mdt.name, mdt.synonym, "
+                    . "NULL as mdid, mdi.name as mdtypename, "
+                    . "mdt.mditem, mdi.synonym as mdtypedescription "
+                    . "FROM \"MDTable\" AS mdt "
+                        . "INNER JOIN \"CTable\" AS mdi "
+                        . "ON mdt.mditem=mdi.id "
+                    . "WHERE mdt.id= :id";
+    }        
+    public function head() 
+    {
+        return new MdentitySet($this->mditem);
+    }
     public function item() 
     {
         return new Entity($this->id);
@@ -20,28 +34,6 @@ class EntitySet extends Head implements I_Head, I_Property
     {
         return NULL;
     }    
-    public function loadProperties()
-    {
-        return $this->properties();
-    }        
-    public static function fill_ent_name($arr_e,$arr_id,&$ldata)
-    {
-        $arr_entities = $this->getAllEntitiesToStr($arr_e);
-        foreach($arr_id as $rid=>$prow)
-        {
-            foreach($ldata as $id=>$row) 
-            {
-                if (array_key_exists($rid, $row))
-                {
-                    $crow = $row[$rid];
-                    if (array_key_exists($crow['id'], $arr_entities))
-                    {
-                        $ldata[$id][$rid]['name'] = $arr_entities[$crow['id']]['name'];
-                    }    
-                }        
-            }
-        }    
-    }
     public static function add_filter_val($ent_obj,$mdid,&$ent_filter)
     {
         $ent_plist = $ent_obj->properties();
@@ -52,7 +44,7 @@ class EntitySet extends Head implements I_Head, I_Property
         $plist = $this->getProperties(true,'toset');
         foreach ($plist as $prop)
         {
-            if ($prop['type']=='id') //фильтруем только по полям ссылочного типа
+            if ($prop['name_type']=='id') //фильтруем только по полям ссылочного типа
             {
                 $propid = $prop['propid']; // ид шаблона реквизита
                 $key = array_search($propid, $arr_ent_propid);
@@ -81,7 +73,7 @@ class EntitySet extends Head implements I_Head, I_Property
         $ent_plist = $ent_obj->properties();
         foreach ($ent_plist as $prop)
         {
-            if ($prop['type'] != 'id')
+            if ($prop['name_type'] != 'id')
             {
                 continue;
             }    
@@ -119,10 +111,9 @@ class EntitySet extends Head implements I_Head, I_Property
         }   
         return $tt_et;
     }
-    public function sqltext_entitylist($filter,$arr_prop,$access_prop,$action,&$params)
+    public function sqltext_entitylist($plist, $filter,$arr_prop,$access_prop,$action,&$params)
     {
         $mdid = $this->id;
-        $plist = $this->properties;
         $str0_req='SELECT et.id';
         $str_req='';
         $str_p = '';
@@ -131,47 +122,48 @@ class EntitySet extends Head implements I_Head, I_Property
         foreach($plist as $row) 
         {
             $rid = $row['id'];
-            $rowname = str_replace(" ","",strtolower($row['name']));
+            $rowname = $this->rowname($row);
+            $rowtype = $row['name_type'];
             $str0_t = ", tv_$rowname.propid as propid_$rowname, pv_$rowname.value as name_$rowname, '' as id_$rowname";
-            $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
-            if ($row['type']=='id')
+            $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            if ($rowtype=='id')
             {
                 $arr_id[$rid]=$row;
                 $str0_t = ", tv_$rowname.propid as propid_$rowname, '' as name_$rowname, pv_$rowname.value as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
             }
-            elseif ($row['type']=='cid') 
+            elseif ($rowtype=='cid') 
             {
                 $str0_t = ", tv_$rowname.propid as propid_$rowname, ct_$rowname.synonym as name_$rowname, pv_$rowname.value as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname INNER JOIN \"CTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname INNER JOIN \"CTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
             }
-            elseif ($row['type']=='mdid') 
+            elseif ($rowtype=='mdid') 
             {
                 $str0_t = ", tv_$rowname.propid as propid_$rowname, ct_$rowname.synonym as name_$rowname, pv_$rowname.value as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname INNER JOIN \"MDTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname INNER JOIN \"MDTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
             }
-            elseif ($row['type']=='int') 
+            elseif ($rowtype=='int') 
             {
                 if (strtolower($row['name'])=='rank') 
                 {
                     $orderstr= ' order by name_'.$rowname;
                 }    
             }
-            elseif ($row['type']=='date') 
+            elseif ($rowtype=='date') 
             {
                 if ($row['isedate']) 
                 {
                     $orderstr= ' order by name_'.$rowname.' DESC';
                 }    
                 $str0_t = ", tv_$rowname.propid as propid_$rowname, date_trunc('second', COALESCE(pv_$rowname.value,'epoch'::timestamp)) as name_$rowname, '' as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
             }
             if ($activity_id!==FALSE)
             {
                 if ($rid==$activity_id)
                 {
                     $str0_t = ", tv_$rowname.propid as propid_$rowname, COALESCE(pv_$rowname.value,true) as name_$rowname, '' as id_$rowname";
-                    $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$row[type]\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+                    $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
                 }    
             }    
             $str0_req .= $str0_t;
@@ -220,30 +212,31 @@ class EntitySet extends Head implements I_Head, I_Property
         $sql .= $orderstr;
         return $sql;
     }
-    public function getItemsByFilter($context, $filter) 
+    public function getItems($context) 
     {
-        $prefix = $context['PREFIX'];
+        $objs = array();
         $action = $context['ACTION'];
         $limit = $context['LIMIT'];
         $page = $context['PAGE'];
-    	$objs = array();
-	$objs['LDATA'] = array();
-	$objs['PSET'] = array();
-        $objs['actionlist'] = DataManager::getActionsbyItem('EntitySet',$prefix,$action);
-        $objs['navlist'] = $this->get_navlist($context);
-        $propid = $filter['filter_id']['id']; //это уид реквизита отбора для выборки
-        $docid = (array_key_exists('docid', $filter) ? $filter['docid']['id'] : '');  
-        $curid = (array_key_exists('curid', $filter) ? $filter['curid']['id'] : '');  
+        $filter = $context['DATA'];
+        $propid = '';
+        $docid = '';  
+        $curid = '';  
         $ptype = '';
         $mdid = $this->id;
-        $ent_filter = array();
-        if ($propid != '') {
-            $ent_filter[$propid] = new Filter($propid,$filter['filter_val']['id']);
-        }
 	$offset=(int)($page-1)*$limit;
         $access_prop = array();
         $arr_prop = array();
         $entities = array();
+        $ent_filter = array();
+        if (count($filter) > 0) {
+            $propid = $filter['param_id']['id']; //это уид реквизита отбора для выборки
+            $docid = (array_key_exists('docid', $filter) ? $filter['docid']['id'] : '');  
+            $curid = (array_key_exists('curid', $filter) ? $filter['curid']['id'] : '');  
+            if ($propid != '') {
+                $ent_filter[$propid] = new Filter($propid,$filter['param_val']['id']);
+            }
+        }    
         if (!User::isAdmin())
         {
             //вкл rls: добавим поля отбора в список реквизитов динамического списка
@@ -260,15 +253,15 @@ class EntitySet extends Head implements I_Head, I_Property
         {    
             foreach ($arr_prop as $prop)
             {
-                $props_templ = new PropsTemplate($prop);
-                if ($props_templ->getvalmdentity()->getid()==$mdid)
+                $props_templ = new CollectionItem($prop);
+                if ($props_templ->mdid)
                 {
                     //на объект есть список доступа - тогда просто выбираем эти объекты из списка
                     $entities = array_unique(array_column(array_filter($access_prop,function($row) use ($prop) { return ($row['propid']==$prop); }),'value'));
                 }    
             }    
         }
-        if ($this->head->getname()=='Items') //запрошены строки ТЧ?
+        if ($this->mdtypename=='Items') //запрошены строки ТЧ?
         {
             $tt_et = $this->get_tt_items($docid, $curid, $ent_filter, $entities);
         }    
@@ -285,41 +278,41 @@ class EntitySet extends Head implements I_Head, I_Property
         }    
         if ($tt_et == '')
         {
-            $objs['RES'] = 'list entities is empty';
             return $objs;
         }
         $artemptable = array();
 	$this->createtemptable_all($tt_et,$artemptable);
         $artemptable[] = $tt_et;
+        $plist = $this->getProperties(TRUE,'toset');
         $params = array();
-        $sql = $this->sqltext_entitylist($ent_filter,$arr_prop,$access_prop,$action,$params);
+        $sql = $this->sqltext_entitylist($plist,$ent_filter,$arr_prop,$access_prop,$action,$params);
         if ($sql=='')
         {
-            $objs['RES']='access denied';
             return $objs;
         }    
 	$res = DataManager::dm_query($sql,$params);
         $arr_e = array();
         $arr_name = array();
-        $arr_id = array_filter($this->properties, function ($prow) { return $prow['type'] == 'id'; });
+        $arr_id = array_filter($this->properties, function ($prow) { return $prow['name_type'] == 'id'; });
         while($row = $res->fetch(PDO::FETCH_ASSOC)) {
-            $objs['LDATA'][$row['id']]= array('id'=>$row['id'],'name'=>'','class' => 'active');
+            $objs[$row['id']]= array('id'=>$row['id'],'name'=>'','class' => 'active');
             $arr_name[$row['id']] = array();
-            foreach($this->properties as $rid => $row_plist) {
-                $field_val = strtolower(str_replace(" ","",strtolower($row_plist['name'])));
+            foreach($plist as $rid => $row_plist) {
+                $field_val = $this->rowname($row_plist);
                 $field_id = "propid_$field_val";
                 $rowid = "id_$field_val";
                 $rowname = "name_$field_val";
+                $type = $row_plist['name_type'];
                 $r_name = $row[$rowname];
                 $r_id = $row[$rowid];
                 if (strtolower($row_plist['name']) == 'activity')
                 {
                     if ($row[$rowname]===false)
                     {    
-                        $objs['LDATA'][$row['id']]['class'] ='erased';               
+                        $objs[$row['id']]['class'] ='erased';               
                     }    
                 }    
-                if ($row_plist['type'] == 'id') {
+                if ($type == 'id') {
                     if (($row[$rowid])&&($row[$rowid]!=DCS_EMPTY_ENTITY)) {
                         if (!in_array($row[$rowid],$arr_e)){
                             $arr_e[]=$row[$rowid];
@@ -327,11 +320,11 @@ class EntitySet extends Head implements I_Head, I_Property
                     }
                     $r_name = '';
                 } else {
-                    if ($row_plist['type'] == 'date') {
+                    if ($type == 'date') {
                         $r_name = substr($r_name,0,10);
                     }    
                 }    
-                $objs['LDATA'][$row['id']][$row[$field_id]] = array('id'=>$r_id,'name'=>$r_name);
+                $objs[$row['id']][$row[$field_id]] = array('id'=>$r_id,'name'=>$r_name);
                 if ($row_plist['ranktostring'] > 0) {
                     $arr_name[$row['id']][$row_plist['ranktostring']] = $r_name;
                 }
@@ -339,22 +332,8 @@ class EntitySet extends Head implements I_Head, I_Property
         }
         if (count($arr_e))
         {
-            $this->fill_entsetname($objs['LDATA'],$arr_e);
+            $this->fill_entsetname($objs,$arr_e);
         }
-        $objs['LNAME'] = $arr_name;
-        $objs['PSET'] = $this->getProperties(true,'toset');
-        $sql = "SELECT count(*) as countrec FROM tt_tv";
-	$res = DataManager::dm_query($sql);	
-	$objs['CNT_REC']=0;
-        $row = $res->fetch(PDO::FETCH_ASSOC);
-        $objs['CNT_REC']=$row['countrec'];
-	$objs['TOP_REC']=$offset+1;
-	if ($objs['CNT_REC']<$objs['TOP_REC'])
-	  $objs['TOP_REC']=$objs['CNT_REC'];
-	$objs['BOT_REC']=$offset+DCS_COUNT_REC_BY_PAGE;
-	if ($objs['CNT_REC']<$objs['BOT_REC'])
-	  $objs['BOT_REC'] = $objs['CNT_REC'];
-	
 	DataManager::droptemptable($artemptable);
 	return $objs;
     }
@@ -423,7 +402,7 @@ class EntitySet extends Head implements I_Head, I_Property
                        continue;
                     }    
                     $propname = $ap['propname'];
-                    $rls_type = $ap['type'];
+                    $rls_type = $ap['name_type'];
                     if (($ap['rd']===true)||($ap['wr']===true))
                     {
                         $str_val .= ",'"."$ap[value]"."'";
@@ -560,7 +539,7 @@ class EntitySet extends Head implements I_Head, I_Property
                     {
                         continue;
                     }    
-                    $rls_type = $ap['type'];
+                    $rls_type = $ap['name_type'];
                     if (($ap['rd']===true)||($ap['wr']===true))
                     {
                         $str_val .= ",'"."$ap[value]"."'";

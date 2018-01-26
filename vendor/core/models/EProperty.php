@@ -12,7 +12,7 @@ class EProperty extends Sheet implements I_Sheet, I_Property
     use T_Mdproperty;
     use T_EProperty;
     
-    public function txtsql_forDetails() 
+    public static function txtsql_forDetails() 
     {
         return "SELECT mp.id, mp.mdid, mp.name, mp.synonym, "
                 . "mc.name as mdname, mc.synonym as mdsynonym, mc.mditem, "

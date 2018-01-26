@@ -12,7 +12,7 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
     use T_Entity;
     use T_Property;
     use T_EProperty;
-    public function txtsql_forDetails() 
+    public static function txtsql_forDetails() 
     {
         return "SELECT mdt.id, mdt.name, mdt.synonym, "
                     . "NULL as mdid, mdi.name as mdtypename, "

@@ -59,36 +59,26 @@ class View implements I_View
     {
         $this->action = $val;
     }
-    public function outfield($t,$hclass,$mode)
+    public function outfield($t,$hclass,$mode='')
     {        
         $type = $t['name_type'];
         echo "<div class=\"$hclass\">";
             echo "<div class=\"form-group\">";
-                if ($mode!='PRINT')
+                if ($t['class']!='hidden')
                 {
-                    if ($t['class']!='hidden')
-                    {
-                        echo "<label for=\"$t[id]\" class=\"control-label col-md-4\">$t[synonym]</label>";
-                    }   
-                }    
+                    echo "<label for=\"$t[id]\" class=\"control-label col-md-4\">$t[synonym]</label>";
+                }   
                 echo "<div class=\"col-md-8\">";
                     $itype='text';
                     $readonly = '';
-                    if ($mode=='PRINT')
-                    {
-                        $itype='hidden';
-                        $readonly = ' readonly';
-                    }   
-                    elseif ($mode=='VIEW')
+                    if ($mode=='VIEW')
                     {    
                         $readonly = ' readonly';
                         if ($t['class']=='hidden')
                         {
                             $itype = 'hidden';
                         }
-                    }
-                    else
-                    {    
+                    } else {    
                         if($type=='int') 
                         {    
                             $itype = 'number';
@@ -112,8 +102,13 @@ class View implements I_View
                     }    
                     if (($type=='id')||($type=='cid')||($type=='mdid'))
                     {
-                        echo "<input type=\"hidden\" class=\"form-control\" id=\"$t[id]\" name=\"$t[id]\" it=\"$type\" vt=\"$t[valmdid]\" value=\"\">\n";
-                        echo "<input type=\"$itype\" class=\"form-control\" st=\"active\" id=\"name_$t[id]\" name=\"name_$t[id]\" it=\"$type\" vt=\"$t[valmdid]\" value=\"\"$readonly>\n";
+                        echo "<input type=\"hidden\" class=\"form-control\" "
+                        . "id=\"$t[id]\" name=\"$t[id]\" it=\"$type\" "
+                                . "vt=\"$t[valmdid]\" value=\"\">\n";
+                        echo "<input type=\"$itype\" class=\"form-control\" "
+                                . "st=\"active\" id=\"name_$t[id]\" "
+                                . "name=\"name_$t[id]\" it=\"$type\" "
+                                . "vt=\"$t[valmdid]\" value=\"\"$readonly>\n";
                         if (($itype != 'hidden')||($readonly == ''))
                         {
                             echo "<ul class=\"types_list\">";
@@ -186,43 +181,6 @@ class View implements I_View
         echo "</form>";
         $this->set_view($pset);
     }        
-    public function outContentToPrint($data)
-    {
-        echo "<div class=\"row\">";
-        $props=$data['PLIST'];
-        $size=count($props);
-        if ($size)
-        {    
-            echo "<form class=\"form-inline\" role=\"form\">\n";
-            echo "<div class=\"row\">";
-            for($i=0 ; $i<$size; $i++)
-            {
-                $t=$props[$i];
-                if($t['rank']==0) continue;
-                if($t['rank']%2)
-                {
-                    $this->outfield($t,'col-md-4',$this->context['MODE']);
-                    if (($i+1) < $size)
-                    {
-                        if(($props[$i+1]['rank']%2)==0)
-                        {
-                            $i++;
-                            $t=$props[$i];
-                            $this->outfield($t,'col-md-4',$this->context['MODE']);
-                        }
-                    }
-                } 
-                else 
-                {
-                    $this->outfield($t,'col-md-offset-4 col-md-4',$this->context['MODE']);
-                }
-            }
-            echo "</div>";
-            echo "</form>";
-        }    
-        $this->set_view($pset,"table toprint");
-        echo "</div>";
-    }        
     public function setclass($data, $mode = '', $edit_mode = '')
     {
         $idclass = 'hidden';
@@ -252,19 +210,28 @@ class View implements I_View
     {
         $show_tab = FALSE;
         $show_head = FALSE;
+        $show_set = FALSE;
         $show_tabheader = FALSE;
         $key_set = '';
-        if (array_key_exists('PLIST', $data) === TRUE) {
+        if ((array_key_exists('PLIST', $data) !== FALSE)&&(count($data['PLIST'])>0)) {
             $show_head = TRUE;
-            $key_set = array_search('Sets', array_column($data['PLIST'], 'valmdtypename'));
-            if ($key_set !== FALSE) {
-                if (count($data['SETS']) > 0) {
-                    $show_tab = TRUE;
-                } else {
-                    $show_tabheader = TRUE;
+        }  
+        if ((array_key_exists('PSET', $data) === TRUE)&&(count($data['PSET'])>0)) {
+            $show_set = TRUE;
+        }   
+        if (($show_head)&&(!$show_set)) {
+            if (array_key_exists('SETS', $data) !== FALSE) {
+                if (count($data['SETS'])>0) {
+                    if ((count($data['SETS']) == 1)&&
+                    ($this->context['SETID'] !== '')) {
+                        $key_set = array_search($this->context['SETID'], array_column($data['PLIST'],'id'));
+                        $show_tabheader = TRUE;
+                    } else {
+                        $show_tab = TRUE;
+                    }    
                 }    
-            }   
-        }    
+            }  
+        }
         if ($show_tab) {
             echo "<ul id=\"dcsTab\" class=\"nav nav-tabs\">";
                 $dop = " class=\"active\"";
@@ -346,17 +313,18 @@ class View implements I_View
             }
             echo "</form>";
         }    
-        if (count($data['PSET'])>0) {
-            if ($show_tabheader) {
+        if ($show_set||$show_tabheader) {
+            if ($show_set) {
+                echo "<div id=\"entityset\">";
+                $this->set_view($data['PSET']);
+            } elseif ($show_tabheader) {
                 $title = $data['PLIST'][$key_set]['synonym'];
                 echo "<p class=\"dcs-tabtitle\">$title</p>";
-                if ($data['PLIST'][$key_set]['id'] !== $this->context['SETID']) {
-                    throw new Exception("ERROR: SETID not equal data[PLIST]");
-                }
-            }
-            $this->set_view($data['PSET']);
+                echo "<div id=\"".$this->context['SETID']."\">";
+                $this->set_view($data['SETS'][$this->context['SETID']]);
         }
-        if ($show_tab) {
+            echo "</div>";
+        } elseif ($show_tab) {
             echo "</div>";
             if ($this->context['ACTION'] !== 'CREATE')
             {    
@@ -369,7 +337,7 @@ class View implements I_View
                     }    
                     $dop='';
                     if (($propid !== '')&&($propid == $t['id'])) {
-                        $dop=" class=\"active\"";
+                        $dop=" active in";
                     }    
                     echo "<div id=\"$t[id]\" class=\"tab-pane fade$dop\">";
                     $this->set_view($data['SETS'][$t['id']]);
@@ -379,22 +347,17 @@ class View implements I_View
             echo "</div>";
         }
     }    
-    public function set_view($pset,$classtable = "table table-border table-hover")
+    public function set_view($pset)
     {
-        $toprint = TRUE;
-        if (strpos($classtable,"toprint") === FALSE) {
-            $toprint = FALSE;
-        }
-        echo "<table class=\"$classtable\">";
+        echo "<table class=\"table table-border table-hover\">";
             echo "<thead  id=\"tablehead\"><tr>";
                 foreach($pset as $key=>$val)
                 {    
                     $cls = $val['class'];
-                    if (($cls == 'hidden')&&($toprint))
-                    {
-                        continue;
+                    if ($cls == '') {
+                        $cls = 'active';
                     }    
-                    echo "<th class=\"$cls active\" id=\"$key\">$val[synonym]</th>";
+                    echo "<th class=\"$cls\" id=\"$key\">$val[synonym]</th>";
                 }
             echo "</tr></thead>";
             echo "<tbody id=\"entitylist\" class=\"list\"></tbody>";
@@ -407,7 +370,7 @@ class View implements I_View
             $prefix = "/".$this->context['PREFIX'];
         }
         echo "<div class=\"navbar navbar-default\" role=\"navigation\">
-               <div class=\"container-fluid\">";
+               <div class=\"container\">";
         if (($this->context['MODE'] === 'CONFIG')||
             (($this->context['ACTION'] !== 'EDIT')&&
              ($this->context['ACTION'] !== 'SET_EDIT')))

@@ -10,7 +10,7 @@ class Mdcollection extends Sheet implements I_Sheet, I_Set, I_Property
     use T_MdSet;
     use T_Mdproperty;
     use T_CProperty;
-    public function txtsql_forDetails() 
+    public static function txtsql_forDetails() 
     {
         return "SELECT mdt.id, mdt.name, mdt.synonym, mdt.mditem, "
                     . "NULL as mdid, mdi.name as mdtypename, "

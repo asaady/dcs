@@ -26,23 +26,17 @@ abstract class Sheet extends Model implements I_Sheet
         $this->id = $arData['id']; 
         $this->name = $arData['name']; 
         $this->synonym = $arData['synonym']; 
-        $this->head = NULL;
-        $this->mdid = $arData['id'];
-        if ($arData['mdid']) {
-            $this->mdid = $arData['mdid'];
-            $this->mditem = $arData['mditem'];
-            $this->mdtypename = $arData['mdtypename'];
-            $this->head = $this->head($arData['mdid']);
-        } elseif ($arData['mditem']) {
-            $this->mditem = $arData['mditem'];
-            $this->mdtypename = $arData['mdtypename'];
-            $this->head = $this->head($arData['mditem']);
-        }    
+        $this->mdid = $arData['mdid'];
+        if (!$this->mdid) {
+            $this->mdid = $this->id;
+        }
+        $this->mditem = $arData['mditem'];
+        if (!$this->mditem) {
+            $this->mditem = $this->id;
+        }
+        $this->mdtypename = $arData['mdtypename'];
+        $this->head = $this->head();
         $this->properties = $this->loadProperties();
-//        if (strpos(get_called_class(),'Set') === FALSE) {
-//            if (strpos(get_called_class(),'Entity') !== FALSE) {
-//                die(var_dump($this->properties));
-//        }    
         $this->load_data();
         $this->version = time();
     }

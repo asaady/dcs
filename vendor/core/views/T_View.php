@@ -14,9 +14,6 @@ trait T_View {
                 $this->body_header_view($data);
             echo "</header>";
             echo "<main>";
-                echo "<nav id=\"dcs-nav\" class=\"navbar\" data-spy=\"affix\" data-offset-top=\"150\">
-                            <ul class=\"nav nav-tabs pull-right\" id=\"actionlist\"><li></li></ul>
-                     </nav>";
                 $this->body_main_view($data);
             echo "</main>";
             echo "<footer>";
@@ -55,7 +52,7 @@ trait T_View {
     }
     public function body_main_view($data)
     {
-        $this->context_view($data);
+        $this->content_view($data);
         echo "<div id=\"ivalue\" class=\"input-group\"></div>";
         echo "<div id=\"form_result\"></div>";
         $this->modal_view();    
@@ -66,8 +63,8 @@ trait T_View {
     }
     public function body_footer_view()
     {
-        echo "<div class=\"container-fluid\">";
-        echo "<div class=\"row\"><a href=\"/\">Copyright &copy;".DCS_COMPANY_NAME." 2017.</a></div>";
+        echo "<div class=\"container\">";
+        echo "<div class=\"row-fluid\"><a href=\"/\">Copyright &copy;".DCS_COMPANY_NAME." 2017.</a></div>";
         echo "</div>";
     }
     public function body_script_view()
@@ -112,9 +109,7 @@ trait T_View {
     }        
     public function context_view($data)
     {
-        echo "<div class=\"container-fluid\">";
-        echo "<div class=\"row\">";
-        echo "<div class=\"col-xs-12 col-md-12\">";
+        echo "<div class=\"dcs-context\">";
         echo "<input class=\"form-control\" name=\"prefix\" type=\"hidden\" value=\"".$this->context['PREFIX']."\">";
         echo "<input class=\"form-control\" name=\"mode\" type=\"hidden\" value=\"".$this->context['MODE']."\">";
         echo "<input class=\"form-control\" name=\"itemid\" type=\"hidden\" value=\"".$this->context['ITEMID']."\">";
@@ -137,10 +132,25 @@ trait T_View {
             $propid = $this->context['DATA']['propid']['id'];
         }   
         echo "<input class=\"form-control ajax\" name=\"propid\" type=\"hidden\" value=\"$propid\">";
+        echo "</div>"; 
+    }        
+    public function actionlist_view()
+    {
+        echo "<nav id=\"dcs-nav\" class=\"navbar\" data-spy=\"affix\" data-offset-top=\"150\">";
+        echo "<div class=\"container\">";
+        echo "<ul class=\"nav nav-tabs pull-right\" id=\"actionlist\"><li></li></ul>";
+        echo "</div>";
+        echo "</nav>";
+    }        
+    public function content_view($data) 
+    {
+        $this->actionlist_view();
+        echo "<div class=\"container\">";
+        echo "<div class=\"row-fluid\">";
+        $this->context_view($data);
         $this->item_view($data);
         echo "<br class=\"clearfix\" />";
         echo "</div>"; 
         echo "</div>"; 
-        echo "</div>"; 
-    }        
+    }
 }

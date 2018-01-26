@@ -13,6 +13,6 @@ return array(
     'Dcs\\App\\Components\\Utils\\Uploadobject\\' => array($baseDir . '/app/components/utils/uploadobject'),
     'Dcs\\App\\Components\\Trigs\\' => array($baseDir . '/app/components/trigs'),
     'Dcs\\App\\Components\\Reps\\' => array($baseDir . '/app/components/reps'),
-    'Dcs\\App\\Components\\Prnforms\\Coversheets\\' => array($baseDir . '/app/components/prnforms/coversheets'),
+    'Dcs\\App\\Components\\Prnforms\\CoverSheets\\' => array($baseDir . '/app/components/prnforms/coversheets'),
     'Dcs\\App\\Api\\' => array($baseDir . '/app/api'),
 );

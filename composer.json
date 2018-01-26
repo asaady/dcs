@@ -24,7 +24,7 @@
             "Dcs\\App\\Components\\Reps\\": [
                 "app/components/reps/"
             ],
-            "Dcs\\App\\Components\\Prnforms\\Coversheets\\": [
+            "Dcs\\App\\Components\\Prnforms\\CoverSheets\\": [
                 "app/components/prnforms/coversheets/"
             ],
             "Dcs\\App\\Components\\Utils\\Uploadset\\": [

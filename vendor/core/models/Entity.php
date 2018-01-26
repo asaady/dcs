@@ -36,7 +36,7 @@ class Entity extends Sheet implements I_Sheet, I_Property
             $this->activity = TRUE;
         }
     }
-    public function txtsql_forDetails() 
+    public static function txtsql_forDetails() 
     {
         return "select et.id, '' as name, '' as synonym, 
                     et.mdid , md.name as mdname, md.synonym as mdsynonym, 
@@ -621,43 +621,6 @@ class Entity extends Sheet implements I_Sheet, I_Property
         
         return array('status'=>'OK', 'id'=>$this->id);
     }
-    
-//    public function getItemsByFilter($context, $filter)
-//    {
-//        $prefix = $context['PREFIX'];
-//        $action = $context['ACTION'];
-//        $curid = $context['CURID'];
-//    	$objs = array();
-//	$objs['LDATA'] = array();
-//	$objs['SDATA'] = array();
-//        $objs['PSET'] = array();
-//        $objs['actionlist'] = DataManager::getActionsbyItem('Entity',$prefix,$action);
-//        $objs['PLIST'] = $this->getProperties(FALSE);
-//        $id = $this->id;
-//        if ($id == '') {
-//            $objs['SDATA'] = DataManager::getDefaultValue($objs['PLIST']);
-//            if ($curid != '')
-//            {
-//                $arr_e[] = $curid;
-//                $ent = new Entity($curid);
-//                foreach($objs['PLIST'] as $row) 
-//                {
-//                    if ($row['valmdid'] == $ent->head->getid())
-//                    {
-//                        $objs['SDATA'][DCS_EMPTY_ENTITY][$row['id']]['id'] = $curid;
-//                        $objs['SDATA'][DCS_EMPTY_ENTITY][$row['id']]['name'] = $ent->getname();
-//                    }    
-//                }    
-//            } 
-//        } else {
-//            $objs['SDATA'][$id] = $this->data;
-//            $objs['SDATA'][$id]['class'] ='active';               
-//            if (!$this->activity) {
-//                $objs['SDATA'][$id]['class'] ='erased';               
-//            }    
-//        }   
-//        return $objs;
-//    }        
     public function createtemptable_allprop($entities)
     {
 	$artemptable=array();
@@ -666,121 +629,7 @@ class Entity extends Sheet implements I_Sheet, I_Property
         
         return $artemptable;    
     }
-    public function get_entitydata()
-    {
-        $entities = array($this->id);
-	$artemptable = $this->createtemptable_allprop($entities);
-        $str0_req='SELECT et.id';
-        $str_req='';
-        $str_p = '';
-        $arr_id=array();
-        foreach($this->properties as $row) 
-        {
-            $rid = $row['id'];
-            $rowtype = $row['name_type'];
-            if ($rowtype == 'id')
-            {
-                if ($row['valmdtypename'] != 'Sets')
-                {
-                    $arr_id[$rid]=$row;
-                }
-            }
-            $rowname = $this->rowname($row);
-            $str0_t = ", tv_$rowname.propid as propid_$rowname, pv_$rowname.value as name_$rowname, '' as id_$rowname";
-            $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
-            if ($rowtype=='id')
-            {
-                $arr_id[$rid]=$row;
-                $str0_t = ", tv_$rowname.propid as propid_$rowname, '' as name_$rowname, pv_$rowname.value as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
-            }
-            elseif ($rowtype=='cid') 
-            {
-                $str0_t = ", tv_$rowname.propid as propid_$rowname, ct_$rowname.synonym as name_$rowname, pv_$rowname.value as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname INNER JOIN \"CTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
-            }
-            elseif ($rowtype=='mdid') 
-            {
-                $str0_t = ", tv_$rowname.propid as propid_$rowname, ct_$rowname.synonym as name_$rowname, pv_$rowname.value as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname INNER JOIN \"MDTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
-            }
-            elseif ($rowtype=='date') 
-            {
-                $str0_t = ", tv_$rowname.propid as propid_$rowname, to_char(pv_$rowname.value,'DD.MM.YYYY') as name_$rowname, '' as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
-            }
-                
-            $str0_req .= $str0_t;
-            $str_req .=$str_t;
-            
-        }
-        $str0_req .=" FROM tt_et as et";
-        $sql = $str0_req.$str_req." WHERE et.id=:id";
-        $res = DataManager::dm_query($sql, array('id'=>$this->id));
-        $arr_e = array();
-        $objs = array();
-        while($row = $res->fetch(PDO::FETCH_ASSOC)) 
-        {
-            foreach($this->properties as $row_properties) 
-            {
-                $rid = $row_properties['id'];
-                $name = $this->rowname($row_properties);
-                $field_id = "propid_$name";
-                $rowid = "id_$rowname";
-                $rowname = "name_$rowname";
-                $type = $row_properties['name_type'];
-                $objs[$row[$field_id]] = array();                
-                if (array_key_exists($rowname,$row))
-                {   
-                    if ($row[$field_id])
-                    {    
-                        if ($type=='id')
-                        {
-                            if ($row_properties['valmdtypename']=='Sets')
-                            {    
-                                $objs[$row[$field_id]]['id']=$row[$rowid];
-                                $objs[$row[$field_id]]['name']=$row_properties['synonym'];
-                            }
-                            else
-                            {
-                                if (($row[$rowid])&&($row[$rowid]!=DCS_EMPTY_ENTITY))
-                                {
-                                    if (!in_array($row[$rowid],$arr_e))
-                                    {
-                                        $arr_e[]=$row[$rowid];
-                                    }
-                                }
-                                $objs[$row[$field_id]]['id']=$row[$rowid];
-                                $objs[$row[$field_id]]['name']='';
-                            }
-                        }
-                        elseif ($type=='cid')
-                        {
-                            $objs[$row[$field_id]]['id']=$row[$rowid];
-                            $objs[$row[$field_id]]['name']=$row[$rowname];
-                        }    
-                        else
-                        {
-                            $objs[$row[$field_id]] = array('id'=>'','name'=>$row[$rowname]);
-                            $objs[$row[$field_id]]['id']='';
-                            $objs[$row[$field_id]]['name']=$row[$rowname];
-                        }    
-                    }    
-                }
-            }
-        }  
-        if (count($arr_e))
-        {
-            $this->fill_entsetname($objs,$arr_e);
-        }
-	$msg = DataManager::droptemptable($artemptable);
-        if ($msg!='')
-        {
-            die($msg);
-        }   
-	return $objs;
-    }
-    function getSetData($context)
+    function getSetData()
     {
 	$objs = array();
 	$pset = $this->getProperties(true,'toset');
@@ -1073,12 +922,26 @@ class Entity extends Sheet implements I_Sheet, I_Property
     public function getItems($context) 
     {
         if ($context['SETID'] === '') {
-            return array();
+            if ((!isset($context['DATA']['setid']))||(!isset($context['DATA']['propid']))) {
+                return array();
+            }    
+            $propid = $context['DATA']['setid']['id'];
+            if ($propid == '') {
+                $propid = $context['DATA']['propid']['id'];
+                if ($propid == '') {
+                    return array();
+                }
+            }    
+        } else {
+            $propid = $context['SETID'];
         }
-        $setid = $this->getattrid($context['SETID']);
+        $setid = $this->getattrid($propid);
+        
+        if ((!$setid)||($setid === DCS_EMPTY_ENTITY)) {
+            return array();
+        }    
         $set = new Entity($setid);
-        $set->set_head($this); 
-        return $set->getSetData($context);
+        return $set->getSetData();
     }
     public function getItemsByName($name) 
     {

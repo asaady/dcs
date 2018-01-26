@@ -13,7 +13,7 @@ class CollectionItem extends Sheet implements I_Sheet, I_Property
     use T_Property;
     use T_CProperty;
     
-    public function txtsql_forDetails() 
+    public static function txtsql_forDetails() 
     {
         return "SELECT ct.id, ct.mdid, ct.name, ct.synonym, "
                 . "mc.name as mdname, mc.synonym as mdsynonym, mc.mditem, "

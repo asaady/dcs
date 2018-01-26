@@ -8,8 +8,6 @@ class Controller_PrnCoverSheets extends Controller
 
 	function __construct($id)
 	{
-		$this->model = new PrnCoverSheets($id);
-		$this->view = new View();
 	}
 	
 	function action_index($arResult)

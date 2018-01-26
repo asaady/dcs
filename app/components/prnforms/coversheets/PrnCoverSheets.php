@@ -1,16 +1,16 @@
 <?php
-namespace dcs\app\components\prnforms\coversheets;
+namespace Dcs\App\Components\Prnforms\Coversheets;
 
 use PDO;
 use PDOStatement;
 use DateTime;
-use dcs\vendor\core\Entity;
-use dcs\vendor\core\Model;
-use dcs\vendor\core\DataManager;
+use Dcs\Vendor\Core\Models\DataManager;
+use Dcs\Vendor\Core\Models\Entity;
+use Dcs\Vendor\Core\Models\Model;
 
 class PrnCoverSheets extends Model 
 {
-     protected $entity;
+    protected $entity;
     protected $tproc_mdid='def88585-c509-4200-8980-19ae0e164bd7';  //тех.процесс справочник
     protected $mdid='be0d47b9-2972-496c-a11b-0f3d38874aab';  //сопр лист справочник
     protected $prop_div='08d45b18-7207-4ad9-a4fa-a76bdb880c01';  //реквизит подразделение справочник
@@ -43,7 +43,7 @@ class PrnCoverSheets extends Model
         $this->name = $this->entity->getattr($this->mpprop_cs_name); 
         $this->version = time();        
     }
-    public function get_data($data)
+    public function get_data(&$context)
     {
         $sdata = array();
         $ldata = array();

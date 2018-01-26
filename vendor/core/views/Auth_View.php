@@ -15,7 +15,7 @@ class Auth_View extends View implements I_View
             echo "<button id=\"submit\" type=\"button\" class=\"btn btn-info form-control-sm\">Выход</button>";
         } else {
             echo "<div class=\"main-error alert alert-error hide\"></div>";
-            echo "<h2 class=\"form-signin-heading\">Пожалуйста, авторизуйтесь</h2>";
+            echo "<h2>Пожалуйста, авторизуйтесь</h2>";
             echo "<input class =\"form-control-sm ajax\" name=\"username\" type=\"text\" class=\"input-block-level\" placeholder=\"Логин\" autofocus>";
             echo "<input class =\"form-control-sm ajax\" name=\"password\" type=\"password\" class=\"input-block-level\" placeholder=\"Пароль\">";
             echo "<input class =\"form-checkbox ajax\" name=\"remember-me\" type=\"checkbox\" value=\"remember-me\" id=\"remember\" checked>";

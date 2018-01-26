@@ -1,9 +1,7 @@
 <?php
 namespace Dcs\Vendor\Core\Models;
 
-//use dcs\vendor\core\Common_data;
-//use dcs\vendor\core\User;
-//use dcs\vendor\core\CollectionSet;
+use PDO;
 
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 
@@ -17,17 +15,16 @@ class DcsContext
                             array('name' => "ITEMID", 'validate'=>TRUE),
                             array('name' => "CURID", 'validate'=>TRUE),
                             array('name' => "ACTION", 'validate'=>FALSE),
-                            array('name' => "PARAM", 'validate'=>FALSE),
                         );
     
     function __construct() {
         $this->context = array();
         $this->context['TITLE'] = DCS_COMPANY_SHORTNAME;
-        $this->context['MODE'] = 'ENTERPRISE';
+        $this->context['PREFIX'] = 'ENTERPRISE';
+        $this->context['MODE'] = 'FORM';
         $this->context['CLASSNAME'] = '';
         $this->context['CLASSTYPE'] = '';
         $this->context['ACTION'] = 'VIEW';
-        $this->context['PREFIX'] = '';
         $this->context['ITEMID'] = '';
         $this->context['CURID'] = '';
         $this->context['SETID'] = '';
@@ -45,12 +42,11 @@ class DcsContext
     //
     // $data = array 
     // [0] - document_root
-    // [1] - prefix (is empty or <config>)
-    // [2] - mode 
+    // [1] - prefix :[config,enterprise,auth,api] default = enterprise = empty
+    // [2] - mode  : [form, ajax, download] default = form = empty
     // [3] - itemid
     // [4] - curid
-    // [5] - action
-    // [6] - param
+    // [5] - action : [view, index, edit, create, print, etc...]
     protected function setitems($data, &$curval, &$validation, &$indx,&$indd)
     {
         if ($validation == $this->valindx[$indx]['validate']) {
@@ -65,7 +61,7 @@ class DcsContext
         } else {
             $indx++;
         }    
-        if ($indx>6) {
+        if ($indx>5) {
             return;
         }
         $this->setitems($data, $curval, $validation, $indx,$indd);
@@ -83,84 +79,91 @@ class DcsContext
         }
         $curval = trim($data[$indx]);
         $indd = $indx;
-        if (strtolower($curval) == 'config') {
-            $this->setattr('PREFIX', 'CONFIG');
+        if (in_array(strtolower($curval), array('config','api','auth','enterprise'))) {
+            $this->setattr('PREFIX', strtoupper($curval));
             $indx++;
             $indd++;
-            if (empty($data[$indx])) {
+            if (empty($data[$indd])) {
                 return;
             }
-            $curval = trim($data[$indx]);
+            $curval = trim($data[$indd]);
         } else {
+            $this->setattr('PREFIX', 'ENTERPRISE');
             $indx++;
-        }
+        } 
+        if (in_array(strtolower($curval), array('form','ajax','download'))) {
+            $this->setattr('MODE', strtoupper($curval));
+            $indx++;
+            $indd++;
+            if (empty($data[$indd])) {
+                return;
+            }
+            $curval = trim($data[$indd]);
+        } else {
+            $this->setattr('MODE', 'FORM');
+            $indx++;
+        } 
         $validation = Common_data::check_uuid($curval);
         $this->setitems($data, $curval, $validation, $indx, $indd);
         $this->get_context_data();
+        if ($this->context['PREFIX'] !== 'AUTH') {
+            if (isset($this->context['DATA']['action'])) {
+                //action from get-parameters is valid
+                $action = $this->context['DATA']['action']['name'];
+                if ($action !== '') {
+                    $this->setattr('ACTION', strtoupper($action));
+                }
+            }
+        }    
     }   
     public function get_context_data()
     {        
         foreach($_POST as $pkey=>$val)
         {
             $key = strtolower($pkey);
-            if (strpos($key,'name_')===false){
+            if (strpos($key,'name_') === FALSE) {
                 $pval = filter_input(INPUT_POST, $key, FILTER_SANITIZE_SPECIAL_CHARS);
-                $this->context['DATA'][strtolower($key)]=array('id' => $pval,'name' => $pval);
+                $this->context['DATA'][strtolower($key)] = array('id' => $pval, 'name' => $pval);
             }
         }
         foreach($_POST as $pkey=>$val)
         {
             $key = strtolower($pkey);
-            if (strpos($key,'name_')===false){
+            if (strpos($key,'name_') === FALSE) {
                 continue;
             }
             $pval = filter_input(INPUT_POST, $key, FILTER_SANITIZE_SPECIAL_CHARS);
             $curkey = substr($key,5);
-            $this->context['DATA'][$curkey]['name']=$pval;
-            if ($pval==DCS_EMPTY_ENTITY) {
-                $this->context['DATA'][$key]['name']='';
+            $this->context['DATA'][$curkey]['name'] = $pval;
+            if ($pval == DCS_EMPTY_ENTITY) {
+                $this->context['DATA'][$key]['name'] = '';
             }
         }
         foreach($_GET as $pkey=>$val)
         {
             $key = strtolower($pkey);
-            if (strpos($key,'name_')===false){
+            if (strpos($key,'name_') === FALSE) {
                 $pval = filter_input(INPUT_GET, $key, FILTER_SANITIZE_SPECIAL_CHARS);
-                $this->context['DATA'][$key]=array('id' => $pval,'name' => $pval);
+                $this->context['DATA'][$key] = array('id' => $pval,'name' => $pval);
             }
         }
-        foreach($_GET as $pkey=>$val)
+        foreach($_GET as $pkey => $val)
         {
             $key = strtolower($pkey);
-            if (strpos($key,'name_')===false){
+            if (strpos($key,'name_') === FALSE) {
                 continue;
             }
             $pval = filter_input(INPUT_POST, $key, FILTER_SANITIZE_SPECIAL_CHARS);
             $curkey = substr($key,5);
-            $this->context['DATA'][$curkey]['name']=$pval;
-            if ($pval==DCS_EMPTY_ENTITY) {
-                $this->context['DATA'][$key]['name']='';
+            $this->context['DATA'][$curkey]['name'] = $pval;
+            if ($pval == DCS_EMPTY_ENTITY) {
+                $this->context['DATA'][$key]['name'] = '';
             }
         }
     }
     public function setattr($attrname, $attrval)
     {
         if (array_key_exists($attrname, $this->context)) {
-            if (($attrname==='MODE')||($attrname==='ACTION')) {
-                if ($attrval === '') {
-                    return FALSE;
-                }
-                $attrval = strtoupper($attrval);
-                if (($attrname==='MODE')&&($attrval==='CONFIG')) {
-                    $this->context['PREFIX'] = '/config';
-                    $this->context['ACTION'] = 'EDIT';
-                }
-//                if ($attrname==='ACTION') {
-//                    if(!CollectionSet::isExistCollItemByName('Action',$attrval)) {
-//                        return FALSE;
-//                    }
-//                }    
-            }
             $this->context[$attrname] = $attrval;
         } else {
             return FALSE;
@@ -178,7 +181,7 @@ class DcsContext
     {
         $arSubSystems = array();
         if ((User::isAdmin())&&($this->context['PREFIX']==='CONFIG')) {
-            $arSubSystems = Mditem::getAllMDitems();
+            $arSubSystems = self::getAllMDitems();
         } else { 
             $cur_interface = User::getUserInterface();
             if ($cur_interface) {
@@ -196,5 +199,12 @@ class DcsContext
         }
         return $arSubSystems;
     }        
+    public static function getAllMDitems() {
+        $sql = "SELECT ct.id, ct.name, ct.synonym  FROM \"CTable\" as ct 
+        	INNER JOIN \"MDTable\" as mc 
+                ON ct.mdid=mc.id AND mc.name= :namemditems";
+        $res = DataManager::dm_query($sql,array('namemditems'=>'MDitems'));        
+	return $res->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
 

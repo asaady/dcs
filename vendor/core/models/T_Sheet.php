@@ -50,36 +50,48 @@ trait T_Sheet {
         if ($this->head) {
             $phead = $this->head;
             $phead->add_navlist($navlist); 
-            $navlist[$this->head->getid()] = sprintf("%s",$this->head);
+            $navlist[] = array('id'=>$this->head->getid(),'name'=>sprintf("%s",$this->head));
         }
     }
     public function get_navlist($context)
     {
         $navlist = array();
-        if ($this->mdtypename == 'Items') {
+        $strkey = 'new';
+        $strval = 'Новый';
+        if ($this->id) {
+            $strkey = $this->id;
+            $strval = sprintf("%s",$this);
+        }    
+        if (($this->mdtypename == 'Items')&&
+            ($context['PREFIX'] !== 'CONFIG')) {
             if (isset($context['DATA']['docid'])) {
-                $doc = new Entity($context['DATA']['docid']['id']);
+                $docid = $context['DATA']['docid']['id'];
+                $doc = new Entity($docid);
                 if (isset($context['DATA']['propid'])) {
-                    $setid = $doc->getattrid($context['DATA']['propid']['id']);
-                    $set = 
-                    die(var_dump($context['DATA']));
+                    $propid = $context['DATA']['propid']['id'];
+                    $doc->add_navlist($navlist);
+                    $navlist[] = array('id'=>$docid,'name'=>sprintf("%s",$doc));
+                    $prop = $doc->getProperty($propid);
+                    $navlist[] = array('id'=>"$docid?propid=".$propid,'name' => $prop['synonym']);
+                    $strkey .= "?docid=$docid&propid=$propid";
                 }
             }
-        }    
-        $this->add_navlist($navlist);
-        if ($this->id) {
-            if (($context['PREFIX'] !== 'CONFIG')&&
-                ($context['CLASSNAME'] === 'Entity')&&
-                ($context['CURID'] !== '')) {
-                    //die(var_dump($this->id));
-                    $prop = $this->head->get_property($context['CURID']);
-                    $navlist["$context[ITEMID]/$context[CURID]"] = $prop['synonym'];
-            } else {
-                $navlist[$this->id] = sprintf("%s",$this);
+        } elseif (($context['CLASSNAME'] == 'Entity')&&
+                  ($context['PREFIX'] !== 'CONFIG')) {
+            if (isset($context['DATA']['propid'])) {
+                $propid = $context['DATA']['propid']['id'];
+                if ($propid !== '') {
+                    $this->add_navlist($navlist);
+                    $navlist[] = array('id'=>$this->id,'name' => sprintf("%s",$this));
+                    $strkey .= "?propid=".$propid;
+                    $strval = $this->properties[$propid]['synonym'];
+                }    
             }
-        } else {
-            $navlist['new'] = 'Новый';
+        }
+        if (!count($navlist)) {    
+            $this->add_navlist($navlist);
         }    
+        $navlist[] = array('id' => $strkey,'name' => sprintf("%s",$strval));
         return $navlist;
     }        
     public function get_property($propid)
@@ -108,12 +120,17 @@ trait T_Sheet {
             {
                 $rowname = $this->rowname($prow);
                 if (array_key_exists('id_'.$rowname, $row)) {
-                    $this->data[$prow['id']] = array('id'=>$row["id_$rowname"],'name'=>$row["name_$rowname"]);
+                    $this->data[$prow['id']] = array(
+                        'id'=>$row["id_$rowname"],
+                        'name'=>$row["name_$rowname"]);
                     if ($prow['name_type'] === 'id') {
-                        if (($row["id_$rowname"])&&($row["id_$rowname"] != DCS_EMPTY_ENTITY)) {
-                            if (!in_array($row["id_$rowname"],$arr_e)){
-                                $arr_e[]=$row["id_$rowname"];
-                            }
+                        if ($prow['valmdtypename'] !== 'Sets') {    
+                            if (($row["id_$rowname"])&&
+                                ($row["id_$rowname"] != DCS_EMPTY_ENTITY)) {
+                                if (!in_array($row["id_$rowname"],$arr_e)){
+                                    $arr_e[]=$row["id_$rowname"];
+                                }
+                            }    
                         }    
                     }
                 } elseif (array_key_exists($rowname, $row)) {
@@ -184,10 +201,10 @@ trait T_Sheet {
 	}  
         return $this;
     }
-    public function getDetails($id) 
+    public static function getDetails($id) 
     {
         $objs = array('id'=>'','mdid'=>'','mditem'=>'');
-        $sql = $this->txtsql_forDetails();
+        $sql = self::txtsql_forDetails();
         $sth = DataManager::dm_query($sql,array('id'=>$id));   
         $res = $sth->fetch(PDO::FETCH_ASSOC);
 	if($res) {
@@ -199,28 +216,6 @@ trait T_Sheet {
     {
         $s_class = explode('\\',get_called_class());
         return end($s_class);
-    }
-    public function get_head_class() 
-    {
-        $s_class = explode('\\', get_called_class());
-        $classname = array_pop($s_class);
-        switch ($classname) {
-            case 'MdentitySet': $head = NULL; break;
-            case 'Mdentity': $head = 'MdentitySet'; break;
-            case 'Mdcollection': $head = 'MdentitySet'; break;
-            case 'Mdregister': $head = 'MdentitySet'; break;
-            case 'EProperty': $head = 'Mdentity'; break;
-            case 'CProperty': $head = 'Mdcollection'; break;
-            case 'RProperty': $head = 'Mdregister'; break;
-            case 'Entity':  $head = 'EntitySet'; break;
-            case 'EntitySet': $head = 'MdentitySet'; break;
-            case 'CollectionSet': $head = 'MdentitySet'; break;
-            case 'CollectionItem': $head = 'CollectionSet'; break;
-            case 'RegisterSet': $head = 'MdentitySet'; break;
-            default: $head = NULL;  break;
-        }
-        $s_class[] = $head;
-        return implode('\\', $s_class);
     }
     public function update($data)     
     {
@@ -253,64 +248,59 @@ trait T_Sheet {
             if (strpos($classname,'Set') === FALSE) {
                 $plist = $this->getProperties(FALSE);
                 $cnt = 0;
-                foreach ($this->properties as $prop) {
-                    if ($prop['valmdtypename'] !== 'Sets') {
-                        continue;
-                    }
-                    $cnt ++;
-                }  
-                if ($cnt > 1) {
-                    foreach ($this->properties as $prop) {
-                        if ($prop['valmdtypename'] !== 'Sets') {
-                            continue;
-                        }
-                        if (!$this->getattrid($prop['id'])) {
+                $psets = array_filter($this->properties,function($item){
+                    return $item['valmdtypename'] === 'Sets';
+                });
+                if (count($psets)) {
+                    $propid = '';
+                    if (isset($context['DATA']['propid'])) {
+                        $propid = $context['DATA']['propid']['id'];
+                    } elseif (isset($context['DATA']['setid'])) {
+                        $propid = $context['DATA']['setid']['id'];
+                    }   
+                    $setid = '';
+                    foreach ($psets as $prop) {
+                        $setid = $prop['id'];
+                        if (!$this->getattrid($setid)) {
                             $set = new Mdentity($prop['valmdid']);
                         } else {
-                            $set = new Entity($this->getattrid($prop['id']));
+                            $set = new Entity($this->getattrid($setid));
                         }    
-                        $sets[$prop['id']] = $set->getProperties(true,'toset');
+                        $sets[$setid] = $set->getProperties(true,'toset');
+                        if ($propid == $prop['id']) {
+                            $context['SETID'] = $propid;
+                        }
                     }  
-                } elseif ($cnt = 1) { 
-                    foreach ($this->properties as $prop) {
-                        if ($prop['valmdtypename'] !== 'Sets') {
-                            continue;
-                        }
-                        $propid = $prop['id'];
-                        if (!$this->getattrid($propid)) {
-                            $set = new Mdentity($prop['valmdid']);
-                        } else {
-                            $set = new Entity($this->getattrid($propid));
-                        }    
-                        $pset = $set->getProperties(true,'toset');
-                        $ldata = $set->getItems($context);
-                        $context['SETID'] = $propid;
-                        break;
+                    if (count($psets) == 1) { 
+                         $context['SETID'] = $setid;
                     }  
                 }
             } else {
                 $pset = $this->getProperties(TRUE,'toset');
-                $ldata = $this->getItems($context);
             }
         }
         $objs['PLIST'] = $plist;
         $objs['PSET'] = $pset;
         $objs['SETS'] = $sets;
-        $objs['LDATA'] = $ldata;
     } 
+    public function getItemData($context) 
+    {
+    	$objs = array();
+        $this->prop_to_Data($context, $objs);
+        if ($this->data) {
+            $objs['LDATA'] = array();
+            $objs['LDATA'][$this->id] = $this->data;
+        }    
+        $objs['SDATA'] = $this->getItems($context);
+	return $objs;
+    }
     public function getItemsByFilter($context) 
     {
         $prefix = $context['PREFIX'];
         $action = $context['ACTION'];
-    	$objs = array();
+    	$objs = $this->getItemData($context);
         $objs['actionlist'] = DataManager::getActionsbyItem($context['CLASSNAME'],$prefix,$action);
         $objs['navlist'] = $this->get_navlist($context);
-        $this->prop_to_Data($context, $objs);
-        if ($this->data) {
-            $objs['SDATA'] = array();
-            $objs['SDATA'][$this->id] = $this->data;
-        }    
-        $objs['LDATA'] = $this->getItems($context);
 	return $objs;
     }
 }

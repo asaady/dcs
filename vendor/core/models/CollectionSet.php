@@ -13,7 +13,7 @@ class CollectionSet extends Sheet implements I_Sheet, I_Property
     use T_Property;
     use T_CProperty;
     
-    public function txtsql_forDetails() 
+    public static function txtsql_forDetails() 
     {
         return "SELECT mdt.id, mdt.name, mdt.synonym, "
                     . "NULL as mdid, mdi.name as mdtypename, "
@@ -56,7 +56,7 @@ class CollectionSet extends Sheet implements I_Sheet, I_Property
         $dbtable = '';
         $propid = '';
         if (count($filter)>0) {
-            $propid = $filter['filter_id']['id'];
+            $propid = $filter['param_id']['id'];
             if ($propid != '') {
                 $arprop = $this->properties[$propid];
                 $ftype = $arprop['name_type'];
@@ -105,13 +105,13 @@ class CollectionSet extends Sheet implements I_Sheet, I_Property
             if (!User::isAdmin())
             {
                 //это уид реквизита user в таблице user_settings
-                $filter['filter_id'] = array('id' => '94f6b075-1536-4d16-a548-bc8128791127','name'=>'');
-                $filter['filter_val'] = array('id' => $_SESSION['user_id'],'name' => User::getUserName($_SESSION['user_id']));
+                $filter['param_id'] = array('id' => '94f6b075-1536-4d16-a548-bc8128791127','name'=>'');
+                $filter['param_val'] = array('id' => $_SESSION['user_id'],'name' => User::getUserName($_SESSION['user_id']));
             }    
         } else {
             if (count($filter) > 0) {
-                $filter_id = $filter['filter_id']['id'];
-                $filter_val = $filter['filter_val']['id'];
+                $filter_id = $filter['param_id']['id'];
+                $filter_val = $filter['param_val']['id'];
             }
         }   
         $entities = $this->findCollByProp($filter);
@@ -203,7 +203,7 @@ class CollectionSet extends Sheet implements I_Sheet, I_Property
                 $field_val = $this->rowname($row_plist);
                 $field_id = "pid_$field_val";
                 $objs[$row['id']][$row[$field_id]] = array('id'=>$row['id_'.$field_val],'name'=>$row['name_'.$field_val]);
-                if ($row_plist['name_type']=='date')
+                if ($row_plist['name_type'] == 'date')
                 {
                     $objs[$row['id']][$row[$field_id]] = array('id'=>'','name'=>substr($row['name_'.$field_val],0,10));
                 }    

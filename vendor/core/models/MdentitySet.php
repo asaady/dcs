@@ -9,7 +9,7 @@ class MdentitySet extends Sheet implements I_Sheet
     use T_Sheet;
     use T_Property;
     
-    public function txtsql_forDetails() 
+    public static function txtsql_forDetails() 
     {
         return "SELECT ct.id, ct.name, ct.synonym, 
                 NULL as mdid, '' as mdname, '' as mdsynonym,

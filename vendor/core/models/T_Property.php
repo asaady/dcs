@@ -47,6 +47,8 @@ trait T_Property {
             $objs[$key]['class'] = 'active';
             if ($key === 'id') {
                 $objs[$key]['class'] = 'hidden';
+            } elseif ($prop['name'] === 'activity') {
+                $objs[$key]['class'] = 'hidden';
             }
         }
         return $objs;

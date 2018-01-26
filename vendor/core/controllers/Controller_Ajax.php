@@ -21,25 +21,19 @@ class Controller_Ajax extends Controller
     }
     function action_view($context)
     {
-        $idm = new \Dcs\Vendor\Core\Models\InputDataManager();
-        echo json_encode($this->model->getItemsByFilter($context, $idm->getdata()));
+        echo json_encode($this->model->getItemsByFilter($context));
     }
     function action_edit($context)
     {
-        $idm = new \Dcs\Vendor\Core\Models\InputDataManager();
-        echo json_encode($this->model->getItemsByFilter($context, $idm->getdata()));
+        $this->action_view($context);
     }
-    function action_set_view($context)
+    function action_print($context)
     {
-        $cur_item = \Dcs\Vendor\Core\Models\Route::getContentByID($context['CURID']);
-        $arData = array('status'=>'ERROR', 'msg'=>"нет обработчика для ".$cur_item['classname']);
-        if ($cur_item['classname'] == 'EProperty') {
-            $setid = $this->model->getattrid($context['CURID']);
-            $set = new Entity($setid);
-            $set->set_head($this->model); 
-            $arData = $set->getSetData($context);
-        }
-        echo json_encode($arData);
+        echo json_encode($this->model->getItemData($context));
+    }
+    function action_denyaccess($context)
+    {
+        echo json_encode(array('msg'=>'Deny access'));
     }
     function action_history($context)
     {

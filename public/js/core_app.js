@@ -192,10 +192,10 @@ function onLoadValID(data)
     if ('SDATA' in data) {   
         sdata = data.SDATA;
         if (setid === '') {
-            $elist = $("tbody#entitylist");
+            $elist = $("tbody.entitylist");
             pset = data.PSET;
         } else {
-            $elist = $("tbody#entitylist",$("div#"+setid));
+            $elist = $("tbody.entitylist",$("div#"+setid));
             pset = data.SETS[setid];
         }    
         loadset($elist,sdata,pset);
@@ -318,7 +318,7 @@ function tr_dblclick($e)
     } 
     location.href=getprefix()+'/'+itemid+dop;
 }
-$('body').on('dblclick','#entitylist tr',function () 
+$('body').on('dblclick','#dcs-list tr',function () 
 {
     tr_dblclick($(this));
 });
@@ -399,7 +399,7 @@ function submitModalForm(e)
     var $pan = $('.tab-pane.fade.in.active');
     var $curcol = $pan.find('#tablehead th.info');
     var propid = $curcol.attr('id');
-    var $currow = $pan.find('#entitylist tr.info');
+    var $currow = $pan.find('#dcs-items tr.info');
     var $etd = $currow.find('td#'+propid);
     var cnm = $ci.val();
     var cid = $ci.attr('it');
@@ -455,7 +455,7 @@ function submitModalForm(e)
     });
 }
 
-$('body').on('dblclick','#entitylist td',function () 
+$('body').on('dblclick','#dcs-items td',function () 
 {
     var action = $("input[name='action']").val();
     if ($(this).parent().attr('st') === 'erased') {
@@ -466,9 +466,6 @@ $('body').on('dblclick','#entitylist td',function ()
     var vt = this.vt;
     var dname = $(this).html();
     var arr_type = ['id','cid','mdid','propid'];
-    if ((action !== 'EDIT')&&(action !== 'VIEW')) {
-        return;
-    }
     if (action === 'VIEW') {
         if (vt !== 'file') {
             return;
@@ -476,7 +473,9 @@ $('body').on('dblclick','#entitylist td',function ()
         if (dname === '') {
             return;
         }    
-    }    
+    } else if (action !== 'EDIT') {
+        return;
+    }
     var tdwidth = $(this).width();
     var $x = $('div#ivalue');
     $x.empty();
@@ -574,7 +573,7 @@ $('body').on('click','button.form-value#list', function(e)
     var action = $("input[name='action']").val();  
     var itemid = $("input[name='itemid']").val(); 
     $("input[name='curid']").val($tr.attr('id')); 
-    $("input[name='filter_id']").val($th.attr('id')); 
+    $("input[name='param_id']").val($th.attr('id')); 
     $("input[name='command']").val('list'); 
     $data = $('.ajax').serializeArray();
     $.ajax({
@@ -594,7 +593,7 @@ $('body').on('click','button.form-value#delete_ivalue', function(e)
     var $ci = $x.find('input');
     var $curcol = $('th.info');
     var propid = $curcol.attr('id');
-    var $currow = $('tr.info');
+    var $currow = $('#dcs-items tr.info');
     var $etd = $currow.find('td#'+propid);
     var typ = $ci.attr('type');
     $etd.html('');
@@ -673,13 +672,13 @@ $('body').on('click', 'ul.types_list li', function(){
     });    
     
 });
-$('body').on('click','#entitylist tr',function () 
+$('body').on('click','.entitylist tr',function () 
 {
   var curid = this.id;
   $('tr.info').attr("class","active");
   $('#'+curid).attr("class","info");
 });
-$('body').on('click','#entitylist td',function () 
+$('body').on('click','.entitylist td',function () 
 {
     var curcol = this.id;
     $('th.info').attr("class","active");
@@ -728,36 +727,22 @@ $('body').on('click','a#create', function ()
     }   
 });
 $('body').on('click', '#edit', function () {
-    var action = $("input[name='action']").val();    
-    if (action === 'EDIT')
-    {    
-        tr_dblclick($('tr.info'));
-    } else {
-        var itemid = $("input[name='itemid']").val();    
-        var curid = $("input[name='curid']").val();    
-        url = getprefix()+'/'+itemid;
-        if (curid !== '')
-        {
-            url += "/"+curid;
-        }    
-        location.href = url+"/edit";
-    }    
+    tr_dblclick($('#dcs-list tr.info'));
 });
 $('body').on('click', '#view', function () {
-    tr_dblclick($('tr.info'));
+    tr_dblclick($('#dcs-list tr.info'));
 });
 function erase_success (result)
 {
     var itemid = $("input[name='itemid']").val(); 
-    var action = $("input[name='action']").val(); 
-    var curid = $("input[name='curid']").val();    
+    var propid = $("input[name='propid']").val();    
     $('#dcsModal').modal('hide');
     dop='';
-    if (curid != '')
+    if (propid !== '')
     {
-        dop +='/'+curid; 
+        dop ='?propid='+propid; 
     }   
-    location.href=getprefix()+'/'+itemid+dop+'/'+action;
+    location.href=getprefix()+'/'+itemid+dop;
 };
 function erase() {
     var $data;

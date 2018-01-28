@@ -5,7 +5,7 @@ use PDO;
 
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 
-class Mdproperty extends Sheet implements I_Sheet, I_Property 
+class Mdproperty_old extends Sheet implements I_Sheet, I_Property 
 {
     use T_Sheet;
     use T_Item;

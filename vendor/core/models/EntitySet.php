@@ -51,7 +51,7 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
                 if ($key!==FALSE)
                 {
                     //нашли реквизит по которому надо отфильтровать строки и добавили к массиву фильтров
-                    $ent_filter[$prop['id']] = new Filter($prop['id'],$ent_obj->getattrid($key));
+                    $ent_filter[$prop['id']] = new Filter($prop,$ent_obj->getattrid($key));
                 }        
             }    
         }   
@@ -114,79 +114,61 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
     public function sqltext_entitylist($plist, $filter,$arr_prop,$access_prop,$action,&$params)
     {
         $mdid = $this->id;
-        $str0_req='SELECT et.id';
-        $str_req='';
+        $str0_req = 'SELECT et.id';
+        $str_req = '';
         $str_p = '';
-        $orderstr='';
+        $orderstr = '';
         $activity_id = array_search('activity', array_column($plist,'name','id'));
-        foreach($plist as $row) 
-        {
+        foreach($plist as $row) {
             $rid = $row['id'];
             $rowname = $this->rowname($row);
             $rowtype = $row['name_type'];
             $str0_t = ", tv_$rowname.propid as propid_$rowname, pv_$rowname.value as name_$rowname, '' as id_$rowname";
-            $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
-            if ($rowtype=='id')
-            {
+            $str_t = " LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            if ($rowtype == 'id') {
                 $arr_id[$rid]=$row;
                 $str0_t = ", tv_$rowname.propid as propid_$rowname, '' as name_$rowname, pv_$rowname.value as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
-            }
-            elseif ($rowtype=='cid') 
-            {
+                $str_t = " LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            } elseif ($rowtype == 'cid') {
                 $str0_t = ", tv_$rowname.propid as propid_$rowname, ct_$rowname.synonym as name_$rowname, pv_$rowname.value as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname INNER JOIN \"CTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
-            }
-            elseif ($rowtype=='mdid') 
-            {
+                $str_t = " LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname INNER JOIN \"CTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            } elseif ($rowtype == 'mdid') {
                 $str0_t = ", tv_$rowname.propid as propid_$rowname, ct_$rowname.synonym as name_$rowname, pv_$rowname.value as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname INNER JOIN \"MDTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
-            }
-            elseif ($rowtype=='int') 
-            {
-                if (strtolower($row['name'])=='rank') 
+                $str_t = " LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname INNER JOIN \"MDTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+            } elseif ($rowtype == 'int') {
+                if (strtolower($row['name']) == 'rank') 
                 {
-                    $orderstr= ' order by name_'.$rowname;
+                    $orderstr = ' order by name_'.$rowname;
                 }    
-            }
-            elseif ($rowtype=='date') 
-            {
-                if ($row['isedate']) 
-                {
-                    $orderstr= ' order by name_'.$rowname.' DESC';
+            } elseif ($rowtype == 'date') {
+                if ($row['isedate']) {
+                    $orderstr = ' order by name_'.$rowname.' DESC';
                 }    
                 $str0_t = ", tv_$rowname.propid as propid_$rowname, date_trunc('second', COALESCE(pv_$rowname.value,'epoch'::timestamp)) as name_$rowname, '' as id_$rowname";
-                $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+                $str_t = " LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
             }
-            if ($activity_id!==FALSE)
+            if ($activity_id !== FALSE)
             {
-                if ($rid==$activity_id)
+                if ($rid == $activity_id)
                 {
                     $str0_t = ", tv_$rowname.propid as propid_$rowname, COALESCE(pv_$rowname.value,true) as name_$rowname, '' as id_$rowname";
-                    $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
+                    $str_t = " LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
                 }    
             }    
             $str0_req .= $str0_t;
-            $str_req .=$str_t;
+            $str_req .= $str_t;
             
-            if ($row['valmdid']==$mdid)    
-            {
+            if ($row['valmdid'] == $mdid) {
                 //rls совпал с объектом - в таком случае фильтруем по id объекта а не по реквизиту объекта
                 continue;
-            }  
-            else
-            {
-                if (in_array($row['propid'], $arr_prop))
-                {
-                    $rls = self::arr_rls($row['propid'], $access_prop, $action);
-                    if (!count($rls))
-                    {    
+            } else {
+                if (in_array($row['propid'], $arr_prop)) {
+                    $rls = DataManager::arr_rls($row['propid'], $access_prop, $action);
+                    if (!count($rls)) {    
                         //rls есть а доступных значений реквизита нет - значит доступ к списку запрещен
                         return $objs;
-                    }
-                    else 
-                    {
-                        $filter[$rid] = new Filter($rid, $rls);
+                    } else {
+                        $filter[$rid] = new Filter($row, $rls);
                     }    
                 }        
             }    
@@ -195,17 +177,14 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
         $sql = $str0_req.$str_req;
         
         $strw = Filter::getstrwhere($filter, 'pv_','.value',$params);
-        $show_erased='';
-        if ($activity_id!==FALSE)
-        {
+        $show_erased = '';
+        if ($activity_id !== FALSE) {
             $show_erased = DataManager::getSetting('show_deleted_rows');
         }    
-        if (strtolower($show_erased)=='false')
-        {
+        if (strtolower($show_erased) == 'false') {
             $strw .= ' AND COALESCE(pv_activity.value,true)';
         }    
-        if ($strw!='')
-        {    
+        if ($strw != '') {    
             $strw = substr($strw,5);
             $sql .= " WHERE $strw";
         }
@@ -240,7 +219,7 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
         if (!User::isAdmin())
         {
             //вкл rls: добавим поля отбора в список реквизитов динамического списка
-            $access_prop = self::get_access_prop();
+            $access_prop = DataManager::get_access_prop();
             $arr_prop = array_unique(array_column($access_prop,'propid'));
             $expr = function($row) use ($arr_prop) { return (($row['ranktoset']==0)&&(!in_array($row['propid'], $arr_prop))); };            
         }    

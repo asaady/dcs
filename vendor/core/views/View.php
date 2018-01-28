@@ -321,7 +321,7 @@ class View implements I_View
                 $title = $data['PLIST'][$key_set]['synonym'];
                 echo "<p class=\"dcs-tabtitle\">$title</p>";
                 echo "<div id=\"".$this->context['SETID']."\">";
-                $this->set_view($data['SETS'][$this->context['SETID']]);
+                $this->set_view($data['SETS'][$this->context['SETID']],'dcs-items');
         }
             echo "</div>";
         } elseif ($show_tab) {
@@ -340,14 +340,14 @@ class View implements I_View
                         $dop=" active in";
                     }    
                     echo "<div id=\"$t[id]\" class=\"tab-pane fade$dop\">";
-                    $this->set_view($data['SETS'][$t['id']]);
+                    $this->set_view($data['SETS'][$t['id']],'dcs-items');
                     echo "</div>";
                 }
             }    
             echo "</div>";
         }
     }    
-    public function set_view($pset)
+    public function set_view($pset,$tbodyid='dcs-list')
     {
         echo "<table class=\"table table-border table-hover\">";
             echo "<thead  id=\"tablehead\"><tr>";
@@ -360,7 +360,7 @@ class View implements I_View
                     echo "<th class=\"$cls\" id=\"$key\">$val[synonym]</th>";
                 }
             echo "</tr></thead>";
-            echo "<tbody id=\"entitylist\" class=\"list\"></tbody>";
+            echo "<tbody id=\"$tbodyid\" class=\"entitylist\"></tbody>";
         echo "</table>";
     }        
     public function out_navbar($data)

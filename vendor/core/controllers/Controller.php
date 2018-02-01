@@ -4,7 +4,7 @@ namespace Dcs\Vendor\Core\Controllers;
 use Dcs\Vendor\Core\Models\Model;
 use Dcs\Vendor\Core\Views\View;
 
-abstract class Controller {
+abstract class Controller implements I_Controller {
 	
 	public $model;
 	public $view;

@@ -23,7 +23,7 @@ class Controller_Ajax extends Controller
     {
         echo json_encode($this->model->getItemsByFilter($context));
     }
-    function action_edit($context)
+    function action_load($context)
     {
         $this->action_view($context);
     }
@@ -37,7 +37,12 @@ class Controller_Ajax extends Controller
     }
     function action_history($context)
     {
-        $mdprop = new Mdproperty($context['CURID']);
+        die(var_dump($context));
+        $mdprop = new Mdproperty($context['DATA']['PROPID']['id']);
         echo json_encode($mdprop->get_history_data($context['ITEMID'],$context['MODE']));
+    }
+    function action_error($context)
+    {
+        echo json_encode(array('msg'=>'error'));
     }
 }    

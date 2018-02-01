@@ -28,6 +28,7 @@ class DcsContext
         $this->context['ITEMID'] = '';
         $this->context['CURID'] = '';
         $this->context['SETID'] = '';
+        $this->context['COMMAND'] = 'LOAD';
         $this->context['PAGE'] = 1;
         $this->context['LIMIT'] = DCS_COUNT_REC_BY_PAGE;
         $this->context['MENU'] = array();
@@ -42,7 +43,7 @@ class DcsContext
     //
     // $data = array 
     // [0] - document_root
-    // [1] - prefix :[config,enterprise,auth,api] default = enterprise = empty
+    // [1] - prefix :[config,enterprise,auth,api,error] default = enterprise = empty
     // [2] - mode  : [form, ajax, download] default = form = empty
     // [3] - itemid
     // [4] - curid
@@ -79,8 +80,11 @@ class DcsContext
         }
         $curval = trim($data[$indx]);
         $indd = $indx;
-        if (in_array(strtolower($curval), array('config','api','auth','enterprise'))) {
+        if (in_array(strtolower($curval), array('config','api','auth','enterprise','error'))) {
             $this->setattr('PREFIX', strtoupper($curval));
+            if (in_array(strtolower($curval), array('api','auth','error'))) {
+                $this->setattr('COMMAND', '');
+            }
             $indx++;
             $indd++;
             if (empty($data[$indd])) {
@@ -106,7 +110,7 @@ class DcsContext
         $validation = Common_data::check_uuid($curval);
         $this->setitems($data, $curval, $validation, $indx, $indd);
         $this->get_context_data();
-        if ($this->context['PREFIX'] !== 'AUTH') {
+        if (($this->context['PREFIX'] !== 'AUTH')&&($this->context['PREFIX'] !== 'ERROR')) {
             if (isset($this->context['DATA']['action'])) {
                 //action from get-parameters is valid
                 $action = $this->context['DATA']['action']['name'];

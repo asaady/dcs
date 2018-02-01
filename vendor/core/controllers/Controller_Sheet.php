@@ -3,7 +3,9 @@ namespace Dcs\Vendor\Core\Controllers;
 
 use Dcs\Vendor\Core\Views\View;
 use Dcs\Vendor\Core\Views\Print_View;
-use Dcs\Vendor\Core\Views\Denyaccess_View;
+use Dcs\Vendor\Core\Views\Error_View;
+use Dcs\Vendor\Core\Models\DcsException;
+use DateTime;
 
 class Controller_Sheet extends Controller
 {
@@ -43,9 +45,24 @@ class Controller_Sheet extends Controller
     }
     function action_denyaccess($context)
     {
-        $this->model = NULL;
-        $data = array('ACTION'=>'DENY_ACCESS');
-        $this->view = new Denyaccess_View();
+        $this->view = new Error_View();
+        $data = array();
+        $data['id'] = '';
+        $data['name'] = 'Ошибка доступа к данным';
+        $data['synonym'] = 'Доступ запрещен';
+        $data['version'] = time();
+        $data['navlist']=array();
+        $this->view->setcontext($context);
+        $this->view->generate($data);
+    }
+    function action_error($context) {
+        $this->view = new Error_View();
+        $data = array();
+        $data['id'] = '';
+        $data['name'] = 'Ошибка доступа к данным';
+        $data['synonym'] = 'Доступ запрещен';
+        $data['version'] = time();
+        $data['navlist']=array();
         $this->view->setcontext($context);
         $this->view->generate($data);
     }

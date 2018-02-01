@@ -12,6 +12,7 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
     use T_Entity;
     use T_Property;
     use T_EProperty;
+    
     public static function txtsql_forDetails() 
     {
         return "SELECT mdt.id, mdt.name, mdt.synonym, "
@@ -70,7 +71,7 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
             return tt_et;
         }
         $ent_obj = new Entity($curid); // получим объект хозяин 
-        $ent_plist = $ent_obj->properties();
+        $ent_plist = $ent_obj->properties;
         foreach ($ent_plist as $prop)
         {
             if ($prop['name_type'] != 'id')
@@ -91,7 +92,7 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
         {
             $item = new Entity($ent_obj->getattrid($filter_id));
             self::add_filter_val($item,$mdid,$ent_filter);
-            if ($ent_obj->head->getmditemname()=='Items')
+            if ($ent_obj->head->getmditemname() == 'Items')
             {
                 //хозяин объект сам является строкой
                 $doc = new Entity($docid);
@@ -213,7 +214,7 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
             $docid = (array_key_exists('docid', $filter) ? $filter['docid']['id'] : '');  
             $curid = (array_key_exists('curid', $filter) ? $filter['curid']['id'] : '');  
             if ($propid != '') {
-                $ent_filter[$propid] = new Filter($propid,$filter['param_val']['id']);
+                $ent_filter[$propid] = new Filter($this->properties[$propid],$filter['param_val']['id']);
             }
         }    
         if (!User::isAdmin())
@@ -233,10 +234,10 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
             foreach ($arr_prop as $prop)
             {
                 $props_templ = new CollectionItem($prop);
-                if ($props_templ->mdid)
-                {
+                if ($props_templ->getattrbyname('valmdid') == $mdid) {
                     //на объект есть список доступа - тогда просто выбираем эти объекты из списка
                     $entities = array_unique(array_column(array_filter($access_prop,function($row) use ($prop) { return ($row['propid']==$prop); }),'value'));
+                    break;
                 }    
             }    
         }
@@ -253,7 +254,7 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
         }    
         if ($tt_et == '')
         {
-            $tt_et = $this->get_findEntitiesByProp('tt_et', $propid, $ptype, $access_prop, $ent_filter ,$limit);
+            $tt_et = $this->findEntitiesByProp('tt_et', $access_prop, $ent_filter ,$limit);
         }    
         if ($tt_et == '')
         {
@@ -274,7 +275,7 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
         $arr_name = array();
         $arr_id = array_filter($this->properties, function ($prow) { return $prow['name_type'] == 'id'; });
         while($row = $res->fetch(PDO::FETCH_ASSOC)) {
-            $objs[$row['id']]= array('id'=>$row['id'],'name'=>'','class' => 'active');
+            $objs[$row['id']] = array('id'=>$row['id'],'name'=>'','class' => 'active');
             $arr_name[$row['id']] = array();
             foreach($plist as $rid => $row_plist) {
                 $field_val = $this->rowname($row_plist);
@@ -451,7 +452,7 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
         DataManager::droptemptable($artt);
         return $objs;
     }
-    public function get_findEntitiesByProp($ttname, $propid, $ptype, $access_prop, $filter ,$limit) 
+    public function findEntitiesByProp($ttname, $access_prop, $filter ,$limit) 
     {
         $mdid = $this->mdid;
         $params = array();
@@ -459,34 +460,33 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
         $prop_templ_id = '';
         $strwhere = '';
         $arprop = array();
-        if ($propid != '')
-        {
-            if ($ptype !== 'text')
-            {
-                $prop_templ_id = $arprop['propid'];
-                $strwhere = DataManager::getstrwhere($filter,$ptype,'pv.value',$params);
-            }
+        $sql = '';
+        if ($filter) {
+            if (count($filter) > 0) {
+                foreach ($filter as $prop => $flt) {
+                    $ptype = $this->properties[$prop]['name_type'];
+                    $sw = DataManager::getstrwhere($flt,$ptype,'pv.value',$params);
+                    if ($sw !== '') {
+                        $sql .= "UNION SELECT DISTINCT it.entityid, it.entityid FROM \"PropValue_$ptype\" as pv INNER JOIN \"IDTable\" as it ON pv.id=it.id AND $sw"; 
+                    }    
+                }
+            }    
+            if ($sql !== '') {
+                $sql = substr($sql, strlen("UNION SELECT DISTINCT it.entityid, it.entityid"));
+                $sql =  "SELECT DISTINCT it.entityid as id , it.entityid ".$sql;
+                $strjoin = "it.entityid";
+            }    
         }
-        if ($strwhere != '')
-        {
-            $strjoin = "it.entityid";
-            $sql = "SELECT DISTINCT it.entityid as id FROM \"PropValue_$ptype\" as pv INNER JOIN \"IDTable\" as it ON pv.id=it.id AND it.propid=:propid"; 
-            $params['propid']=$propid;
-        }
-        else
-        {
+        if ($sql == '') {
             $key_edate = array_search(true, array_column($this->properties, 'isedate','id'));
-            if ($key_edate !== FALSE)
-            {
+            if ($key_edate !== FALSE) {
                 //если есть реквизит с установленным флагом isedate сортируем по этому реквизиту по убыванию
                 $strjoin = "et.id";
                 $sql = "SELECT et.id, COALESCE(pv.value,'epoch'::timestamp) as value FROM \"ETable\" as et LEFT JOIN \"IDTable\" as it  INNER JOIN \"PropValue_date\" as pv ON pv.id=it.id AND it.propid=:propid ON et.id=it.entityid "; 
                 $strwhere = " et.mdid=:mdid";
                 $params['propid'] = $key_edate;
                 $params['mdid'] = $mdid;
-            }        
-            else 
-            {
+            } else {
                 $strwhere = " et.mdid=:mdid";
                 $strjoin = "et.id";
                 $sql = "SELECT et.id FROM \"ETable\" as et"; 
@@ -531,8 +531,8 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
                     return '';
                 }    
                 $str_val = "(".substr($str_val,1).")";
-                $props_templ = new PropsTemplate($prop);
-                if ($props_templ->getvalmdentity()->getid()==$mdid)    
+                $props_templ = new CollectionItem($prop);
+                if ($props_templ->get_mdid() == $mdid)    
                 {
                     $sql_rls .= " INNER JOIN \"ETable\" as et_$propname ON et_$propname.id=$strjoin AND et_$propname.id IN $str_val";
                 }    
@@ -546,16 +546,13 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
                 }    
             }    
         }   
-        if ($sql_rls<>'')
-        {
+        if ($sql_rls !== '') {
             $sql .= $sql_rls;
         }    
-        if ($strwhere<>'')
-        {
+        if ($strwhere !== '') {
             $sql .= " WHERE $strwhere";
         }    
         $sql .= " LIMIT $rec_limit";
-        
         return DataManager::createtemptable($sql,$ttname,$params);
     }    
 }

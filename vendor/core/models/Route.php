@@ -2,6 +2,7 @@
 namespace Dcs\Vendor\Core\Models;
 
 use PDO;
+use Dcs\Vendor\Core\Controllers\Controller_404;
 
 class Route {
     protected $routes;
@@ -31,50 +32,17 @@ class Route {
                 $this->context->setattr('PREFIX','AUTH');
                 $this->context->setattr('ACTION','VIEW');
             }
-        } else {
+        } elseif ($this->context->getattr('PREFIX') !== 'ERROR') {
             $arSubSystems = $this->context->getsubsystems();
-            if (($this->context->getattr('ITEMID') == '')&&(count($arSubSystems))) {
+            if (($this->context->getattr('ITEMID') == '')&&
+                (count($arSubSystems))) {
                 $ritem = reset($arSubSystems);
                 $this->context->setattr('ITEMID',$ritem['id']);
             }
             if ($this->context->getattr('ITEMID')) {
-                $item = self::getContentByID($this->context->getattr('ITEMID'),$this->context->getattr('PREFIX'));
+                $item = self::getContentByID($this->context->getattr('ITEMID'),
+                                             $this->context->getattr('PREFIX'));
                 $this->context->setattr('CLASSNAME', $item['classname']);
-            }
-            $action = strtoupper($this->context->getattr('ACTION'));
-            if (User::isAdmin()) {
-                if ($action == 'VIEW') {
-                    if ($this->context->getattr('CLASSNAME') !== 'MdentitySet') {
-                        $this->context->setattr('ACTION','EDIT');
-                    }    
-                }
-            } else {
-                $itemid = $this->context->getattr('ITEMID');
-                $arr_rd = DataManager::get_right($itemid);
-                $rd = "deny";
-                if (($arr_rd)&&(count($arr_rd) > 0)) {
-                    $ar_wr = array_filter($arr_rd,function($item) { 
-                        return ((strtolower($item['name']) == 'write')&&
-                                ($item['val'] === TRUE));});
-                    if (count($ar_wr) > 0 ) {
-                        $rd = "edit";
-                    } else {
-                        $ar_rd = array_filter($arr_rd,function($item) { 
-                            return ((strtolower($item['name']) == 'read')&&
-                                    ($item['val'] === TRUE));});
-                        if (count($ar_rd) > 0 ) {
-                            $rd = "view";
-                        }
-                    }    
-                } 
-                $edit_actions = array('EDIT','CREATE','DELETE','BEFORE_DELETE','COPY','SAVE');
-                if ($rd == "deny") {
-                    $this->context->setattr('ACTION','DENYACCESS');
-                } else {
-                    if ((array_search($action, $edit_actions) !== FALSE)&&($rd == "view")) {
-                        $this->context->setattr('ACTION','DENYACCESS');
-                    }
-                }
             }
         }
         $this->controller_path = "/vendor/core/controllers";
@@ -84,31 +52,37 @@ class Route {
         $this->controller_name = $this->setcontrollername();
         $controller_namespace = "\\Dcs".str_replace("/","\\",ucwords($this->controller_path,"/"))."\\";
         $controllername = $controller_namespace.$this->controller_name;
-        if (class_exists($controllername)) {
-            try {
-                $controller = new $controllername($this->context->getcontext());
-            } catch (Exception $ex) {
-                $this->ErrorPage404();
-            }
-        } else {
-            $this->ErrorPage404();        
-        }
         $this->action_name = 'action_'.strtolower($this->context->getattr('ACTION'));
-        $action = $this->action_name;
-        if(method_exists($controller, $action)) {
-            $controller->$action($this->context->getcontext());
-        } else {
-            $this->ErrorPage404();
+        if ($this->context->getattr('MODE') === 'AJAX') {
+            $this->action_name = 'action_'.strtolower($this->context->getattr('COMMAND'));
         }
+        if (!class_exists($controllername)) {
+            $this->seterrorcontext();
+            $controllername = 'Controller_Error';
+        }    
+        try {
+            $controller = new $controllername($this->context->getcontext());
+        } catch (DcsException $ex) {
+            $this->action_name = 'action_error';
+            if ($ex->getCode() === DCS_DENY_ACCESS) {
+                $this->action_name = 'action_denyaccess';
+            }
+            $this->seterrorcontext();
+            $controller = new Controller_Error($this->context->getcontext());
+        }
+        $action = $this->action_name;
+        if(!method_exists($controller, $action)) {
+            $action = 'action_error';
+        }
+        $controller->$action($this->context->getcontext());
     }    
-    function ErrorPage404($context)
+    function seterrorcontext()
     {
-        $host = 'http://'.$_SERVER['HTTP_HOST'].'/';
-        header('HTTP/1.1 404 Not Found');
-        header("Error: 404 Not Found");
-        header("Status: 404 Not Found");
-        header('Location:'.$host);
-        exit();
+        $this->context->setattr('PREFIX','ERROR');
+        $this->context->setattr('COMMAND','');
+        if ($this->context->getattr('MODE') === 'AJAX') {
+            $this->context->setattr('COMMAND','JSON');
+        }
     }
     public static function getContentByID($itemid, $prefix='') 
     {
@@ -156,6 +130,6 @@ class Route {
             ($this->context->getattr('PREFIX') == 'ENTERPRISE')) {
             return 'Controller_Sheet';
         }
-        return 'Controller_404';
+        return 'Controller_Error';
     }        
 }

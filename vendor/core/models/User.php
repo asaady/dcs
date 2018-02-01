@@ -2,7 +2,7 @@
 namespace Dcs\Vendor\Core\Models;
 
 use PDO;
-use Exception;
+use Dcs\Vendor\Core\Models\DcsException;
 
 class User
 {
@@ -59,7 +59,7 @@ class User
         $res = DataManager::dm_query($sql,array('username'=>$username, 'mdname'=>'Users'));
 	if(!$res) 
         {
-            throw new \Exception("User $username not found", 1);
+            throw new DcsException("User $username not found", 1);
 	}
         $row=$res->fetch(PDO::FETCH_ASSOC);
         if (!$row) 
@@ -172,7 +172,7 @@ class User
         $user_exists = $this->getSalt($username);
         if ($user_exists) 
         {
-            throw new \Exception("User exists: " . $username, 1);
+            throw new DcsException("User exists: " . $username, 1);
         }
         
         $hashes = $this->passwordHash($password);
@@ -203,13 +203,11 @@ class User
         catch (\PDOException $e) 
         {
             DataManager::dm_rollback();
-            echo "Database error: " . $e->getMessage();
-            die();
+            throw new DcsException("Database error: " . $e->getMessage());
         }
         if (!$result) 
         {
-            printf("Database error");
-            die();
+            throw new DcsException("Database error");
         } 
         $this->name = $data['name']['name'];
         $this->synonym = $data['synonym']['name'];
@@ -220,17 +218,9 @@ class User
     public function update($data) 
     {
         $id = $data['itemid']['name'];
-        try 
-        {
-            $col = new CollectionItem($id);
-        } 
-        catch (Exception $ex) 
-        {
-            echo "bad user id : ".$id." : ". $e->getMessage();
-            die();
-        }
+        $col = new CollectionItem($id);
         $sql = "SELECT pt.id, pt.name, pt.synonym, pt.mdid, pt.type FROM \"CProperties\" AS pt WHERE pt.mdid = :mdid";
-        $res = DataManager::dm_query($sql,array('mdid'=> $col->getcollectionset()->getid()));        
+        $res = DataManager::dm_query($sql,array('mdid'=> $col->getmd()));        
         $plist = $res ->fetchAll(PDO::FETCH_ASSOC);
         $username = '';
         $password = '';
@@ -285,13 +275,11 @@ class User
         catch (\PDOException $e) 
         {
             DataManager::dm_rollback();
-            echo "Database error: " . $e->getMessage();
-            die();
+            throw new DcsException("Database error: " . $e->getMessage());
         }
         if (!$result) 
         {
-            printf("Database error");
-            die();
+            throw new DcsException("Database error: result is empty");
         } 
         $this->name = $data['name']['name'];
         $this->synonym = $data['synonym']['name'];

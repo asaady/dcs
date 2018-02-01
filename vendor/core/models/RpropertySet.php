@@ -1,7 +1,7 @@
 <?php
 namespace Dcs\Vendor\Core\Models;
 
-use Exception;
+use Dcs\Vendor\Core\Models\DcsException;
 //use dcs\vendor\core\PropertySet;
 //use dcs\vendor\core\iPropertySet as iPropertySet;
 
@@ -14,7 +14,7 @@ class RpropertySet extends PropertySet implements iPropertySet
     {
 	if ($mdid=='') 
         {
-            throw new Exception("class.RPropertySet constructor: mdid is empty");
+            throw new DcsException("class.RPropertySet constructor: mdid is empty");
 	}
             //конструктор базового класса
          parent::__construct($mdid);

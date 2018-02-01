@@ -3,6 +3,8 @@ namespace Dcs\Vendor\Core\Models;
 
 use PDO;
 use PDOStatement;
+use PDOException;
+use Dcs\Vendor\Core\Models\DcsException;
 
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING) . "/app/dcs_const.php");
 
@@ -15,12 +17,10 @@ class DataManager {
             return $hDB;
         }
         try {
-//            $hDB = new PDO("pgsql:host=".DCS_DBHOST.";port=5432;dbname=" . DCS_DBNAME . ";", DCS_DBUSER, DCS_DBPASS, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION)); //,[PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
             $connection_string = "pgsql:host=".DCS_DBHOST.";port=5432;dbname=" . DCS_DBNAME . ";";
-            //die(var_dump($connection_string));
             $hDB = new PDO($connection_string, DCS_DBUSER, DCS_DBPASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-        } catch (PDOException $e) {
-            die("*********** Error = ".$e->getMessage());
+        } catch (PDOException $ex) {
+            throw new DcsException($ex->getMessage(),DCS_DB_ERROR,$ex);
         }
         return $hDB;
     }
@@ -36,8 +36,8 @@ class DataManager {
             try {
                 $sth = self::dm_prepare($sql);
                 $query = $sth->execute($params);
-            } catch (Exception $ex) {
-                die($ex->getMessage());
+            } catch (PDOException $ex) {
+                throw new DcsException($ex->getMessage().' sql: '.$sql.' params:'.print_r($params,TRUE),DCS_DB_ERROR,$ex);
             }
         }
         return $sth;
@@ -46,8 +46,8 @@ class DataManager {
     public static function dm_query($sql, $params = 0) {
         try {
             $sth = self::dm_exec($sql, $params);
-        } catch (PDOException $e) {
-            die($e->getMessage() . " error: " . $sql);
+        } catch (PDOException $ex) {
+            throw new DcsException($ex->getMessage().' sql: '.$sql.' params:'.print_r($params,TRUE),DCS_DB_ERROR,$ex);
         }
         return $sth;
     }
@@ -171,29 +171,23 @@ class DataManager {
     public static function getstrwhere($filter, $type, $name, &$params) 
     {
         $strwhere = '';
-        if (count($filter) == 0) {
-            return $strwhere;
+        if (!($filter instanceof Filter)) {
+            throw new DcsException("it is not filter class",DCS_TYPE_ERROR,$ex);
         }
-        $fval = $filter['param_val']['name'];
-        $fvalid = $filter['param_val']['id'];
+        $fval = $filter->getval();
+        $prop = $filter->getprop();
+        $pid = $prop['id'];
+        $strpid = str_replace('-', '', $pid);
         if ($fval != '') {
             switch ($type) {
                 case 'date': $filterval = "$name>='" . substr($fval, 0, 10) . " 00:00:00+3' AND $name<='" . substr($fval, 0, 10) . " 23:59:59+3'";
                     break;
-                case 'int':
-                case 'float': $filterval = "$name=:par0";
-                    $params['par0'] = $fval;
-                    break;
-                case 'id':
-                case 'mdid':
-                case 'cid': $filterval = "$name=:par0";
-                    $params['par0'] = $fvalid;
-                    break;
-                default: $filterval = "$name=:par0";
-                    $params['par0'] = $fval;
+                default: $filterval = "$name=:par".$strpid;
+                    $params['par'.$strpid] = $fval;
                     break;
             }
-            $strwhere .= " $filterval";
+            $params['pid'.$strpid] = $pid;
+            $strwhere .= " $filterval and it.propid=:pid$strpid";
         }
         return $strwhere;
     }
@@ -243,7 +237,12 @@ class DataManager {
     }
 
     public static function get_select_properties($strwhere) {
-        $sql = "SELECT mp.id, mp.propid, pr.name as name_propid, mp.name, mp.synonym, pst.value as typeid, pt.name as type, mp.length, mp.prec, mp.mdid, mp.rank, mp.ranktostring, mp.ranktoset, mp.isedate, mp.isenumber, mp.isdepend, pmd.value as valmdid, valmd.name AS valmdname, valmd.synonym AS valmdsynonym, valmd.mditem as valmditem, mi.name as valmdtypename FROM \"MDProperties\" AS mp
+        $sql = "SELECT mp.id, mp.propid, pr.name as name_propid, mp.name, mp.synonym, 
+            pst.value as typeid, pt.name as type, mp.length, mp.prec, mp.mdid, 
+            mp.rank, mp.ranktostring, mp.ranktoset, mp.isedate, mp.isenumber, 
+            mp.isdepend, pmd.value as valmdid, valmd.name AS valmdname, 
+            valmd.synonym AS valmdsynonym, valmd.mditem as valmditem, 
+            mi.name as valmdtypename FROM \"MDProperties\" AS mp
 		  LEFT JOIN \"CTable\" as pr
 		    LEFT JOIN \"CPropValue_mdid\" as pmd
         		INNER JOIN \"MDTable\" as valmd
@@ -301,11 +300,7 @@ class DataManager {
         $errormsg = '';
         foreach ($arrtt as $tt => $name) {
             $sql = "DROP TABLE $name";
-            try {
-                $sth = self::dm_query($sql);
-            } catch (PDOException $e) {
-                $errormsg .= "\n" . $e->getMessage() . " Failed sql request " . $sql . "\n";
-            }
+            $sth = self::dm_query($sql);
         }
         return $errormsg;
     }
@@ -406,23 +401,13 @@ class DataManager {
         } else {
             $sql = "UPDATE \"SetDepList\" SET rank=:rank WHERE parentid=:parentid AND childid=:childid";
         }
-        try {
-            $sth = self::dm_query($sql, array('parentid' => $parentid, 'childid' => $childid, 'rank' => $valrank));
-        } catch (Exception $e) {
-            $errmsg = $e->getMessage() . " Failed sql request: " . $sql;
-            return -1;
-        }
+        $sth = self::dm_query($sql, array('parentid' => $parentid, 'childid' => $childid, 'rank' => $valrank));
         return $valrank;
     }
 
     public static function getMaxRankSetDepList($parentid, &$errmsg = '') {
         $sql = "SELECT max(sdl.rank) as maxrank FROM \"SetDepList\" as sdl INNER JOIN \"ETable\" as et ON sdl.childid=et.id WHERE parentid=:parentid";
-        try {
-            $sth = self::dm_query($sql, array('parentid' => $parentid));
-        } catch (Exception $e) {
-            $errmsg = $e->getMessage() . " Failed sql request: " . $sql;
-            return -1;
-        }
+        $sth = self::dm_query($sql, array('parentid' => $parentid));
         $maxrank = 0;
         $row = $sth->fetch(PDO::FETCH_ASSOC);
         if ($row) {
@@ -433,12 +418,7 @@ class DataManager {
 
     public static function getParentidSetDepList($childid, &$parentid, &$errmsg = '') {
         $sql = "SELECT parentid, childid, rank FROM \"SetDepList\" WHERE childid=:childid";
-        try {
-            $sth = self::dm_query($sql, array('childid' => $childid));
-        } catch (Exception $e) {
-            $errmsg = $e->getMessage() . " Failed sql request: " . $sql;
-            return -1;
-        }
+        $sth = self::dm_query($sql, array('childid' => $childid));
         $row = $sth->fetch(PDO::FETCH_ASSOC);
         if (count($row)) {
             $parentid = $row['parentid'];
@@ -550,13 +530,6 @@ class DataManager {
 
         $res = self::dm_query($sql, array('login' => $login, 'pass_hash' => $pass_hash, 'namelogin' => 'login', 'namepass' => 'pass_hash', 'nameusers' => 'Users'));
         return $res->fetch(PDO::FETCH_ASSOC);
-    }
-
-    public static function CreateUser($login, $pass_hash) {
-        $sql = "INSERT INTO \"Users\"(login, pass_hash) VALUES ($login,$pass_hash)";
-        $res = pg_query(self::_getConnection(), $sql);
-        if (!$res)
-            die("Failed sql request!: " . $sql);
     }
 
     public static function TableSelect($dbtable, $strwhere = '', $params = 0) {
@@ -889,7 +862,7 @@ class DataManager {
                 where pv_usr.value = :userid and pv.value = :id";
         return $sql;
     }
-    public static function get_right($mdid, $userid = '')
+    public static function get_right($id, $userid = '')
     {
         if ($userid == '') {
             $userid = $_SESSION['user_id'];
@@ -897,7 +870,7 @@ class DataManager {
         $sql = self::txtsql_access();
         $params = array();
         $params['userid'] = $userid;
-        $params['id'] = $mdid;
+        $params['id'] = $id;
         $res = DataManager::dm_query($sql,$params);
         return $res->fetchAll(PDO::FETCH_ASSOC);
     }        
@@ -1040,11 +1013,11 @@ class DataManager {
                       on it.id=pv.id 
                       where it.propid = :propid";
         $params['propid'] = $prop_ent;
-        $ar_tt0[] = DataManager::createtemptable($sql, 'tt_per0', $params);
+        $ar_tt0[] = self::createtemptable($sql, 'tt_per0', $params);
 
         $sql = "SELECT max(it.dateupdate) AS dateupdate, it.entityid, it.propid FROM \"IDTable\" as it INNER JOIN tt_per0 AS et ON it.entityid=et.entityid AND it.propid=et.propid
                       GROUP BY it.entityid, it.propid";
-        $ar_tt0[] = DataManager::createtemptable($sql, 'tt_it0');
+        $ar_tt0[] = self::createtemptable($sql, 'tt_it0');
 
         if ($tt_val == '') {
             $sql = "SELECT tper.entityid, tper.propid, pv.value FROM tt_it0 AS tper 
@@ -1066,8 +1039,8 @@ class DataManager {
                         AND tper.dateupdate=it.dateupdate";
         }
 
-        $res = DataManager::createtemptable($sql, $ttname);
-        DataManager::droptemptable($ar_tt0);
+        $res = self::createtemptable($sql, $ttname);
+        self::droptemptable($ar_tt0);
         return $res;
     }
 
@@ -1089,7 +1062,7 @@ class DataManager {
                 inner join \"CTable\" as ct_intcont
                 on pv_intcont.id = ct_intcont.id
                 where pv_int.value = :interfaceid order by pv_rank.value";
-        $res = DataManager::dm_query($sql, array('interfaceid' => $interfaceid));
+        $res = self::dm_query($sql, array('interfaceid' => $interfaceid));
         return $res->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -1112,7 +1085,7 @@ class DataManager {
                             and cp_usr.name='user'
                     on ct.id=pv_usr.id
                     where pv_usr.value = :userid";
-        $res = DataManager::dm_query($sql, array('userid' => $userid));
+        $res = self::dm_query($sql, array('userid' => $userid));
         return $res->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -1133,7 +1106,7 @@ class DataManager {
                             on pv_dep.pid=cp_dep.id
                             and cp_dep.name='prop_depend'
                     on ct.id=pv_dep.id";
-        $res = DataManager::dm_query($sql, array('propid' => $propid));
+        $res = self::dm_query($sql, array('propid' => $propid));
         return $res->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -1163,7 +1136,7 @@ class DataManager {
             on ct.id = pv_prop.id
             and pv_prop.value=:propid";
         $params = array('eventname' => $eventname, 'mdid' => $mdid, 'propid' => $propid);
-        $res = DataManager::dm_query($sql, $params);
+        $res = self::dm_query($sql, $params);
         return $res->fetchAll(PDO::FETCH_ASSOC);
     }
     
@@ -1180,7 +1153,7 @@ class DataManager {
         $params = array();
         $params['itemid'] = $itemid;
         
-        $res = DataManager::dm_query($sql,$params);
+        $res = self::dm_query($sql,$params);
         return $res->fetchAll(PDO::FETCH_ASSOC);
     }        
     //возвращает массив объектов метаданных которые содержат в ТЧ метаданные указанной строки 
@@ -1225,7 +1198,7 @@ class DataManager {
                     on mp.mdid=mdp.id";
         $params = array();
         $params['mdid'] = $mdid;
-        $res = DataManager::dm_query($sql,$params);
+        $res = self::dm_query($sql,$params);
         $ar_obj = array();
         while($row = $res->fetch(PDO::FETCH_ASSOC)) 
         {
@@ -1236,7 +1209,9 @@ class DataManager {
     public static function get_access_prop()
     {
         $userid=$_SESSION['user_id'];
-        $sql = "select pv_group.value as user_group, pv_prop.value as propid, ct_prop.name as propname, pt.name as type, pv_val.value as value, pv_rd.value as rd, pv_wr.value as wr from \"CTable\" as ct
+        $sql = "select pv_group.value as user_group, pv_prop.value as propid, 
+                ct_prop.name as propname, pt.name as name_type, pv_val.value as value, 
+                pv_rd.value as rd, pv_wr.value as wr from \"CTable\" as ct
                     inner join \"MDTable\" as mt
                     on ct.mdid = mt.id
                     and mt.name='access_rights'

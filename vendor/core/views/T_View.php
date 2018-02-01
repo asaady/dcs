@@ -118,7 +118,7 @@ trait T_View {
         echo "<input class=\"form-control ajax\" name=\"action\" type=\"hidden\" value=\"".$this->context['ACTION']."\">";
         echo "<input class=\"form-control ajax\" name=\"version\" type=\"hidden\" value=\"".$data['version']."\">";
         echo "<input class=\"form-control ajax\" name=\"page\" type=\"hidden\" value=\"".$this->context['PAGE']."\">";
-        echo "<input class=\"form-control ajax\" name=\"command\" type=\"hidden\" value=\"\">";
+        echo "<input class=\"form-control ajax\" name=\"command\" type=\"hidden\" value=\"".$this->context['COMMAND']."\">";
         echo "<input class=\"form-control ajax\" name=\"param_id\" type=\"hidden\" value=\"\">";
         echo "<input class=\"form-control ajax\" name=\"param_val\" type=\"hidden\" value=\"\">";
         echo "<input class=\"form-control ajax\" name=\"param_type\" type=\"hidden\" value=\"\">";

@@ -29,7 +29,7 @@ class Rproperty extends Model {
     {
         if ($id=='')
         {
-            throw new Exception("class.Rproperty constructor: id is empty");
+            throw new DcsException("class.Rproperty constructor: id is empty");
         }
         
         $arData = self::getProperty($id);

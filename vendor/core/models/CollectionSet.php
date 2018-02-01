@@ -171,7 +171,7 @@ class CollectionSet extends Sheet implements I_Sheet, I_Property
         $strwhere='';
         if ($filtername!='')
         {
-            $strwhere = DataManager::getstrwhere($filter,$filtertype,$filtername);
+            $strwhere = DataManager::getstrwhere($filter,$filtertype,$filtername,$params);
         }
         $str0_req .=" FROM tt_et as et";
         $sql = $str0_req.$str_req;

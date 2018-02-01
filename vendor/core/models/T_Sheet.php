@@ -31,6 +31,13 @@ trait T_Sheet {
         $this->prop_to_Data($context, $objs);
         return $objs;
     }
+    function get_head()
+    {
+        if(!$this->head) {
+            return $this->head();
+        }
+        return $this->head;
+    }
     public function get_navid() 
     {
         return $this->id;
@@ -189,6 +196,15 @@ trait T_Sheet {
         {
 	  $val=$this->data[$propid]['id'];
 	}  
+	return $val;
+    }
+    function getattrbyname($name)
+    {
+        $val='';
+        $key = array_search($name, array_column($this->properties,'name','id'));
+        if ($key !== FALSE) {
+            $val = $this->getattrid($key);
+        }
 	return $val;
     }
     public function setattr($propid,$valname,$valid='') 

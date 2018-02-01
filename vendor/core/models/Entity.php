@@ -3,7 +3,7 @@ namespace Dcs\Vendor\Core\Models;
 
 use PDO;
 use DateTime;
-use Exception;
+use Dcs\Vendor\Core\Models\DcsException;
 
 class Entity extends Sheet implements I_Sheet, I_Property 
 {
@@ -25,15 +25,11 @@ class Entity extends Sheet implements I_Sheet, I_Property
         $this->enumber = $this->getpropnumber();
         $this->synonym = $this->name;
         $this->name = $this->gettoString();
+        $this->activity = TRUE;
         $prop_activity = array_search("activity", 
                                 array_column($this->properties,'name','id'));
-        if ($prop_activity !== FALSE)
-        {    
-            $this->activity = $this->getattr($prop_activity); 
-        }
-        if ($this->activity !== FALSE)
-        {
-            $this->activity = TRUE;
+        if ($prop_activity !== FALSE) {    
+            $this->activity = (bool)$this->getattr($prop_activity); 
         }
     }
     public static function txtsql_forDetails() 
@@ -86,7 +82,7 @@ class Entity extends Sheet implements I_Sheet, I_Property
         } else {
             asort($artoStr);
         }
-        $isDocs = $this->head->get_head()->getname() === 'Docs';
+        $isDocs = $this->mdtypename === 'Docs';
         if (count($artoStr)) {
             $res = '';
             foreach($artoStr as $prop => $rank)
@@ -199,7 +195,7 @@ class Entity extends Sheet implements I_Sheet, I_Property
             return DCS_EMPTY_ENTITY;
         }
         $row = $res->fetch(PDO::FETCH_ASSOC);
-        if(!count($res)) 
+        if(!count($row)) 
         {
             return DCS_EMPTY_ENTITY;
         }
@@ -290,35 +286,21 @@ class Entity extends Sheet implements I_Sheet, I_Property
                     }    
                     
                     //попробуем найти объекты зависимого реквизита  - в надежде установить единственное значение
-                    $filter = array();
-                    $filter['itemid'] =  array('id' => $dep_prop['valmdid'],'name' => '');
-                    $filter['curid'] = array('id'=>$this->id,'name'=>'');
-                    if ($this->getmdentity()->getmditemname() == 'Items') {
+                    $filter = $context;
+                    $filter['DATA']['itemid'] =  array('id' => $dep_prop['valmdid'],'name' => '');
+                    $filter['DATA']['curid'] = array('id'=>$this->id,'name'=>'');
+                    if ($this->mdtypename == 'Items') {
                         //это строка тч - в фильтр передадим объект владелец ТЧ
                         $ar_obj = DataManager::get_obj_by_item($this->id);
                         if (count($ar_obj)>0) {
-                            $filter['docid'] = array('id'=>$ar_obj[0]['id'],'name'=>'');
+                            $filter['DATA']['docid'] = array('id'=>$ar_obj[0]['id'],'name'=>'');
                         }
                     }
-                    $filter['filter_id']= array('id'=>'','name'=>'');
-                    $filter['filter_val']= array('id'=>'','name'=>'');
-                    $filter['filter_min']= array('id'=>'','name'=>'');
-                    $filter['filter_max']= array('id'=>'','name'=>'');
-//                    die(var_dump($data)." filter ". var_dump($filter));
-                    $ar_dep_data = EntitySet::getEntitiesByFilter($filter,'ENTERPISE','VIEW');
-                    if (count($ar_dep_data['LDATA']) > 0) {
-                        foreach ($ar_dep_data['LDATA'] as $dep_entid => $obj) {
-                            asort($ar_dep_data['LNAME'][$dep_entid]);
-                            $fname = '';
-                            foreach ($ar_dep_data['LNAME'][$dep_entid] as $rank => $cname) {
-                                $fname .= ' '.trim($cname);
-                            }
-                            if ($fname != '') {
-                                $fname = trim($fname);
-                            }
-                            $res[$dep_pid] = array('value'=>$dep_entid,'id'=>$dep_entid,'type'=>$dep_prop['name_type'], 'name'=>$fname);
-                            break;
-                        }
+                    $es = new EntitySet($dep_prop['valmdid']);
+                    $ar_dep_data = $es->getItems($filter);
+                    foreach ($ar_dep_data as $dep_entid => $obj) {
+                        $res[$dep_pid] = array('value'=>$dep_entid,'id'=>$dep_entid,'type'=>$dep_prop['name_type'], 'name'=>$obj['name']);
+                        break;
                     }
                     if (count($res) == 0) {
                         $res[$dep_pid] = array('value'=>DCS_EMPTY_ENTITY,'type'=>$dep_prop['name_type'], 'name'=>'');                    
@@ -410,11 +392,9 @@ class Entity extends Sheet implements I_Sheet, I_Property
 	    }
 	    $row = $res->fetch(PDO::FETCH_ASSOC);
             $t_val = $propval['nval'];
-            if (($type=='id')||($type=='cid'))
-            {
+            if (($type=='id')||($type=='cid')) {
                 $t_val = $propval['nvalid'];
-                if ($t_val == '')
-                {
+                if ($t_val == '') {
                     $t_val = DCS_EMPTY_ENTITY;
                 }    
             }    

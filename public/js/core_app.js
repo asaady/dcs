@@ -931,7 +931,7 @@ $('body').on('click', '#history', function (e)
             {  
                 tcurid = tcurid.replace('name_', '');
             }
-            $("input[name='curid']").val(tcurid);
+            $("input[name='propid']").val(tcurid);
             $("input[name='command']").val('history'); 
             $data = $('.ajax').serializeArray();
             $.ajax({
@@ -1094,10 +1094,11 @@ function activate_pickadate()
 $(document).ready(function() 
 { 
     var itemid = $("input[name='itemid']").val(); 
+    var action = $("input[name='action']").val(); 
     var prefix = $("input[name='prefix']").val();
+    var command = $("input[name='command']").val();
     activate_pickadate();
-    if ((prefix !== 'AUTH')&&(itemid !== '')) {
-        $("input[name='command']").val('load'); 
+    if (command !== '') {
         var $data = $('.ajax').serializeArray();
         $.ajax({
           url: getprefix()+'/ajax/'+itemid,

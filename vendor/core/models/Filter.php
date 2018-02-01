@@ -12,7 +12,7 @@ class Filter
     public function __construct($prop, $val, $valmin='',$valmax='')
     {
 	if (!$prop) {
-            throw new Exception("empty propid Filter");
+            throw new DcsException("empty propid Filter");
 	}
         $this->prop = $prop; 
         $this->val = $val; 

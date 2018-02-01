@@ -36,5 +36,8 @@ define("DCS_UPLOAD_LOG","/log/upload");
 define("DCS_UPLOAD_IMPORT_DIR","/upload/import");
 define("DCS_UPLOAD_IMPORT_LOG","/log/import");
 define("DCS_API_LOG","/log/api");
-
+define("DCS_DB_ERROR",900);
+define("DCS_DENY_ACCESS",800);
+define("DCS_UNKNOWN_ERROR",999);
+define("DCS_TYPE_ERROR",700);
 

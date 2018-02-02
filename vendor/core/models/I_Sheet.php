@@ -9,4 +9,5 @@ interface I_Sheet
     public function load_data();
     public function getItemsByFilter($context);
     public function getItemsByName($name);
- }
+    public static function txtsql_access();  
+}

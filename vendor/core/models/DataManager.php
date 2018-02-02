@@ -20,7 +20,7 @@ class DataManager {
             $connection_string = "pgsql:host=".DCS_DBHOST.";port=5432;dbname=" . DCS_DBNAME . ";";
             $hDB = new PDO($connection_string, DCS_DBUSER, DCS_DBPASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
         } catch (PDOException $ex) {
-            throw new DcsException($ex->getMessage(),DCS_DB_ERROR,$ex);
+            throw new DcsException($ex->getMessage(),DCS_ERROR_DB,$ex);
         }
         return $hDB;
     }
@@ -37,7 +37,7 @@ class DataManager {
                 $sth = self::dm_prepare($sql);
                 $query = $sth->execute($params);
             } catch (PDOException $ex) {
-                throw new DcsException($ex->getMessage().' sql: '.$sql.' params:'.print_r($params,TRUE),DCS_DB_ERROR,$ex);
+                throw new DcsException($ex->getMessage().' sql: '.$sql.' params:'.print_r($params,TRUE),DCS_ERROR_DB,$ex);
             }
         }
         return $sth;
@@ -47,7 +47,7 @@ class DataManager {
         try {
             $sth = self::dm_exec($sql, $params);
         } catch (PDOException $ex) {
-            throw new DcsException($ex->getMessage().' sql: '.$sql.' params:'.print_r($params,TRUE),DCS_DB_ERROR,$ex);
+            throw new DcsException($ex->getMessage().' sql: '.$sql.' params:'.print_r($params,TRUE),DCS_ERROR_DB,$ex);
         }
         return $sth;
     }
@@ -829,52 +829,6 @@ class DataManager {
         }
         return $dop;
     }
-    public static function txtsql_access($ra_tbl = 'RoleAccess', $type = 'mdid') 
-    {
-        $sql = "SELECT pv.value as id, cp_rd.name as name, ct_rd.value as val "
-                . "FROM \"CPropValue_$type\" as pv 
-		   inner join \"CTable\" as ct
-			inner join \"MDTable\" as md_ra
-			on ct.mdid = md_ra.id
-			and md_ra.name='" . $ra_tbl . "'
-			inner join \"CPropValue_cid\" as pv_rol
-				inner join \"CProperties\" as cp_rol
-				on pv_rol.pid=cp_rol.id
-				and cp_rol.name='role_kind'
-				inner join \"CPropValue_cid\" as pv_usrol
-					inner join \"CProperties\" as cp_usrol
-					on pv_usrol.pid=cp_usrol.id
-					and cp_usrol.name='role'
-					inner join \"CPropValue_cid\" as pv_usr
-                                            inner join \"CProperties\" as cp_usr
-                                            on pv_usr.pid=cp_usr.id
-                                            and cp_usr.name='user'
-					on pv_usrol.id=pv_usr.id
-				on pv_rol.value=pv_usrol.value
-				and pv_rol.id<>pv_usrol.id
-			on ct.id = pv_rol.id
-                        inner join \"CPropValue_bool\" as ct_rd
-				inner join \"CProperties\" as cp_rd
-				on ct_rd.pid=cp_rd.id
-			on ct.id = ct_rd.id
-			AND ct_rd.value 
-		on pv.id=ct.id
-                where pv_usr.value = :userid and pv.value = :id";
-        return $sql;
-    }
-    public static function get_right($id, $userid = '')
-    {
-        if ($userid == '') {
-            $userid = $_SESSION['user_id'];
-        }
-        $sql = self::txtsql_access();
-        $params = array();
-        $params['userid'] = $userid;
-        $params['id'] = $id;
-        $res = DataManager::dm_query($sql,$params);
-        return $res->fetchAll(PDO::FETCH_ASSOC);
-    }        
-
     public static function getTT_entity($ttname, $mdid, $propid, $val, $type, $oper)
     {
         $ar_tt0 = array();

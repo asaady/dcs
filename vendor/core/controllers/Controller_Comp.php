@@ -6,10 +6,10 @@ use Dcs\Vendor\Core\Models\Register;
 
 class Controller_Register extends Controller
 {
-	function __construct($id)
+	function __construct($context)
 	{
-		$this->model = new Register($id);
-		$this->view = new View();
+            $this->model = new Register($context['ITEMID']);
+            $this->view = new View();
 	}
 	
 	function action_index($context)

@@ -11,7 +11,6 @@ class User
     private $user_id;
     private $name;
     private $synonym;
-
     private $is_authorized = false;
 
     public function __construct($username = null, $password = null)
@@ -301,12 +300,18 @@ class User
     }
     public static function isAdmin()
     {
-        if (array_key_exists('user_id', $_SESSION))
-        {        
-            $user_role = self::getUserRole();
-            return (array_search('admin', array_column($user_role, 'name'))!==false);
+        static $is_admin;
+        
+        if (!array_key_exists('user_id', $_SESSION)) {
+            return false;
+        }    
+
+        if (isset($is_admin)) {
+            return $is_admin;
         }
-        return false;
+        $is_admin = array_search('admin', 
+                    array_column(self::getUserRole(), 'name')) !== FALSE;
+        return $is_admin;
     }
     public static function getUserRole()
     {

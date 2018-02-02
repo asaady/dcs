@@ -7,6 +7,8 @@ use Dcs\Vendor\Core\Models\DcsException;
 
 abstract class Sheet extends Model implements I_Sheet
 {
+    use T_Sheet;
+    
     protected $head;     
     protected $data;
     protected $mdid;
@@ -16,12 +18,17 @@ abstract class Sheet extends Model implements I_Sheet
     public function __construct($id)
     {
         if ($id == '') {
-            throw new DcsException("Class ".get_called_class()." constructor: id is empty");
+            throw new DcsException("Class ".get_called_class().
+                    " constructor: id is empty",DCS_ERROR_WRONG_PARAMETER);
+        }
+        if (self::get_right($id) == 'deny') {
+            throw new DcsException('Access denied',DCS_DENY_ACCESS);
         }
         $arData = $this->getDetails($id);
         $this->mdid = $id;
         if ($arData['id'] === '') {
-            throw new DcsException("Class ".get_called_class()." constructor: id not found ");
+            throw new DcsException("Class ".get_called_class().
+                    " constructor: id not found ",DCS_ERROR_WRONG_PARAMETER);
         }    
         $this->id = $arData['id']; 
         $this->name = $arData['name']; 
@@ -40,23 +47,6 @@ abstract class Sheet extends Model implements I_Sheet
         $this->load_data();
         $this->version = time();
         
-        $arr_rd = DataManager::get_right($itemid);
-        $rd = "deny";
-        if (($arr_rd)&&(count($arr_rd) > 0)) {
-            $ar_wr = array_filter($arr_rd,function($item) { 
-                return ((strtolower($item['name']) == 'write')&&
-                        ($item['val'] === TRUE));});
-            if (count($ar_wr) > 0 ) {
-                $rd = "edit";
-            } else {
-                $ar_rd = array_filter($arr_rd,function($item) { 
-                    return ((strtolower($item['name']) == 'read')&&
-                            ($item['val'] === TRUE));});
-                if (count($ar_rd) > 0 ) {
-                    $rd = "view";
-                }
-            }    
-        } 
     }
     function get_mdid()
     {

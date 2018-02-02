@@ -319,4 +319,34 @@ trait T_Sheet {
         $objs['navlist'] = $this->get_navlist($context);
 	return $objs;
     }
+    public static function txtsql_access() 
+    {
+        return '';
+    }
+    public static function get_right($id) 
+    {
+        $userid = $_SESSION['user_id'];
+        $sql = self::txtsql_access();
+        if ($sql == '') {
+            return (User::isAdmin()) ? 'write':'read';
+        }
+        $params = array();
+        $params['userid'] = $userid;
+        $params['id'] = $id;
+        $res = DataManager::dm_query($sql,$params);
+        $arr_rd = $res->fetchAll(PDO::FETCH_ASSOC);
+        $ar_wr = array_filter($arr_rd,function($item) { 
+            return ((strtolower($item['name']) == 'write')&&
+                    ($item['val'] === TRUE));});
+        if ($ar_wr) {
+            return "edit";
+        }
+        $ar_rd = array_filter($arr_rd,function($item) { 
+            return ((strtolower($item['name']) == 'read')&&
+                    ($item['val'] === TRUE));});
+        if ($ar_rd) {
+            return "read";
+        }
+        return "deny";
+    }
 }

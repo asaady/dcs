@@ -74,7 +74,17 @@ class Route {
         if(!method_exists($controller, $action)) {
             $action = 'action_error';
         }
-        $controller->$action($this->context->getcontext());
+        try {
+            $controller->$action($this->context->getcontext());
+        } catch (DcsException $ex) {
+            $this->action_name = 'action_error';
+            if ($ex->getCode() === DCS_DENY_ACCESS) {
+                $this->action_name = 'action_denyaccess';
+            }
+            $this->seterrorcontext();
+            $controller = new Controller_Error($this->context->getcontext());
+            $controller->$action($this->context->getcontext());
+        }    
     }    
     function seterrorcontext()
     {

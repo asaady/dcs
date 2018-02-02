@@ -112,13 +112,8 @@ class CollectionItem extends Sheet implements I_Sheet, I_Property
                 $sql = substr($sql,1);
                 $sql = "UPDATE \"CTable\" SET$sql WHERE id=:id";
                 $params['id'] = $this->id;
-                $res = DataManager::dm_query($sql,$params);
-                if(!$res) 
-                {
-                    $objs['status']='ERROR';
-                    $objs['msg']=$sql;
-                    break;
-                }
+                DataManager::dm_query($sql,$params) or 
+                        DcsException::doThrow('$sql: '.$sql, DCS_ERROR_SQL);
             }    
             
             foreach($pdata['PLIST'] as $row)
@@ -126,12 +121,10 @@ class CollectionItem extends Sheet implements I_Sheet, I_Property
                 $key = $row['name'];
                 $id = $row['id'];
                 $type = $row['name_type'];
-                if (($key=='id')||($key=='name')||($key=='synonym'))
-                {
+                if (($key=='id')||($key=='name')||($key=='synonym')) {
                     continue;
                 }    
-                if (array_key_exists($id, $data))
-                {
+                if (array_key_exists($id, $data)) {
 
                     $dataname = $data[$id]['name'];
                     $valname = $prow[$id]['name'];
@@ -184,25 +177,18 @@ class CollectionItem extends Sheet implements I_Sheet, I_Property
                     $params['pid'] = $id;
                     $res = DataManager::dm_query($sql,$params);
                     $rw = $res->fetch(PDO::FETCH_ASSOC);
-                    if ($rw)
-                    {    
+                    if ($rw) {    
                         $sql = "UPDATE \"CPropValue_$type\" SET value=:val, userid=:userid, dateupdate=DEFAULT WHERE id=:id and pid=:pid returning \"id\"";
-                    }
-                    else
-                    {
+                    } else {
                         $sql = "INSERT INTO \"CPropValue_$type\" (id, pid, value, userid) VALUES (:id, :pid, :val, :userid) returning \"id\"";
                     }    
                     $params['val'] = $val;
                     $params['userid']=$_SESSION["user_id"];
                     
-                    $res = DataManager::dm_query($sql,$params);
-                    $rw = $res->fetch(PDO::FETCH_ASSOC);
-                    if(!$rw) 
-                    {
-                        $objs['status']='ERROR';
-                        $objs['msg']=$sql;
-                        break;
-                    }
+                    $res = DataManager::dm_query($sql,$params) or 
+                        DcsException::doThrow('$sql: '.$sql, DCS_ERROR_SQL);
+                    $res->fetch(PDO::FETCH_ASSOC) or 
+                        DcsException::doThrow('$sql: '.$sql, DCS_ERROR_SQL);
                     $objs['status']='OK';
                     $objs['id']=$this->id;
                 }    
@@ -280,8 +266,11 @@ class CollectionItem extends Sheet implements I_Sheet, I_Property
             }    
             else 
             {
-                $sql ="INSERT INTO \"CTable\" (name, synonym, mdid) VALUES (:name, :synonym, :mdid) RETURNING \"id\"";
-                $params = array('name' => $curname, 'synonym'=>$data['synonym']['name'],'mdid'=> $this->head->getid());
+                $sql ="INSERT INTO \"CTable\" (name, synonym, mdid) "
+                        . "VALUES (:name, :synonym, :mdid) RETURNING \"id\"";
+                $params = array('name' => $curname, 
+                        'synonym'=>$data['synonym']['name'],
+                        'mdid'=> $this->head->getid());
                 $res = DataManager::dm_query($sql,$params);
                 $row = $res ->fetch(PDO::FETCH_ASSOC);
                 $id = $row['id'];
@@ -297,31 +286,25 @@ class CollectionItem extends Sheet implements I_Sheet, I_Property
                         continue;
                     }
                     $val = $dataname['name'];
-                    if ($type=='bool') 
-                    {
-                        if ($val=='t')
-                        {
+                    if ($type == 'bool') {
+                        if ($val == 't') {
                             $val = 'true';
                         }
-                        if ($val != 'true')
-                        {
+                        if ($val != 'true') {
                             $val = 'false';
                         }
-                    } 
-                    elseif (($type == 'id')||($type == 'cid')||($type == 'mdid'))
-                    {
+                    } elseif (($type == 'id')||($type == 'cid')||($type == 'mdid')) {
                         $val = $dataname['id'];
                     }    
 
-                    $sql = "INSERT INTO \"CPropValue_$type\" (id, pid, value) VALUES (:id, :pid, :value) RETURNING \"id\"";
+                    $sql = "INSERT INTO \"CPropValue_$type\" (id, pid, value) "
+                            . "VALUES (:id, :pid, :value) RETURNING \"id\"";
                     $params = array();
                     $params['id'] = $id;
                     $params['pid'] = $f['id'];
                     $params['value'] = $val;
-                    $res = DataManager::dm_query($sql,$params);        
-                    if(!$res) {
-                        $ares = array('status'=>'ERROR', 'msg'=>$sql);
-                    }
+                    DataManager::dm_query($sql,$params) or 
+                        DcsException::doThrow('$sql: '.$sql, DCS_ERROR_SQL);
                 }    
             }
         }    

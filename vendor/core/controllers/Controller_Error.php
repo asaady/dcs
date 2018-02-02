@@ -5,7 +5,7 @@ use Dcs\Vendor\Core\Views\Error_View;
 
 class Controller_Error extends Controller
 {
-    function __construct()
+    function __construct($context)
     {
         $this->view = new Error_View();
     }

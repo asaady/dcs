@@ -9,12 +9,6 @@ abstract class Controller implements I_Controller {
 	public $model;
 	public $view;
 	
-	function __construct($id='')
-	{
-//		$this->model = new Model($id);
-//		$this->view = new View();
-	}
-	
 	// действие (action), вызываемое по умолчанию
 	function action_index($context)
 	{

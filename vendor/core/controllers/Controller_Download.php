@@ -7,14 +7,14 @@ use Dcs\Vendor\Core\Models\Download;
 class Controller_Download extends Controller
 {
 
-    function __construct($id)
+    function __construct($context)
     {
-            $this->model = new Download($id);
+        $this->model = new Download($context['ITEMID']);
     }
 
     function action_index($context)
     {
-            return $this->model->get_data($context['CURID']);
+        return $this->model->get_data($context['CURID']);
     }
     function action_error($context)
     {

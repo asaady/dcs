@@ -3,7 +3,7 @@ namespace Dcs\Vendor\Core\Models;
 
 use PDO;
 use DateTime;
-use Exception;
+use Dcs\Vendor\Core\Models\DcsException;
 
 class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
 {
@@ -13,6 +13,10 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
     use T_Property;
     use T_EProperty;
     
+    public static function txtsql_access() 
+    {
+        return self::txtsql_set_access('RoleAccess', 'mdid');
+    }
     public static function txtsql_forDetails() 
     {
         return "SELECT mdt.id, mdt.name, mdt.synonym, "

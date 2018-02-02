@@ -8,7 +8,7 @@ use Dcs\Vendor\Core\Models\InputDataManager;
 class Controller_Auth extends Controller
 {
 
-    function __construct()
+    function __construct($context)
     {
         $this->view = new Auth_View();
     }

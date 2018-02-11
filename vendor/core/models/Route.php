@@ -2,7 +2,7 @@
 namespace Dcs\Vendor\Core\Models;
 
 use PDO;
-use Dcs\Vendor\Core\Controllers\Controller_404;
+use Dcs\Vendor\Core\Controllers\Controller_Error;
 
 class Route {
     protected $routes;
@@ -64,9 +64,6 @@ class Route {
             $controller = new $controllername($this->context->getcontext());
         } catch (DcsException $ex) {
             $this->action_name = 'action_error';
-            if ($ex->getCode() === DCS_DENY_ACCESS) {
-                $this->action_name = 'action_denyaccess';
-            }
             $this->seterrorcontext();
             $controller = new Controller_Error($this->context->getcontext());
         }
@@ -81,6 +78,7 @@ class Route {
             if ($ex->getCode() === DCS_DENY_ACCESS) {
                 $this->action_name = 'action_denyaccess';
             }
+            $action = $this->action_name;
             $this->seterrorcontext();
             $controller = new Controller_Error($this->context->getcontext());
             $controller->$action($this->context->getcontext());

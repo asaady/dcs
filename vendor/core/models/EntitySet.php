@@ -17,6 +17,10 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
     {
         return self::txtsql_set_access('RoleAccess', 'mdid');
     }
+    public function getaccessrightid()
+    {
+        return $this->id;
+    }        
     public static function txtsql_forDetails() 
     {
         return "SELECT mdt.id, mdt.name, mdt.synonym, "

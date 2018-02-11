@@ -10,18 +10,10 @@ use Dcs\Vendor\Core\Models\Entity;
 trait T_Sheet {
     function get_data(&$context) 
     {
-        if  ($this->getmdtypename() == 'Items') {
-            if ((array_key_exists('docid',$context['DATA']) !== FALSE)&&
-                ($context['DATA']['docid']['id'] !== '')&&
-                (array_key_exists('propid',$context['DATA']) !== FALSE)&&
-                ($context['DATA']['propid']['id'] !== '')) {
-                $prop = new EProperty($context['DATA']['propid']['id']);
-                
-                $this->set_head($prop);
-                $doc = new Entity($context['DATA']['docid']['id']);
-                $prop->set_head($doc);
-            }    
+        if ($this->get_right() == 'deny') {
+            throw new DcsException('Access denied',DCS_DENY_ACCESS);
         }
+        $this->load_data();
         $objs = array(
           'id'=>$this->id,
           'name'=>$this->name,
@@ -319,11 +311,7 @@ trait T_Sheet {
         $objs['navlist'] = $this->get_navlist($context);
 	return $objs;
     }
-    public static function txtsql_access() 
-    {
-        return '';
-    }
-    public static function get_right($id) 
+    public function get_right() 
     {
         $userid = $_SESSION['user_id'];
         $sql = self::txtsql_access();
@@ -332,7 +320,7 @@ trait T_Sheet {
         }
         $params = array();
         $params['userid'] = $userid;
-        $params['id'] = $id;
+        $params['id'] = $this->getaccessrightid();
         $res = DataManager::dm_query($sql,$params);
         $arr_rd = $res->fetchAll(PDO::FETCH_ASSOC);
         $ar_wr = array_filter($arr_rd,function($item) { 

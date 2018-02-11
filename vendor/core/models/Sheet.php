@@ -21,9 +21,6 @@ abstract class Sheet extends Model implements I_Sheet
             throw new DcsException("Class ".get_called_class().
                     " constructor: id is empty",DCS_ERROR_WRONG_PARAMETER);
         }
-        if (self::get_right($id) == 'deny') {
-            throw new DcsException('Access denied',DCS_DENY_ACCESS);
-        }
         $arData = $this->getDetails($id);
         $this->mdid = $id;
         if ($arData['id'] === '') {
@@ -44,7 +41,6 @@ abstract class Sheet extends Model implements I_Sheet
         $this->mdtypename = $arData['mdtypename'];
         $this->head = $this->get_head();
         $this->properties = $this->loadProperties();
-        $this->load_data();
         $this->version = time();
         
     }
@@ -156,6 +152,10 @@ abstract class Sheet extends Model implements I_Sheet
     function getmdtypename() 
     {
         return $this->mdtypename;
+    }
+    public static function txtsql_access() 
+    {
+        return '';
     }
 }
 

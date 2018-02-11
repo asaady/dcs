@@ -18,20 +18,38 @@ class Entity extends Sheet implements I_Sheet, I_Property
     protected $enumber;
     protected $num;
     
-    public function __construct($id)
+    function get_data(&$context) 
     {
-        parent::__construct($id);
-        $this->edate = $this->getpropdate();
-        $this->enumber = $this->getpropnumber();
-        $this->synonym = $this->name;
-        $this->name = $this->gettoString();
-        $this->activity = TRUE;
-        $prop_activity = array_search("activity", 
-                                array_column($this->properties,'name','id'));
-        if ($prop_activity !== FALSE) {    
-            $this->activity = (bool)$this->getattr($prop_activity); 
+        if ($this->get_right() == 'deny') {
+            throw new DcsException('Access denied',DCS_DENY_ACCESS);
         }
+        $this->load_data();
+        if  ($this->getmdtypename() == 'Items') {
+            if ((array_key_exists('docid',$context['DATA']) !== FALSE)&&
+                ($context['DATA']['docid']['id'] !== '')&&
+                (array_key_exists('propid',$context['DATA']) !== FALSE)&&
+                ($context['DATA']['propid']['id'] !== '')) {
+                $prop = new EProperty($context['DATA']['propid']['id']);
+                
+                $this->set_head($prop);
+                $doc = new Entity($context['DATA']['docid']['id']);
+                $prop->set_head($doc);
+            }    
+        }
+        $objs = array(
+          'id'=>$this->id,
+          'name'=>$this->name,
+          'synonym'=>$this->synonym,
+          'version'=>$this->version
+          );
+        $this->prop_to_Data($context, $objs);
+        return $objs;
     }
+    }
+    public function getaccessrightid()
+    {
+        return $this->mdid;
+    }        
     public static function txtsql_forDetails() 
     {
         return "select et.id, '' as name, '' as synonym, 

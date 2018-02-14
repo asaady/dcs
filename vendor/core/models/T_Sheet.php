@@ -10,10 +10,15 @@ use Dcs\Vendor\Core\Models\Entity;
 trait T_Sheet {
     function get_data(&$context) 
     {
-        if ($this->get_right() == 'deny') {
+        $ar = $this->get_right($context);
+        if ($ar == 'deny') {
             throw new DcsException('Access denied',DCS_DENY_ACCESS);
         }
-        $this->load_data();
+        if ($ar === 'write') {
+            $context['ACTION'] = 'EDIT';
+        } else {
+            $context['ACTION'] = 'VIEW';
+        } 
         $objs = array(
           'id'=>$this->id,
           'name'=>$this->name,
@@ -23,11 +28,11 @@ trait T_Sheet {
         $this->prop_to_Data($context, $objs);
         return $objs;
     }
+    public function setnamesynonym($context)
+    {
+    }        
     function get_head()
     {
-        if(!$this->head) {
-            return $this->head();
-        }
         return $this->head;
     }
     public function get_navid() 
@@ -61,35 +66,7 @@ trait T_Sheet {
             $strkey = $this->id;
             $strval = sprintf("%s",$this);
         }    
-        if (($this->mdtypename == 'Items')&&
-            ($context['PREFIX'] !== 'CONFIG')) {
-            if (isset($context['DATA']['docid'])) {
-                $docid = $context['DATA']['docid']['id'];
-                $doc = new Entity($docid);
-                if (isset($context['DATA']['propid'])) {
-                    $propid = $context['DATA']['propid']['id'];
-                    $doc->add_navlist($navlist);
-                    $navlist[] = array('id'=>$docid,'name'=>sprintf("%s",$doc));
-                    $prop = $doc->getProperty($propid);
-                    $navlist[] = array('id'=>"$docid?propid=".$propid,'name' => $prop['synonym']);
-                    $strkey .= "?docid=$docid&propid=$propid";
-                }
-            }
-        } elseif (($context['CLASSNAME'] == 'Entity')&&
-                  ($context['PREFIX'] !== 'CONFIG')) {
-            if (isset($context['DATA']['propid'])) {
-                $propid = $context['DATA']['propid']['id'];
-                if ($propid !== '') {
-                    $this->add_navlist($navlist);
-                    $navlist[] = array('id'=>$this->id,'name' => sprintf("%s",$this));
-                    $strkey .= "?propid=".$propid;
-                    $strval = $this->properties[$propid]['synonym'];
-                }    
-            }
-        }
-        if (!count($navlist)) {    
-            $this->add_navlist($navlist);
-        }    
+        $this->add_navlist($navlist);
         $navlist[] = array('id' => $strkey,'name' => sprintf("%s",$strval));
         return $navlist;
     }        
@@ -105,12 +82,11 @@ trait T_Sheet {
     // filter - function returning bool 
     //          or string 'toset' / 'tostring'
     //
-    public function load_data()
+    public function load_data($context)
     {
         $artemptable = $this->get_tt_sql_data();
         $sql = "select * from tt_out";
         $sth = DataManager::dm_query($sql);        
-        $this->data = array();
         $arr_e = array();
         while($row = $sth->fetch(PDO::FETCH_ASSOC)) 
         {
@@ -144,6 +120,12 @@ trait T_Sheet {
         }
         $this->version = time();
         DataManager::droptemptable($artemptable);
+        $this->head = $this->head($context);
+        $this->setnamesynonym($context);
+        $ar = $this->get_right();
+        if ($ar == 'deny') {
+            throw new DcsException('Access denied',DCS_DENY_ACCESS);
+        }
     }
     public function fill_entname(&$data,$arr_e) {
         $arr_entities = $this->getAllEntitiesToStr($arr_e);
@@ -174,7 +156,7 @@ trait T_Sheet {
     }
     public function getattr($propid) 
     {
-        $val='';
+        $val = '';
 	if(array_key_exists($propid, $this->data))
         {
 	  $val=$this->data[$propid]['name'];
@@ -183,10 +165,9 @@ trait T_Sheet {
     }
     function getattrid($propid)
     {
-        $val='';
-	if(array_key_exists($propid, $this->data))
-        {
-	  $val=$this->data[$propid]['id'];
+        $val = '';
+	if(array_key_exists($propid, $this->data)) {
+            $val = $this->data[$propid]['id'];
 	}  
 	return $val;
     }
@@ -294,6 +275,7 @@ trait T_Sheet {
     public function getItemData($context) 
     {
     	$objs = array();
+        $this->load_data($context);
         $this->prop_to_Data($context, $objs);
         if ($this->data) {
             $objs['LDATA'] = array();
@@ -311,23 +293,30 @@ trait T_Sheet {
         $objs['navlist'] = $this->get_navlist($context);
 	return $objs;
     }
+    public function getaccessright_id()
+    {
+        return $this->id;
+    }        
     public function get_right() 
     {
+        if (User::isAdmin()) {
+            return "write";
+        }
         $userid = $_SESSION['user_id'];
         $sql = self::txtsql_access();
         if ($sql == '') {
-            return (User::isAdmin()) ? 'write':'read';
+            return 'read';
         }
         $params = array();
         $params['userid'] = $userid;
-        $params['id'] = $this->getaccessrightid();
+        $params['id'] = $this->getaccessright_id();
         $res = DataManager::dm_query($sql,$params);
         $arr_rd = $res->fetchAll(PDO::FETCH_ASSOC);
         $ar_wr = array_filter($arr_rd,function($item) { 
             return ((strtolower($item['name']) == 'write')&&
                     ($item['val'] === TRUE));});
         if ($ar_wr) {
-            return "edit";
+            return "write";
         }
         $ar_rd = array_filter($arr_rd,function($item) { 
             return ((strtolower($item['name']) == 'read')&&

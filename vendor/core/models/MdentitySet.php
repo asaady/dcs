@@ -35,7 +35,8 @@ class MdentitySet extends Sheet implements I_Sheet
     {
         return new Mdentity($this->id);
     }
-    function load_data() {
+    function load_data($context) 
+    {
         return NULL;
     }
     public function getItems($context) 

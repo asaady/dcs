@@ -37,7 +37,6 @@ class Controller_Ajax extends Controller
     }
     function action_history($context)
     {
-        die(var_dump($context));
         $mdprop = new Mdproperty($context['DATA']['PROPID']['id']);
         echo json_encode($mdprop->get_history_data($context['ITEMID'],$context['MODE']));
     }

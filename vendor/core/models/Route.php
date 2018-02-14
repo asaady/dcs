@@ -64,6 +64,9 @@ class Route {
             $controller = new $controllername($this->context->getcontext());
         } catch (DcsException $ex) {
             $this->action_name = 'action_error';
+            if ($ex->getCode() === DCS_DENY_ACCESS) {
+                $this->action_name = 'action_denyaccess';
+            }
             $this->seterrorcontext();
             $controller = new Controller_Error($this->context->getcontext());
         }
@@ -75,9 +78,6 @@ class Route {
             $controller->$action($this->context->getcontext());
         } catch (DcsException $ex) {
             $this->action_name = 'action_error';
-            if ($ex->getCode() === DCS_DENY_ACCESS) {
-                $this->action_name = 'action_denyaccess';
-            }
             $action = $this->action_name;
             $this->seterrorcontext();
             $controller = new Controller_Error($this->context->getcontext());
@@ -101,7 +101,33 @@ class Route {
                 UNION SELECT 'Mdcollection', md.name, md.id, md.synonym, ct.name FROM \"MDTable\" as md  inner join \"CTable\" as ct inner join \"MDTable\" as mditem on ct.mdid=mditem.id on md.mditem=ct.id and mditem.name='MDitems' WHERE md.id=:itemid and :prefix = 'CONFIG' and ct.name in ('Cols','Comps')
                 UNION SELECT 'Mdregister', md.name, md.id, md.synonym, ct.name FROM \"MDTable\" as md  inner join \"CTable\" as ct inner join \"MDTable\" as mditem on ct.mdid=mditem.id on md.mditem=ct.id and mditem.name='MDitems' WHERE md.id=:itemid and :prefix = 'CONFIG' and ct.name = 'Regs'
                 UNION SELECT 'MdentitySet', ct.name, ct.id, ct.synonym, md.name FROM \"CTable\" as ct INNER JOIN \"MDTable\" as md ON ct.mdid=md.id AND md.name='MDitems' WHERE ct.id=:itemid
-                UNION SELECT 'Entity', et.name, et.id, et.name, md.name FROM \"ETable\" as et INNER JOIN \"MDTable\" as md ON et.mdid = md.id WHERE et.id=:itemid
+                UNION SELECT 'Entity', et.name, et.id, et.name, md.name FROM \"ETable\" as et 
+                    INNER JOIN \"MDTable\" as md  
+                        inner join \"CTable\" as ct 
+                            inner join \"MDTable\" as mditem 
+                            on ct.mdid=mditem.id 
+                        on md.mditem=ct.id 
+                        and mditem.name='MDitems' 
+                    ON et.mdid = md.id 
+                    WHERE et.id=:itemid  and NOT ct.name = 'Items'
+                UNION SELECT 'Item', et.name, et.id, et.name, md.name FROM \"ETable\" as et 
+                    INNER JOIN \"MDTable\" as md  
+                        inner join \"CTable\" as ct 
+                            inner join \"MDTable\" as mditem 
+                            on ct.mdid=mditem.id 
+                        on md.mditem=ct.id 
+                        and mditem.name='MDitems' 
+                    ON et.mdid = md.id 
+                    WHERE et.id=:itemid  and ct.name = 'Items'
+                UNION SELECT 'Sets', et.name, et.id, et.name, md.name FROM \"ETable\" as et 
+                    INNER JOIN \"MDTable\" as md  
+                        inner join \"CTable\" as ct 
+                            inner join \"MDTable\" as mditem 
+                            on ct.mdid=mditem.id 
+                        on md.mditem=ct.id 
+                        and mditem.name='MDitems' 
+                    ON et.mdid = md.id 
+                    WHERE et.id=:itemid  and ct.name = 'Sets'
                 UNION SELECT 'CollectionItem', ct.name, ct.id, ct.synonym, md.name FROM \"CTable\" as ct INNER JOIN \"MDTable\" as md ON ct.mdid=md.id AND md.name<>'MDitems' WHERE ct.id=:itemid
                 UNION SELECT 'EProperty', mp.name, mp.id, mp.synonym, md.name  FROM \"MDProperties\" as mp INNER JOIN \"MDTable\" as md ON mp.mdid=md.id WHERE mp.id=:itemid
                 UNION SELECT 'CProperty', cp.name, cp.id, cp.synonym, md.name FROM \"CProperties\" as cp INNER JOIN \"MDTable\" as md ON cp.mdid=md.id WHERE cp.id=:itemid 

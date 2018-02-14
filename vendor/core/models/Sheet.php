@@ -9,10 +9,18 @@ abstract class Sheet extends Model implements I_Sheet
 {
     use T_Sheet;
     
+    //сущность верхнего уровня
+    //для строк это табличная часть
+    //для табличной части - документа(справочник)
+    //для сущности - набор сущностей 
+    //для набора сущностей - класс сущностей
+    //для реквизита метаданные сущности
     protected $head;     
     protected $data;
     protected $mdid;
     protected $mditem;
+    protected $mdname;
+    protected $mdsynonym;
     protected $mdtypename;
     
     public function __construct($id)
@@ -31,6 +39,8 @@ abstract class Sheet extends Model implements I_Sheet
         $this->name = $arData['name']; 
         $this->synonym = $arData['synonym']; 
         $this->mdid = $arData['mdid'];
+        $this->mdname = $arData['mdname'];
+        $this->mdsynonym = $arData['mdsynonym'];
         if (!$this->mdid) {
             $this->mdid = $this->id;
         }
@@ -39,8 +49,9 @@ abstract class Sheet extends Model implements I_Sheet
             $this->mditem = $this->id;
         }
         $this->mdtypename = $arData['mdtypename'];
-        $this->head = $this->get_head();
         $this->properties = $this->loadProperties();
+        $this->head = $this->head();
+        $this->data = array();
         $this->version = time();
         
     }

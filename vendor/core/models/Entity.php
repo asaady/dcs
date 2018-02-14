@@ -18,35 +18,18 @@ class Entity extends Sheet implements I_Sheet, I_Property
     protected $enumber;
     protected $num;
     
-    function get_data(&$context) 
+    public function setnamesynonym($context)
     {
-        if ($this->get_right() == 'deny') {
-            throw new DcsException('Access denied',DCS_DENY_ACCESS);
-        }
-        $this->load_data();
-        if  ($this->getmdtypename() == 'Items') {
-            if ((array_key_exists('docid',$context['DATA']) !== FALSE)&&
-                ($context['DATA']['docid']['id'] !== '')&&
-                (array_key_exists('propid',$context['DATA']) !== FALSE)&&
-                ($context['DATA']['propid']['id'] !== '')) {
-                $prop = new EProperty($context['DATA']['propid']['id']);
-                
-                $this->set_head($prop);
-                $doc = new Entity($context['DATA']['docid']['id']);
-                $prop->set_head($doc);
-            }    
-        }
-        $objs = array(
-          'id'=>$this->id,
-          'name'=>$this->name,
-          'synonym'=>$this->synonym,
-          'version'=>$this->version
-          );
-        $this->prop_to_Data($context, $objs);
-        return $objs;
+        $this->edate = $this->getdate();
+        $this->enumber = $this->getnumber();
+        $this->name = $this->head->getname();
+        $this->synonym = $this->gettoString();
+    }        
+    public static function txtsql_access() 
+    {
+        return self::etxtsql_access('RoleAccess', 'mdid');
     }
-    }
-    public function getaccessrightid()
+    public function getaccessright_id()
     {
         return $this->mdid;
     }        
@@ -62,6 +45,10 @@ class Entity extends Sheet implements I_Sheet, I_Property
                         ON et.mdid = md.id 
                     WHERE et.id = :id";  
     }
+    function getactivity()
+    {
+        return $this->activity;
+    }
     function head() 
     {
         return new EntitySet($this->mdid);
@@ -70,16 +57,9 @@ class Entity extends Sheet implements I_Sheet, I_Property
     {
         return NULL;
     }
-    function __toString() 
-    {
-      return $this->name;
-    }
     public function gettoString() 
     {
         $artoStr = array();
-        if ($this->head->get_head()->getname() == 'Sets') {
-            return $this->name;
-        }
         foreach($this->properties as $prop)
         {
             if ($prop['ranktostring'] > 0) 
@@ -103,48 +83,27 @@ class Entity extends Sheet implements I_Sheet, I_Property
         $isDocs = $this->mdtypename === 'Docs';
         if (count($artoStr)) {
             $res = '';
-            foreach($artoStr as $prop => $rank)
-            {
-                if ($isDocs)
-                {
-                    if ($this->properties[$prop]['isenumber'])
-                    {
-                        continue;
-                    }    
-                    if ($this->properties[$prop]['isedate'])
-                    {
-                        continue;
-                    }    
+            foreach($artoStr as $prop => $rank) {
+                if ($isDocs && ($this->properties[$prop]['isenumber'] ||
+                                $this->properties[$prop]['isedate'])) {
+                    continue;
                 }    
                 $name = $this->data[$prop]['name'];
-                if ($this->properties[$prop]['name_type'] == 'date')
-                {
-                    $name =substr($name,0,10);
+                if ($this->properties[$prop]['name_type'] == 'date') {
+                    $name = substr($name,0,10);
                 }
-                $res .=' '.$name;
+                $res .= ' '.$name;
             }
-            if ($isDocs)
-            {
+            if ($isDocs) {
                 $datetime = new DateTime($this->edate);
                 $res = $this->head->getsynonym()." №".$this->enumber." от ".$datetime->format('d-m-y').$res;
-            }
-            else    
-            {
-                if ($res!='')
-                {
+            } elseif ($res != '') {
                     $res = substr($res, 1);
-                }    
             }    
             return $res;
-        }
-        else 
-        {
+        } else {
             return $this->name;
         }
-    }
-    function getactivity()
-    {
-        return $this->activity;
     }
     //ret: array temp table names 
     public function get_tt_sql_data()
@@ -204,58 +163,20 @@ class Entity extends Sheet implements I_Sheet, I_Property
         $artemptable[] = DataManager::createtemptable($sql,'tt_out',array('id'=>$this->id));   
         return $artemptable;
     }    
-    public static function get_set_by_item($itemid)
-    {
-        $sql = "SELECT parentid, childid, rank FROM \"SetDepList\" "
-                . "where childid = :itemid";
-        $res = DataManager::dm_query($sql,array('itemid'=>$itemid));
-        if(!$res) {
-            return DCS_EMPTY_ENTITY;
-        }
-        $row = $res->fetch(PDO::FETCH_ASSOC);
-        if(!count($row)) 
-        {
-            return DCS_EMPTY_ENTITY;
-        }
-        return $row['parentid'];
-    }
-    public static function get_entity_by_setid($setid)
-    {
-        $sql = "SELECT it.entityid, max(it.dateupdate) from \"PropValue_id\" as pv "
-                . "inner join \"IDTable\" as it on pv.id=it.id "
-                . "where pv.value=:setid "
-                . "group by it.entityid";
-
-        $res = DataManager::dm_query($sql,array('setid'=>$setid));
-        $row = $res->fetch(PDO::FETCH_ASSOC);
-        if(!count($row)) 
-        {
-            return DCS_EMPTY_ENTITY;
-        }
-        return $row['entityid'];
-    }
-    public function getpropdate(){
+    public function getdate(){
 	$res=$this->edate;
-        foreach ($this->properties as $prow)
-        {    
-            if (($prow['isedate']==true)||($prow['isedate']=='t')||($prow['isedate']=='true')) 
-            {
-              $res=$this->data[$prow['id']]['name'];
-              break;
-            }  
-	}
+        $key = array_search(TRUE, array_column($this->properties,'isedate','id'),TRUE);
+        if ($key !== FALSE) {
+            $res=$this->getattr($key);
+        }
 	return $res;
     }
-    public function getpropnumber(){
+    public function getnumber(){
 	$res=0;
-        foreach ($this->properties as $prow)
-        {    
-            if (($prow['isenumber']==true)||($prow['isenumber']=='t')||($prow['isenumber']=='true')) 
-            {
-              $res=$this->data[$prow['id']]['name'];
-              break;
-            }  
-	}
+        $key = array_search(TRUE, array_column($this->properties,'isenumber','id'),TRUE);
+        if ($key !== FALSE) {
+            $res=$this->getattr($key);
+        }
 	return $res;
     }
     public function update_dependent_properties($data)
@@ -550,47 +471,33 @@ class Entity extends Sheet implements I_Sheet, I_Property
                     continue;
                 }
             }
-            elseif (($type=='cid')||($type=='mdid'))
-            {
-                if (($valid!=DCS_EMPTY_ENTITY)&&($valid!=''))  
-                {
+            elseif (($type == 'cid') || ($type == 'mdid')) {
+                if (($valid != DCS_EMPTY_ENTITY) && ($valid != '')) {
                     $valname = $valid;
-                }
-                else 
-                {
+                } else {
                     continue;
                 }
-            }    
-            else 
-            {
-                if ($type=='bool')
-                {
-                    if ($valname=='') 
-                    {
-                        if (strtolower($prop['name_propid'])=='activity')
-                        {
+            } else {
+                if ($type == 'bool') {
+                    if ($valname == '') {
+                        if (strtolower($prop['name_propid']) == 'activity') {
                             $valname='true';
                         }    
                     }    
-                    if ($valname=='t')
-                     {
+                    if ($valname == 't') {
                          $valname = 'true';
-                     }
-                     if ($valname!='true')
-                     {
-                         $valname ='false';
-                     }
+                    }
+                    if ($valname != 'true') {
+                         $valname = 'false';
+                    }
                  }
-                elseif (($type=='int')||($type=='float'))
-                {
-                    if ($valname=='') 
-                    {
+                elseif (($type == 'int') || ($type == 'float')) {
+                    if ($valname == '') {
                         continue;
                     }    
                 }
                 
-                if (!isset($valname)) 
-                {
+                if (!isset($valname)) {
                     continue;
                 }    
             }
@@ -627,185 +534,6 @@ class Entity extends Sheet implements I_Sheet, I_Property
         
         return $artemptable;    
     }
-    function getSetData()
-    {
-	$objs = array();
-	$pset = $this->getProperties(true,'toset');
-        if ($this->id == '')
-        {
-            return $objs;
-        }    
-        $artemptable=array();
-        $entityid = $this->id;
-	$sql = "SELECT it.childid as rowid, it.rank as rownum  FROM \"SetDepList\" as it WHERE it.parentid=:entityid and it.rank > 0";
-        $artemptable[]= DataManager::createtemptable($sql, 'tt_it',array('entityid'=>$entityid));
-        
-        
-        $sql = "SELECT et.id, et.name, et.mdid, it.rownum  FROM \"ETable\" as et INNER JOIN tt_it as it ON et.id=it.rowid";
-        $artemptable[]= DataManager::createtemptable($sql, 'tt_et');
-        
-        $sql = "SELECT max(it.dateupdate) AS dateupdate, it.entityid, it.propid  FROM \"IDTable\" as it inner join tt_et AS et on it.entityid=et.id GROUP BY it.entityid, it.propid";
-        $artemptable[]= DataManager::createtemptable($sql, 'tt_id');
-
-	$sql = "SELECT 	t.id as tid, 
-			t.userid,  
-			ts.dateupdate,
-			ts.entityid,
-			it.rownum,
-			ts.propid as id,
-			pv_str.value as str_value, 
-			pv_int.value as int_value, 
-			pv_id.value as id_value, 
-			ve.name as id_valuename, 
-			pv_cid.value as cid_value, 
-			ce.synonym as cid_valuename, 
-			pv_date.value as date_value, 
-			pv_float.value as float_value, 
-			pv_bool.value as bool_value, 
-			pv_text.value as text_value, 
-			pv_file.value as file_value, 
-			mp.synonym,
-			cv_name.name as name_type,
-			mp.ranktostring,
-			mp.isedate,
-			mp.isenumber,
-			mp.rank
-		FROM \"IDTable\" AS t 
-		INNER JOIN tt_id AS ts
-                    INNER JOIN tt_it as it
-                    ON ts.entityid=it.rowid
-		ON t.entityid=ts.entityid
-		AND t.propid = ts.propid
-		AND t.dateupdate=ts.dateupdate
-		INNER JOIN \"MDProperties\" as mp
-		    INNER JOIN \"CTable\" as pt
-                        INNER JOIN \"CPropValue_cid\" as ct
-                            INNER JOIN \"CProperties\" as cp
-                            ON ct.pid=cp.id
-                            AND cp.name='type'
-                            INNER JOIN \"CTable\" as cv_name
-                            ON ct.value = cv_name.id
-                        ON pt.id=ct.id
-		    ON mp.propid=pt.id
-		ON t.propid=mp.id
-                and mp.ranktoset>0
-		LEFT JOIN \"PropValue_str\" AS pv_str
-		ON t.id = pv_str.id	
-		LEFT JOIN \"PropValue_id\" AS pv_id
-		  INNER JOIN \"ETable\" as ve
-		  ON pv_id.value=ve.id
-		ON t.id = pv_id.id	
-		LEFT JOIN \"PropValue_cid\" AS pv_cid
-		  INNER JOIN \"CTable\" as ce
-		  ON pv_cid.value=ce.id
-		ON t.id = pv_id.id	
-		LEFT JOIN \"PropValue_int\" AS pv_int
-		ON t.id = pv_int.id	
-		LEFT JOIN \"PropValue_date\" AS pv_date
-		ON t.id = pv_date.id	
-		LEFT JOIN \"PropValue_bool\" AS pv_bool
-		ON t.id = pv_bool.id	
-		LEFT JOIN \"PropValue_text\" AS pv_text
-		ON t.id = pv_text.id	
-		LEFT JOIN \"PropValue_float\" AS pv_float
-		ON t.id = pv_float.id 
-		LEFT JOIN \"PropValue_file\" AS pv_file
-		ON t.id = pv_file.id";
-        
-        $artemptable[]= DataManager::createtemptable($sql, 'tt_lv');
-        $rank_id = array_search('rank', array_column($pset,'name','id'));
-        if ($rank_id!==FALSE)
-        {
-            $sql = "SELECT et.id, COALESCE(lv.int_value,999) as rank FROM tt_et AS et left join tt_lv as lv on et.id=lv.entityid and lv.id=:rankid order by rank"; 
-            $params=array('rankid'=>$rank_id);
-        }    
-        else 
-        {
-            $sql = "SELECT et.id FROM tt_et AS et"; 
-            $params='';
-        }
-        $res = DataManager::dm_query($sql, $params);
-        $sobjs=array();
-        $sobjs['rows']=$res->fetchAll(PDO::FETCH_ASSOC);
-        
-        $sql = "SELECT * FROM tt_lv"; 
-	$res = DataManager::dm_query($sql);
-        $activity_id = array_search('activity', array_column($pset,'name','id'));
-        $arr_e=array();
-        foreach ($sobjs['rows'] as $row)
-        {
-            $objs[$row['id']]=array();
-            foreach ($pset as $prop)
-            {
-                $objs[$row['id']][$prop['id']]= array('id'=>'', 'name'=>'');
-                if ($activity_id!==FALSE)
-                {
-                    if ($prop['id']==$activity_id)
-                    {
-                        $objs[$row['id']]['class']= 'active';
-                    }    
-                }    
-            }
-        }
-        $destPath = $_SERVER['DOCUMENT_ROOT'] . '/upload/';
-        while($row = $res->fetch(PDO::FETCH_ASSOC)) 
-        {
-            $rowtype = $row['name_type'];
-            if (($rowtype=='id')||($rowtype=='cid'))
-            {
-                $objs[$row['entityid']][$row['id']] = array(
-                       'id'=>$row[$rowtype.'_value'],
-                       'name'=>$row['id_valuename']
-                  );
-                if ($rowtype == 'id')
-                {    
-                    if (($row['id_value'])&&($row['id_value']!=DCS_EMPTY_ENTITY)) {        
-                        if (!in_array($row['id_value'],$arr_e)) {
-                            $arr_e[] = $row['id_value'];
-                        }
-                    }    
-                }    
-            } else {
-                if ($rowtype == 'file')
-                {
-                    $name = $row[$rowtype.'_value'];
-                    $ext = strrchr($name,'.');
-                    
-                    $curm = date("Ym",strtotime($row['dateupdate']));
-                    $objs[$row['entityid']][$row['id']] = array(
-                      'name'=>$name,
-                      'id'=>"/download/".$row['entityid']."?propid=".$row['id']
-                    );
-                }   
-                else
-                {
-                    $objs[$row['entityid']][$row['id']] = array(
-                      'name'=>$row[$rowtype.'_value'],
-                      'id'=>''
-                      );
-                }    
-                if ($activity_id !== FALSE)
-                {
-                    if ($row['id'] == $activity_id)
-                    {
-                        if ($row['bool_value'] === FALSE)
-                        {    
-                            $objs[$row['entityid']]['class']= 'erased';
-                        }    
-                    }    
-                }    
-            }
-
-        }
-        if (count($arr_e))
-        {
-            $this->fill_entsetname($objs,$arr_e);
-        }    
-        
-	DataManager::droptemptable($artemptable);
-	
-	return $objs;
-    }    
     public static function CopyEntity($id,$user)
     {
         $arEntity = self::getEntityDetails($id);
@@ -938,11 +666,37 @@ class Entity extends Sheet implements I_Sheet, I_Property
         if ((!$setid)||($setid === DCS_EMPTY_ENTITY)) {
             return array();
         }    
-        $set = new Entity($setid);
+        $set = new Sets($setid);
         return $set->getSetData();
     }
     public function getItemsByName($name) 
     {
         return NULL;
     }
+    public function get_navlist($context)
+    {
+        $navlist = array();
+        $strkey = 'new';
+        $strval = 'Новый';
+        if ($this->id) {
+            $strkey = $this->id;
+            $strval = sprintf("%s",$this);
+        }    
+        if ($context['PREFIX'] !== 'CONFIG') {
+            if (isset($context['DATA']['setid'])) {
+                $propid = $context['DATA']['setid']['id'];
+                if ($propid !== '') {
+                    $this->add_navlist($navlist);
+                    $navlist[] = array('id'=>$this->id,'name' => sprintf("%s",$this));
+                    $strkey .= "?propid=".$propid;
+                    $strval = $this->properties[$propid]['synonym'];
+                }    
+            }
+        }
+        if (!count($navlist)) {    
+            $this->add_navlist($navlist);
+        }    
+        $navlist[] = array('id' => $strkey,'name' => sprintf("%s",$strval));
+        return $navlist;
+    }        
 }

@@ -45,6 +45,7 @@ $('a').on('show.bs.tab', function (e) {
         dop = '?propid='+activeid;
     } else {
         $("input[name='setid']").val(''); 
+        $("input[name='propid']").val(''); 
     }    
     var $x = $('div#ivalue');
     $x.empty();
@@ -728,9 +729,11 @@ $('body').on('click','a#create', function ()
 });
 $('body').on('click', '#edit', function () {
     tr_dblclick($('#dcs-list tr.info'));
+    tr_dblclick($('#dcs-items tr.info'));
 });
 $('body').on('click', '#view', function () {
     tr_dblclick($('#dcs-list tr.info'));
+    tr_dblclick($('#dcs-items tr.info'));
 });
 function erase_success (result)
 {

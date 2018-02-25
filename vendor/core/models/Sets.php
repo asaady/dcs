@@ -14,12 +14,10 @@ class Sets extends Entity implements I_Sheet, I_Property
     use T_Property;
     use T_EProperty;
     
-    protected $activity;
-    protected $edate;
-    protected $enumber;
-    protected $num;
+    protected $docid;
+    protected $propid;
     
-    public function setnamesynonym($context)
+    public function setnamesynonym()
     {
         $this->name = $this->mdname;
         $this->synonym = $this->mdsynonym;
@@ -28,24 +26,31 @@ class Sets extends Entity implements I_Sheet, I_Property
     {
         return $this->get_head()->get_mdid();
     }        
-    public function get_entityid()
+    public function get_head_param()
     {
-        $sql = "SELECT it.entityid, max(it.dateupdate) from \"PropValue_id\" as pv "
+        $sql = "SELECT it.entityid, it.propid, max(it.dateupdate) from \"PropValue_id\" as pv "
                 . "inner join \"IDTable\" as it on pv.id=it.id "
                 . "where pv.value=:setid "
-                . "group by it.entityid";
+                . "group by it.entityid, it.propid";
 
         $res = DataManager::dm_query($sql,array('setid'=>$this->id));
-        $row = $res->fetch(PDO::FETCH_ASSOC);
-        if(!count($row)) 
-        {
-            return DCS_EMPTY_ENTITY;
-        }
-        return $row['entityid'];
+        return $res->fetchAll(PDO::FETCH_ASSOC);
     }
     function head() 
     {
-        return new Entity($this->get_entityid());
+        $param = $this->get_head_param();
+        if (!$param) {
+            return NULL;
+        }
+        $this->docid = $param[0]['entityid'];
+        $this->propid = $param[0]['propid'];
+        $_head = new Entity($this->docid);
+        $context = array();
+        $context['ITEMID'] = $this->docid;
+        $context['ACTION'] = 'VIEW';
+        $context['PREFIX'] = 'ENTERPRISE';
+        $_head->load_data($context);
+        return $_head;
     }
     function item() 
     {
@@ -80,7 +85,7 @@ class Sets extends Entity implements I_Sheet, I_Property
         }
         return $properties;
     }        
-    function getSetData()
+    function getItems($context)
     {
 	$objs = array();
 	$pset = $this->getProperties(true,'toset');

@@ -18,7 +18,7 @@ class Entity extends Sheet implements I_Sheet, I_Property
     protected $enumber;
     protected $num;
     
-    public function setnamesynonym($context)
+    public function setnamesynonym()
     {
         $this->edate = $this->getdate();
         $this->enumber = $this->getnumber();
@@ -179,6 +179,52 @@ class Entity extends Sheet implements I_Sheet, I_Property
         }
 	return $res;
     }
+    public function prop_to_Data(&$context,&$objs)
+    {        
+        $plist = array();
+        $sets = array();
+        $pset = array();
+        $ldata = array();
+        $propid = '';
+        $prefix = $context['PREFIX'];
+        if ($prefix == 'CONFIG') {
+            $pset = $this->getProperties(TRUE,'toset');
+        } else {
+            $plist = $this->getProperties(FALSE);
+            $cnt = 0;
+            $psets = array_filter($this->properties,function($item){
+                                return $item['valmdtypename'] === 'Sets';
+                            });
+            if (count($psets)) {
+                $propid = '';
+                if (isset($context['DATA']['propid'])) {
+                    $propid = $context['DATA']['propid']['id'];
+                } elseif (isset($context['DATA']['setid'])) {
+                    $propid = $context['DATA']['setid']['id'];
+                }   
+                $setid = '';
+                foreach ($psets as $prop) {
+                    $param = $this->get_valid($prop['id']);
+                    if (!$param) {
+                        $set = new Mdentity($prop['valmdid']);
+                    } else {
+                        $setid = $param[0]['value'];
+                        $set = new Sets($setid);
+                    }    
+                    $sets[$prop['id']] = $set->getProperties(true,'toset');
+                    if ($propid == $prop['id']) {
+                        $context['SETID'] = $propid;
+                    } elseif (count($psets) == 1) { 
+                        $context['SETID'] = $prop['id'];
+                        break;
+                    }  
+                }  
+            }
+        }
+        $objs['PLIST'] = $plist;
+        $objs['PSET'] = $pset;
+        $objs['SETS'] = $sets;
+    } 
     public function update_dependent_properties($data)
     {
         $res = array();
@@ -654,10 +700,10 @@ class Entity extends Sheet implements I_Sheet, I_Property
             $propid = $context['DATA']['setid']['id'];
             if ($propid == '') {
                 $propid = $context['DATA']['propid']['id'];
-                if ($propid == '') {
-                    return array();
-                }
             }    
+            if ($propid == '') {
+                return array();
+            }
         } else {
             $propid = $context['SETID'];
         }
@@ -667,7 +713,7 @@ class Entity extends Sheet implements I_Sheet, I_Property
             return array();
         }    
         $set = new Sets($setid);
-        return $set->getSetData();
+        return $set->getItems($context);
     }
     public function getItemsByName($name) 
     {
@@ -699,4 +745,19 @@ class Entity extends Sheet implements I_Sheet, I_Property
         $navlist[] = array('id' => $strkey,'name' => sprintf("%s",$strval));
         return $navlist;
     }        
+    public function get_valid($propid)
+    {
+        $sql = "SELECT it.entityid, it.propid, pv.value from \"IDTable\" as it "
+                . "inner join (SELECT it.entityid, it.propid, "
+                . "max(it.dateupdate) as dateupdate "
+                . "from \"IDTable\" as it "
+                . "where it.entityid = :id and it.propid = :propid "
+                . "group by it.entityid, it.propid) as slc "
+                . "on it.entityid = slc.entityid "
+                . "and it.propid = slc.propid "
+                . "and it.dateupdate = slc.dateupdate "
+                . "inner join \"PropValue_id\" as pv on it.id=pv.id";
+        $res = DataManager::dm_query($sql,array('id'=>$this->id, 'propid'=>$propid));
+        return $res->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

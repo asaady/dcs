@@ -10,15 +10,7 @@ use Dcs\Vendor\Core\Models\Entity;
 trait T_Sheet {
     function get_data(&$context) 
     {
-        $ar = $this->get_right($context);
-        if ($ar == 'deny') {
-            throw new DcsException('Access denied',DCS_DENY_ACCESS);
-        }
-        if ($ar === 'write') {
-            $context['ACTION'] = 'EDIT';
-        } else {
-            $context['ACTION'] = 'VIEW';
-        } 
+        $this->check_right($context);
         $objs = array(
           'id'=>$this->id,
           'name'=>$this->name,
@@ -28,7 +20,7 @@ trait T_Sheet {
         $this->prop_to_Data($context, $objs);
         return $objs;
     }
-    public function setnamesynonym($context)
+    public function setnamesynonym()
     {
     }        
     function get_head()
@@ -120,13 +112,10 @@ trait T_Sheet {
         }
         $this->version = time();
         DataManager::droptemptable($artemptable);
-        $this->head = $this->head($context);
-        $this->setnamesynonym($context);
-        $ar = $this->get_right();
-        if ($ar == 'deny') {
-            throw new DcsException('Access denied',DCS_DENY_ACCESS);
-        }
-    }
+        $this->head = $this->head();
+        $this->setnamesynonym();
+        $this->check_right($context);
+    }            
     public function fill_entname(&$data,$arr_e) {
         $arr_entities = $this->getAllEntitiesToStr($arr_e);
         foreach($arr_entities as $rid=>$prow)
@@ -228,7 +217,7 @@ trait T_Sheet {
         $classname = $this->get_classname();
         $prefix = $context['PREFIX'];
         if ($prefix == 'CONFIG') {
-            if (strpos($classname,'Property') === FALSE) {
+            if (strpos($classname,'Property') > 0) {
                 $pset = $this->getProperties(TRUE,'toset');
             } else {
                 $plist = $this->getProperties(FALSE);
@@ -236,34 +225,6 @@ trait T_Sheet {
         } else {
             if (strpos($classname,'Set') === FALSE) {
                 $plist = $this->getProperties(FALSE);
-                $cnt = 0;
-                $psets = array_filter($this->properties,function($item){
-                    return $item['valmdtypename'] === 'Sets';
-                });
-                if (count($psets)) {
-                    $propid = '';
-                    if (isset($context['DATA']['propid'])) {
-                        $propid = $context['DATA']['propid']['id'];
-                    } elseif (isset($context['DATA']['setid'])) {
-                        $propid = $context['DATA']['setid']['id'];
-                    }   
-                    $setid = '';
-                    foreach ($psets as $prop) {
-                        $setid = $prop['id'];
-                        if (!$this->getattrid($setid)) {
-                            $set = new Mdentity($prop['valmdid']);
-                        } else {
-                            $set = new Entity($this->getattrid($setid));
-                        }    
-                        $sets[$setid] = $set->getProperties(true,'toset');
-                        if ($propid == $prop['id']) {
-                            $context['SETID'] = $propid;
-                        }
-                    }  
-                    if (count($psets) == 1) { 
-                         $context['SETID'] = $setid;
-                    }  
-                }
             } else {
                 $pset = $this->getProperties(TRUE,'toset');
             }
@@ -299,9 +260,6 @@ trait T_Sheet {
     }        
     public function get_right() 
     {
-        if (User::isAdmin()) {
-            return "write";
-        }
         $userid = $_SESSION['user_id'];
         $sql = self::txtsql_access();
         if ($sql == '') {
@@ -319,11 +277,32 @@ trait T_Sheet {
             return "write";
         }
         $ar_rd = array_filter($arr_rd,function($item) { 
-            return ((strtolower($item['name']) == 'read')&&
+            $res = ((strtolower($item['name']) == 'read')&&
                     ($item['val'] === TRUE));});
         if ($ar_rd) {
             return "read";
         }
-        return "deny";
+        return 'deny';
+    }        
+    public function setcontext_action($param,$prefix) 
+    {
+        if ($param === 'write') {
+            return 'EDIT';
+        }
+        return 'VIEW';
+    }
+    public function check_right(&$context) 
+    {
+        $res = "deny";
+        $isadmin = User::isAdmin();
+        if ($isadmin) {
+            $res = "write";
+        } else {
+            $res = $this->get_right();
+        }
+        if ($res == 'deny') {
+            throw new DcsException('Access denied',DCS_DENY_ACCESS);
+        }
+        $context['ACTION'] = $this->setcontext_action($res, $context['PREFIX']);
     }
 }

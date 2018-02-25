@@ -32,18 +32,19 @@ class Route {
                 $this->context->setattr('PREFIX','AUTH');
                 $this->context->setattr('ACTION','VIEW');
             }
-        } elseif ($this->context->getattr('PREFIX') !== 'ERROR') {
+        } elseif (($this->context->getattr('PREFIX') !== 'ERROR')&&
+                  ($this->context->getattr('MODE') === 'FORM')) {
             $arSubSystems = $this->context->getsubsystems();
             if (($this->context->getattr('ITEMID') == '')&&
                 (count($arSubSystems))) {
                 $ritem = reset($arSubSystems);
                 $this->context->setattr('ITEMID',$ritem['id']);
             }
-            if ($this->context->getattr('ITEMID')) {
-                $item = self::getContentByID($this->context->getattr('ITEMID'),
-                                             $this->context->getattr('PREFIX'));
-                $this->context->setattr('CLASSNAME', $item['classname']);
-            }
+        }
+        if ($this->context->getattr('ITEMID')) {
+            $item = self::getContentByID($this->context->getattr('ITEMID'),
+                                         $this->context->getattr('PREFIX'));
+            $this->context->setattr('CLASSNAME', $item['classname']);
         }
         $this->controller_path = "/vendor/core/controllers";
     }

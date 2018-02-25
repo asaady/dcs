@@ -13,7 +13,7 @@ class Item extends Entity implements I_Sheet, I_Property
     use T_Item;
     use T_Property;
     use T_EProperty;
-    public function setnamesynonym($context)
+    public function setnamesynonym()
     {
         $this->name = $this->gettoString();
         $this->synonym = $this->name;

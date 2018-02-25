@@ -10,6 +10,6 @@ interface I_Sheet
     public function getItemsByFilter($context);
     public function getItemsByName($name);
     public static function txtsql_access();  
-    public function setnamesynonym($context);
+    public function setnamesynonym();
     public function getaccessright_id();
 }

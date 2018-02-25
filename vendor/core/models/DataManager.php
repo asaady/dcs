@@ -5,68 +5,34 @@ use PDO;
 use PDOStatement;
 use PDOException;
 use Dcs\Vendor\Core\Models\DcsException;
+use Dcs\Vendor\Core\Models\Db;
 
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING) . "/app/dcs_const.php");
 
 class DataManager {
-
-    protected static function _getConnection() {
-        static $hDB;
-
-        if (isset($hDB)) {
-            return $hDB;
-        }
-        try {
-            $connection_string = "pgsql:host=".DCS_DBHOST.";port=5432;dbname=" . DCS_DBNAME . ";";
-            $hDB = new PDO($connection_string, DCS_DBUSER, DCS_DBPASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-        } catch (PDOException $ex) {
-            throw new DcsException($ex->getMessage(),DCS_ERROR_DB,$ex);
-        }
-        return $hDB;
-    }
-
-    public static function dm_prepare($sql) {
-        return self::_getConnection()->prepare($sql);
-    }
-
-    public static function dm_exec($sql, $params = 0) {
-        if (!$params) {
-            $sth = self::_getConnection()->query($sql);
-        } else {
-            try {
-                $sth = self::dm_prepare($sql);
-                $query = $sth->execute($params);
-            } catch (PDOException $ex) {
-                throw new DcsException($ex->getMessage().' sql: '.$sql.' params:'.print_r($params,TRUE),DCS_ERROR_DB,$ex);
-            }
-        }
-        return $sth;
-    }
-
-    public static function dm_query($sql, $params = 0) {
-        try {
-            $sth = self::dm_exec($sql, $params);
-        } catch (PDOException $ex) {
-            throw new DcsException($ex->getMessage().' sql: '.$sql.' params:'.print_r($params,TRUE),DCS_ERROR_DB,$ex);
-        }
-        return $sth;
+    
+    public static function dm_query($sql, $params = []) {
+        $db = Db::getInstance();
+        return $db->run($sql, $params);
     }
 
     public static function dm_beginTransaction() {
-        self::_getConnection()->beginTransaction();
+        $db = Db::getInstance();
+        $db->beginTransaction();
     }
 
     public static function dm_commit() {
-        self::_getConnection()->commit();
+        $db = Db::getInstance();
+        $db->commit();
     }
 
     public static function dm_rollback() {
-        self::_getConnection()->rollBack();
+        $db = Db::getInstance();
+        $db->rollBack();
     }
 
     public static function getMainSettingsByName($name) {
         $sql = "SELECT name, id, synonym, description FROM \"MainSettings\" WHERE name= :name";
-
         $sth = self::dm_query($sql, array('name' => $name));
         return $sth->fetch(PDO::FETCH_ASSOC);
     }
@@ -192,7 +158,7 @@ class DataManager {
         return $strwhere;
     }
 
-    public static function createtemptable($sql, $tmpname, $params = 0) {
+    public static function createtemptable($sql, $tmpname, $params = []) {
         $sth = self::dm_query("CREATE TEMP TABLE $tmpname AS ($sql);", $params);
         return "$tmpname";
     }
@@ -532,7 +498,7 @@ class DataManager {
         return $res->fetch(PDO::FETCH_ASSOC);
     }
 
-    public static function TableSelect($dbtable, $strwhere = '', $params = 0) {
+    public static function TableSelect($dbtable, $strwhere = '', $params = []) {
         if ($strwhere != '') {
             $strwhere = "WHERE $strwhere";
         }

@@ -25,6 +25,7 @@ abstract class Sheet extends Model implements I_Sheet
     
     public function __construct($id)
     {
+        
         if ($id == '') {
             throw new DcsException("Class ".get_called_class().
                     " constructor: id is empty",DCS_ERROR_WRONG_PARAMETER);

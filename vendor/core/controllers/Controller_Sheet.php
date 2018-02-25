@@ -5,6 +5,7 @@ use Dcs\Vendor\Core\Views\View;
 use Dcs\Vendor\Core\Views\Print_View;
 use Dcs\Vendor\Core\Views\Error_View;
 use Dcs\Vendor\Core\Models\DcsException;
+use Exception;
 use DateTime;
 
 class Controller_Sheet extends Controller
@@ -13,7 +14,11 @@ class Controller_Sheet extends Controller
     function __construct($context)
     {
         $modelname = "\\Dcs\\Vendor\\Core\\Models\\".$context['CLASSNAME'];
-        $this->model = new $modelname($context['ITEMID']);
+        try {
+            $this->model = new $modelname($context['ITEMID']);
+        } catch (Exception $e) {
+            die($modelname.':'.$e->getMessage());
+        }
         $this->view = new View();
     }
     function action_index($context)

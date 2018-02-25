@@ -62,6 +62,17 @@ class MdentitySet extends Sheet implements I_Sheet
         }
         return $objs;
     }
+    public function setcontext_action($param, $prefix) 
+    {
+        if ($prefix == 'CONFIG')
+        {
+            return 'EDIT';
+        }  else {
+            return 'VIEW';
+        }
+        
+    }        
+
 //    public function getItemsByFilter($context) 
 //    {
 //        $prefix = $context['PREFIX'];

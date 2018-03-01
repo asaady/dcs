@@ -242,7 +242,7 @@ $('input.form-control').keyup(function(eventObject) {
     if ($curinp[0] != $(this)[0])
     {
         $curinp.attr('st','active');
-        this.attr('st','info');
+        $(this).attr('st','info');
     }    
     if (eventObject.which==27) 
     { 
@@ -250,16 +250,16 @@ $('input.form-control').keyup(function(eventObject) {
     }
     else 
     {
-        var vt = this.attr("vt");
+        var vt = $(this).attr("vt");
         if (vt == '')
         {
             vt = $("input[it='mdid'][type='hidden']").val();
         }    
-        var $data = {action:action, id:vt, type:itype, name:this.val(), command:'find', prefix:'field'};
+        var $data = {action:action, id:vt, type:itype, name:$(this).val(), command:'find', prefix:'field'};
         if (curid == 'name_valmdid')
         {    
             var $curtype = $("input#type");
-            $data = {action:action, id:$("input#valmdid").val(),type: 'mdid',name:this.val(),'command':'find', prefix:'field'};
+            $data = {action:action, id:$("input#valmdid").val(),type: 'mdid',name:$(this).val(),'command':'find', prefix:'field'};
             itype = $curtype.val();
         }
         if (arr_type.indexOf(itype)>=0) {
@@ -277,7 +277,7 @@ $('input.form-control').keyup(function(eventObject) {
                     onLoadGetData
                 );
             } else {
-                if (this.val().length === 0) 
+                if ($(this).val().length === 0) 
                 {
                     var curname = $curinp.attr('name');
                     if((curname.indexOf('name_') + 1)>0)

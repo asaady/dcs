@@ -36,7 +36,15 @@ class Sets extends Entity implements I_Sheet, I_Property
         $res = DataManager::dm_query($sql,array('setid'=>$this->id));
         return $res->fetchAll(PDO::FETCH_ASSOC);
     }
-    function head() 
+    public function getdocid()
+    {
+        return $this->docid;
+    }        
+    public function getpropid()
+    {
+        return $this->propid;
+    }        
+    public function head() 
     {
         $param = $this->get_head_param();
         if (!$param) {
@@ -58,7 +66,11 @@ class Sets extends Entity implements I_Sheet, I_Property
     }
     public function gettoString() 
     {
-        return $this->synonym;
+        return $this->mdsynonym;
+    }
+    function __toString() 
+    {
+      return $this->mdsynonym;
     }
     public function loadProperties()
     {

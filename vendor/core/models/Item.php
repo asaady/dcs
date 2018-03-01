@@ -13,7 +13,15 @@ class Item extends Entity implements I_Sheet, I_Property
     use T_Item;
     use T_Property;
     use T_EProperty;
-    public function setnamesynonym()
+    public function add_navlist(&$navlist) 
+    {
+        if ($this->head) {
+            $phead = $this->head;
+            $phead->add_navlist($navlist); 
+            $navlist[] = array('id'=>$this->head->getdocid()."?propid=".$this->head->getpropid(),'name'=>sprintf("%s",$this->head));
+        }
+    }
+   public function setnamesynonym()
     {
         $this->name = $this->gettoString();
         $this->synonym = $this->name;
@@ -40,10 +48,6 @@ class Item extends Entity implements I_Sheet, I_Property
     function head() 
     {
         return new Sets($this->get_set_by_item());
-    }
-    function item() 
-    {
-        return NULL;
     }
     public function gettoString() 
     {

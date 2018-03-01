@@ -120,49 +120,42 @@ class DcsContext
             }
         }    
     }   
+    private function set_dataname($key,$src) 
+    {
+        $pval = filter_input($src, $key, FILTER_SANITIZE_SPECIAL_CHARS);
+        $curkey = $key;
+        if (strpos($key,'name_') !== FALSE) {
+            $curkey = substr($key,5);
+        }
+        if ($pval == DCS_EMPTY_ENTITY) {
+            $this->context['DATA'][$key]['name'] = '';
+        } else {
+            $this->context['DATA'][$curkey]['name'] = $pval;
+        }
+    }
+    private function set_dataid($key,$src) 
+    {
+        if (strpos($key,'name_') === FALSE) {
+            $pval = filter_input($src, $key, FILTER_SANITIZE_SPECIAL_CHARS);
+            $this->context['DATA'][strtolower($key)] = array('id' => $pval, 'name' => $pval);
+            if (strtolower($key) === 'command') {
+                $this->setattr('COMMAND', strtoupper($pval));
+            }
+        }
+    }
     public function get_context_data()
     {        
-        foreach($_POST as $pkey=>$val)
-        {
-            $key = strtolower($pkey);
-            if (strpos($key,'name_') === FALSE) {
-                $pval = filter_input(INPUT_POST, $key, FILTER_SANITIZE_SPECIAL_CHARS);
-                $this->context['DATA'][strtolower($key)] = array('id' => $pval, 'name' => $pval);
-            }
+        foreach($_POST as $pkey => $val) {
+            $this->set_dataid(strtolower($pkey),INPUT_POST);
         }
-        foreach($_POST as $pkey=>$val)
-        {
-            $key = strtolower($pkey);
-            if (strpos($key,'name_') === FALSE) {
-                continue;
-            }
-            $pval = filter_input(INPUT_POST, $key, FILTER_SANITIZE_SPECIAL_CHARS);
-            $curkey = substr($key,5);
-            $this->context['DATA'][$curkey]['name'] = $pval;
-            if ($pval == DCS_EMPTY_ENTITY) {
-                $this->context['DATA'][$key]['name'] = '';
-            }
+        foreach($_POST as $pkey => $val) {
+            $this->set_dataname(strtolower($pkey),INPUT_POST);
         }
-        foreach($_GET as $pkey=>$val)
-        {
-            $key = strtolower($pkey);
-            if (strpos($key,'name_') === FALSE) {
-                $pval = filter_input(INPUT_GET, $key, FILTER_SANITIZE_SPECIAL_CHARS);
-                $this->context['DATA'][$key] = array('id' => $pval,'name' => $pval);
-            }
+        foreach($_GET as $pkey => $val) {
+            $this->set_dataid(strtolower($pkey),INPUT_GET);
         }
-        foreach($_GET as $pkey => $val)
-        {
-            $key = strtolower($pkey);
-            if (strpos($key,'name_') === FALSE) {
-                continue;
-            }
-            $pval = filter_input(INPUT_POST, $key, FILTER_SANITIZE_SPECIAL_CHARS);
-            $curkey = substr($key,5);
-            $this->context['DATA'][$curkey]['name'] = $pval;
-            if ($pval == DCS_EMPTY_ENTITY) {
-                $this->context['DATA'][$key]['name'] = '';
-            }
+        foreach($_GET as $pkey => $val) {
+            $this->set_dataname(strtolower($pkey),INPUT_GET);
         }
     }
     public function setattr($attrname, $attrval)

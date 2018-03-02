@@ -11,13 +11,27 @@ use Dcs\Vendor\Core\Models\Mdentity;
 use Dcs\Vendor\Core\Models\CollectionItem;
 use Dcs\Vendor\Core\Models\Mdproperty;
 use Dcs\Vendor\Core\Models\MdentitySet;
+use Dcs\Vendor\Core\Models\DcsException;
+use Dcs\Vendor\Core\Models\Route;
+use Dcs\Vendor\Core\Models\Common_data;
 
 class Controller_Ajax extends Controller
 {
     function __construct($context)
     {
-        $modelname = "\\Dcs\\Vendor\\Core\\Models\\".$context['CLASSNAME'];
-        $this->model = new $modelname($context['ITEMID']);
+        $id = $context['ITEMID'];
+        if ($context['COMMAND'] == 'FIND') {
+            $id = $context['DATA']['id']['id'];
+        }
+        $validation = Common_data::check_uuid($id);
+        if (!$validation) {
+            throw new DcsException("Class ".get_called_class().
+                    " constructor: id is not valid",DCS_ERROR_WRONG_PARAMETER);
+        }
+        $prefix = $context['PREFIX'];
+        $cont = \Dcs\Vendor\Core\Models\Route::getContentByID($id,$prefix);
+        $modelname = "\\Dcs\\Vendor\\Core\\Models\\".$cont['classname'];
+        $this->model = new $modelname($id);
     }
     function action_view($context)
     {
@@ -26,6 +40,44 @@ class Controller_Ajax extends Controller
     function action_load($context)
     {
         $this->action_view($context);
+    }
+    function action_find($context)
+    {
+        echo json_encode($this->model->getItemsByName($context['DATA']['name']['name']));
+    }
+    function action_list($context)
+    {
+        $data = $idm->getdata();
+        $propid = $data['filter_id']['id'];
+        if ($propid)
+        {    
+            $curid = $idm->getcurid();
+            $arMD = Entity::getEntityDetails($curid);
+            $mdprop = new Mdproperty($propid);
+            $valmdentity = $mdprop->getpropstemplate()->getvalmdentity();
+            $data = array();
+            $data['curid'] = array('id'=>$curid,'name'=>'');
+            $data['itemid'] = array('id'=>$valmdentity->getid(),'name'=>'');
+            $data['docid'] = array('id'=>$idm->getitemid(),'name'=>'');
+            $data['filter_id']= array('id'=>'','name'=>'');
+            $data['filter_val']= array('id'=>'','name'=>'');
+            $data['filter_min']= array('id'=>'','name'=>'');
+            $data['filter_max']= array('id'=>'','name'=>'');
+            $event_trig = DataManager::get_event_trigger('onSelect',$arMD['mdid'] , $mdprop->getpropstemplate()->getid());
+            if ($event_trig)
+            {
+                die(var_dump($event_trig));
+            }   
+            else
+            {    
+                if (($valmdentity->getmdtypename()=='Cols')||($valmdentity->getmdtypename()=='Comps'))
+                {    
+                    return CollectionSet::getCollectionByFilter($data,$idm->getmode(),$idm->getaction());
+                }
+            }    
+        }    
+        return EntitySet::getEntitiesByFilter($data,$idm->getmode(),$idm->getaction());
+        echo json_encode($this->model->getItemsByName($context['DATA']['name']['name']));
     }
     function action_print($context)
     {

@@ -337,7 +337,7 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
             $arr_prop = array();
         }
         $mdentity = new Mdentity($this->id);
-        if ($mdentity->getmditemname()=='Docs')
+        if ($mdentity->getmdtypename() == 'Docs')
         {
             $sql = "select et.id, pv.value as name, it.dateupdate FROM \"PropValue_int\" as pv
                     inner join \"IDTable\" as it
@@ -422,11 +422,6 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
         
         $artt[] = DataManager::createtemptable($sql,'tt_et',$params);   
         
-//        $sqlr = "select * from tt_et";
-//	$res = DataManager::dm_query($sqlr);
-//	die(var_dump($res->fetchAll(PDO::FETCH_ASSOC))." sql = ".$sql. var_dump($params));
-        
-        
 	$sql = "select id, max(dateupdate) as dateupdate FROM tt_et group by id";
         $artt[] = DataManager::createtemptable($sql,'tt_nml');   
         
@@ -444,8 +439,10 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
                 on et.id=it.entityid";  
         $artt[] = DataManager::createtemptable($sql,'tt_act');   
         
+        
 	$sql = "select id, max(dateupdate) as dateupdate FROM tt_act group by id";
         $artt[] = DataManager::createtemptable($sql,'tt_actl');   
+        
 	$sql = "select et.id, et.name FROM tt_act as et inner join tt_actl as nm on et.id=nm.id and et.dateupdate=nm.dateupdate and et.activity";
         if ($sql_rls<>'')
         {

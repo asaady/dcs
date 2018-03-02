@@ -141,11 +141,11 @@ function loadset($elist,sdata,pset)
             {    
                 var dname = val[pval.id]['name'];
                 var did = val[pval.id]['id'];
-                shtml = shtml + "<td class=\""+pval.class+"\" id=\""+pval.id+"\" it=\""+did+"\" vt=\""+pval.type+"\">"+dname_st+dname+dname_en+"</td>";    
+                shtml = shtml + "<td class=\""+pval.class+"\" id=\""+pval.id+"\" it=\""+did+"\" vt=\""+pval.name_type+"\">"+dname_st+dname+dname_en+"</td>";    
             }
             else
             {
-                shtml = shtml + "<td class=\""+pval.class+"\" id=\""+pval.id+"\" it=\"\" vt=\""+pval.type+"\"></td>";    
+                shtml = shtml + "<td class=\""+pval.class+"\" id=\""+pval.id+"\" it=\"\" vt=\""+pval.name_type+"\"></td>";    
             }    
         });
         shtml = shtml + "</tr>";
@@ -211,7 +211,7 @@ function onLoadGetData(data) {
     var shtml = '';
     var $curlist = $("#"+curid+"~.types_list");
     $curlist.empty();
-    $.each(data.items, function(key, val) 
+    $.each(data, function(key, val) 
     {
         if (val.id)
         {    
@@ -463,8 +463,8 @@ $('body').on('dblclick','#dcs-items td',function ()
         return;
     }
     var $etd = $(this);
-    var it = this.it;
-    var vt = this.vt;
+    var it = $etd.attr('it');
+    var vt = $etd.attr('vt');
     var dname = $(this).html();
     var arr_type = ['id','cid','mdid','propid'];
     if (action === 'VIEW') {
@@ -575,6 +575,8 @@ $('body').on('click','button.form-value#list', function(e)
     var itemid = $("input[name='itemid']").val(); 
     $("input[name='curid']").val($tr.attr('id')); 
     $("input[name='param_id']").val($th.attr('id')); 
+    $("input[name='param_type']").val($('div#ivalue input.form-control').attr('vt')); 
+    $("input[name='param_val']").val($('div#ivalue input.form-control').attr('ov')); 
     $("input[name='command']").val('list'); 
     $data = $('.ajax').serializeArray();
     $.ajax({

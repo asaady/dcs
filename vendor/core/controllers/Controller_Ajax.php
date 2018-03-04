@@ -22,6 +22,8 @@ class Controller_Ajax extends Controller
         $id = $context['ITEMID'];
         if ($context['COMMAND'] == 'FIND') {
             $id = $context['DATA']['id']['id'];
+        } elseif ($context['COMMAND'] == 'FIELD_SAVE') {
+            $id = $context['DATA']['curid']['id'];
         }
         $validation = Common_data::check_uuid($id);
         if (!$validation) {
@@ -44,6 +46,15 @@ class Controller_Ajax extends Controller
     function action_find($context)
     {
         echo json_encode($this->model->getItemsByName($context['DATA']['name']['name']));
+    }
+    function action_field_save($context)
+    {
+           $getdata = $idm->getdata();
+            $data=array();
+            $data[$getdata['propid']['id']]=array('name'=>$getdata['name']['name'],'id'=>$getdata['id']['id']);
+            $ent = new Entity($idm->getitemid());
+            $ent->update($data);
+       
     }
     function action_list($context)
     {

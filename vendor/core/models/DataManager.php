@@ -138,7 +138,7 @@ class DataManager {
     {
         $strwhere = '';
         if (!($filter instanceof Filter)) {
-            throw new DcsException("it is not filter class",DCS_TYPE_ERROR,$ex);
+            throw new DcsException("it is not filter class",DCS_ERROR_WRONG_PARAMETER);
         }
         $fval = $filter->getval();
         $prop = $filter->getprop();

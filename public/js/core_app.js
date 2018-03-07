@@ -230,11 +230,11 @@ $('body').keyup(function(eventObject) {
 $('input.form-control').keyup(function(eventObject) { 
     
     var action = $("input[name='action']").val();
-    var itemid = $("input[name='itemid']").val();
     if (action === 'VIEW')
     {
         return;
     }
+    var itemid = $("input[name='itemid']").val();
     var itype = $(this).attr("it");
     var name = $(this).val();
     var vt = $(this).attr("vt");

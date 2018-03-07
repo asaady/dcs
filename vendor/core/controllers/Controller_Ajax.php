@@ -20,10 +20,17 @@ class Controller_Ajax extends Controller
     function __construct($context)
     {
         $id = $context['ITEMID'];
+        $get_model = function($modelname) use ($id) { return new $modelname($id); };
         if ($context['COMMAND'] == 'FIND') {
-            $id = $context['DATA']['id']['id'];
+            $id = $context['DATA']['param_id']['id'];
         } elseif ($context['COMMAND'] == 'FIELD_SAVE') {
             $id = $context['DATA']['curid']['id'];
+        } elseif ($context['COMMAND'] == 'LIST') {
+            $id = $context['DATA']['param_val']['id'];
+            $get_model = function($modelname) use ($id) { 
+                $ent = new $modelname($id); 
+                return $ent->head();
+            };
         }
         $validation = Common_data::check_uuid($id);
         if (!$validation) {
@@ -31,9 +38,9 @@ class Controller_Ajax extends Controller
                     " constructor: id is not valid",DCS_ERROR_WRONG_PARAMETER);
         }
         $prefix = $context['PREFIX'];
-        $cont = \Dcs\Vendor\Core\Models\Route::getContentByID($id,$prefix);
+        $cont = Route::getContentByID($id,$prefix);
         $modelname = "\\Dcs\\Vendor\\Core\\Models\\".$cont['classname'];
-        $this->model = new $modelname($id);
+        $this->model = $get_model($modelname);
     }
     function action_view($context)
     {
@@ -45,50 +52,23 @@ class Controller_Ajax extends Controller
     }
     function action_find($context)
     {
-        echo json_encode($this->model->getItemsByName($context['DATA']['name']['name']));
+        echo json_encode($this->model->getItemsByName($context['DATA']['param_val']['name']));
     }
     function action_field_save($context)
     {
-           $getdata = $idm->getdata();
-            $data=array();
-            $data[$getdata['propid']['id']]=array('name'=>$getdata['name']['name'],'id'=>$getdata['id']['id']);
-            $ent = new Entity($idm->getitemid());
-            $ent->update($data);
-       
+        $data=array();
+        $data[$context['DATA']['propid']['id']]=array('name'=>$context['DATA']['param_val']['name'],'id'=>$context['DATA']['param_id']['id']);
+        $ent = new Entity($idm->getitemid());
+        $ent->update($data);
+    }
+    function action_choice($context)
+    {
+        echo json_encode(array('msg'=>'OK'));
     }
     function action_list($context)
     {
-        $data = $idm->getdata();
-        $propid = $data['filter_id']['id'];
-        if ($propid)
-        {    
-            $curid = $idm->getcurid();
-            $arMD = Entity::getEntityDetails($curid);
-            $mdprop = new Mdproperty($propid);
-            $valmdentity = $mdprop->getpropstemplate()->getvalmdentity();
-            $data = array();
-            $data['curid'] = array('id'=>$curid,'name'=>'');
-            $data['itemid'] = array('id'=>$valmdentity->getid(),'name'=>'');
-            $data['docid'] = array('id'=>$idm->getitemid(),'name'=>'');
-            $data['filter_id']= array('id'=>'','name'=>'');
-            $data['filter_val']= array('id'=>'','name'=>'');
-            $data['filter_min']= array('id'=>'','name'=>'');
-            $data['filter_max']= array('id'=>'','name'=>'');
-            $event_trig = DataManager::get_event_trigger('onSelect',$arMD['mdid'] , $mdprop->getpropstemplate()->getid());
-            if ($event_trig)
-            {
-                die(var_dump($event_trig));
-            }   
-            else
-            {    
-                if (($valmdentity->getmdtypename()=='Cols')||($valmdentity->getmdtypename()=='Comps'))
-                {    
-                    return CollectionSet::getCollectionByFilter($data,$idm->getmode(),$idm->getaction());
-                }
-            }    
-        }    
-        return EntitySet::getEntitiesByFilter($data,$idm->getmode(),$idm->getaction());
-        echo json_encode($this->model->getItemsByName($context['DATA']['name']['name']));
+        $context['DATA'] = array();
+        echo json_encode($this->model->getItemData($context));
     }
     function action_print($context)
     {

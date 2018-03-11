@@ -1,3 +1,18 @@
+function get_input_fieldid($curinp)
+{
+    var curname = $curinp.attr('name');
+    if ((curname.indexOf('name_') + 1) > 0) {
+        return $('div.form-group').find('input#'+curname.substring(5)).val();
+    }
+    return '';
+}
+function set_input_fieldid($curinp, value)
+{
+    var curname = $curinp.attr('name');
+    if ((curname.indexOf('name_') + 1) > 0) {
+        $('div.form-group').find('input#'+curname.substring(5)).val(value);
+    }
+}
 function actionlist(data)
 {
     var $navtab = $('#actionlist');
@@ -39,8 +54,7 @@ $('a').on('show.bs.tab', function (e) {
     var itemid = $("input[name='itemid']").val(); 
     var activeid = $(e.target).attr('href').substring(1);
     var dop = '';
-    if (activeid !== 'entityhead')
-    {   
+    if (activeid !== 'entityhead') {   
         $("input[name='setid']").val(activeid); 
         dop = '?propid='+activeid;
     } else {
@@ -70,10 +84,8 @@ $('a').on('show.bs.tab', function (e) {
 
 function onGetMdData(data)
 {
-    $.each(data.items, function(key, val) 
-    {
-        if (val.id)
-        {    
+    $.each(data.items, function(key, val) {
+        if (val.id) {    
             $("input#"+val.id).val(val.name);
         }
     });    
@@ -81,10 +93,8 @@ function onGetMdData(data)
 
 function onGetData(data)
 {
-    $.each(data.items, function(key, val) 
-    {
-        if (val.id)
-        {    
+    $.each(data.items, function(key, val) {
+        if (val.id) {    
             $("input#"+key).val(val.id);
             $("input#name_"+key).val(val.name);
         }
@@ -235,9 +245,9 @@ $('input.form-control').keyup(function(eventObject) {
         return;
     }
     var itemid = $("input[name='itemid']").val();
-    var itype = $(this).attr("it");
+    var itype = $(this).attr("vt");
     var name = $(this).val();
-    var vt = $(this).attr("vt");
+    var it = $(this).attr("it");
     var curid = this.id;
     var $curinp = $(":input.form-control[st='info']");
     var arr_type = ['id','cid','mdid','propid'];
@@ -249,11 +259,11 @@ $('input.form-control').keyup(function(eventObject) {
     if (eventObject.which==27) { 
         $("#"+curid+"~.types_list").slideUp('fast');
     } else {
-        if (vt == '') {
-            vt = $("input[it='mdid'][type='hidden']").val();
+        if (it == '') {
+            it = $("input[vt='mdid'][type='hidden']").val();
         }    
         if (curid == 'name_valmdid') {    
-            vt = $("input#valmdid").val();
+            it = $("input#valmdid").val();
             itype = 'mdid';
         }
         if (arr_type.indexOf(itype)>=0) {
@@ -261,7 +271,7 @@ $('input.form-control').keyup(function(eventObject) {
             if (name.length>1) {
                 $("input[name='command']").val('find');
                 $("input[name='curid']").val(curid);
-                $("input[name='param_id']").val(vt);
+                $("input[name='param_id']").val(it);
                 $("input[name='param_val']").val(name);
                 $("input[name='param_type']").val(itype);
                 if (itype == 'propid') {    
@@ -274,15 +284,8 @@ $('input.form-control').keyup(function(eventObject) {
                     onLoadGetData
                 );
             } else {
-                if (name.length === 0) 
-                {
-                    var curname = $curinp.attr('name');
-                    if((curname.indexOf('name_') + 1)>0)
-                    {
-                        curid = curname.substring(5);
-                        curinpid = $('div.form-group').find('input#'+curid);
-                        curinpid.val(''); 
-                    }    
+                if (name.length === 0) {
+                    set_input_fieldid($curinp,'');
                 }    
             }    
         }	
@@ -441,53 +444,33 @@ function submitModalForm(e)
       success: setvals
     });
 }
-
-$('body').on('dblclick','#dcs-items td',function () 
+function show_ivalue($e, it)
 {
     var action = $("input[name='action']").val();
-    if ($(this).parent().attr('st') === 'erased') {
-        return;
-    }
-    var $etd = $(this);
-    var it = $etd.attr('it');
-    var vt = $etd.attr('vt');
-    var dname = $(this).html();
     var arr_type = ['id','cid','mdid','propid'];
-    if (action === 'VIEW') {
-        if (vt !== 'file') {
-            return;
-        }    
-        if (dname === '') {
-            return;
-        }    
-    } else if (action !== 'EDIT') {
-        return;
-    }
-    var tdwidth = $(this).width();
-    var $x = $('div#ivalue');
-    $x.empty();
     var bwidth = 0;
-    var ov = dname;
-    var itype='text';
+    var itype = 'text';
     var max_tdwidth = 200;
-    if (vt=='date')
-    {
-        itype='datetime';
+    var $x = $('div#ivalue');
+    var tdwidth = $e.width();
+    var vt = $e.attr('vt');
+    var dname = $e.html();
+    var ov = dname;
+    var cur_offset = $e.offset().left-40;
+    
+    $x.empty();
+    if (vt == 'date') {
+        itype = 'datetime';
         max_tdwidth = 100;
-    }
-    else if (vt=='int')
-    {
+    } else if (vt == 'int') {
         itype='number';
         max_tdwidth = 100;
-    }
-    else if (vt=='float')
-    {
-        itype='number\" step=\"any';
+    } else if (vt == 'float') {
+        itype = 'number\" step=\"any';
         max_tdwidth = 120;
     }
     s_html = '';
-    if (arr_type.indexOf(vt)>=0)
-    {
+    if (arr_type.indexOf(vt) >= 0) {
         ov = it;
         s_html = "<input type=\""+itype+"\" class=\"form-control ajax\" \n\
                         vt=\""+vt+"\" it=\""+it+"\" ov=\""+ov+"\" \n\
@@ -499,10 +482,8 @@ $('body').on('dblclick','#dcs-items td',function ()
                         <button id=\"done\" class=\"form-value\">\n\
                           <i class=\"material-icons\">done</i>\n\
                         </button></span>";
-        bwidth +=90; 
-    }    
-    else if (vt=='file')
-    {
+        bwidth += 90; 
+    } else if (vt == 'file') {
         if (action === 'VIEW') {
             s_html = "<a href=\""+it+"\" download=\""+dname+"\">"+dname+"</a>";
         } else {    
@@ -542,13 +523,54 @@ $('body').on('dblclick','#dcs-items td',function ()
     $x.width(tdwidth);
     $x.find('input').width(tdwidth-bwidth);
     $x.show();
-    var cur_offset = $etd.offset().left-40;
     var max_width = $("body").width();
     if ((cur_offset+tdwidth) > max_width) {
         cur_offset = max_width - tdwidth-5;
     }
-    $x.offset({top:$etd.offset().top+$etd.height(),left:cur_offset});
+    $x.offset({top:$e.offset().top+$e.height(),left:cur_offset});
     $("body").one('click','button.form-value#done',submitModalForm);
+}
+$('body').on('dblclick','#entityhead input',function () 
+{
+    var action = $("input[name='action']").val();
+    var $etd = $(this);
+    var it = $etd.attr('it');
+    var vt = $etd.attr('vt');
+    var dname = $(this).html();
+    if (action === 'VIEW') {
+        if (vt !== 'file') {
+            return;
+        }    
+        if (dname === '') {
+            return;
+        }    
+    } else if (action !== 'EDIT') {
+        return;
+    }
+    it = get_input_fieldid($etd);
+    show_ivalue($etd, it);
+});
+$('body').on('dblclick','#dcs-items td',function () 
+{
+    var action = $("input[name='action']").val();
+    if ($(this).parent().attr('st') === 'erased') {
+        return;
+    }
+    var $etd = $(this);
+    var it = $etd.attr('it');
+    var vt = $etd.attr('vt');
+    var dname = $(this).html();
+    if (action === 'VIEW') {
+        if (vt !== 'file') {
+            return;
+        }    
+        if (dname === '') {
+            return;
+        }    
+    } else if (action !== 'EDIT') {
+        return;
+    }
+    show_ivalue($etd, it);
 });   
 
 $('body').on('click','button.form-value#list', function(e)
@@ -557,7 +579,6 @@ $('body').on('click','button.form-value#list', function(e)
     var $pan = $('.tab-pane.fade.in.active');
     var $tr = $pan.find('tr.info'); 
     var $th = $pan.find('th.info'); 
-    var action = $("input[name='action']").val();  
     var itemid = $("input[name='itemid']").val(); 
     $("input[name='curid']").val($tr.attr('id')); 
     $("input[name='param_id']").val($th.attr('id')); 
@@ -607,6 +628,7 @@ $('body').on('click','button.form-value#delete_ivalue', function(e)
 $(':input.form-control').click(function () {
     
     $("input~.types_list").slideUp('fast');
+    $('div#ivalue').hide();
     var $curinp = $(":input.form-control[st='info']");
     $curinp.attr('st','active');
     $(this).attr('st','info');
@@ -621,15 +643,10 @@ $('body').on('click', 'ul.types_list li', function(){
     var $curdiv = $(this).parent().parent();
     var $curinp = $curdiv.find("input[type='text']");
     var curname = $curinp.attr('name');
-    var curtype = $curinp.attr('it');
+    var curtype = $curinp.attr('vt');
     var propid = '';
     var func;
-    if((curname.indexOf('name_') + 1)>0)
-    {
-        propid = curname.substring(5);
-        $curinpid = $('div.form-group').find('input#'+propid);
-        $curinpid.val(lid); 
-    }    
+    set_input_fieldid($curinp,lid);
     $curinp.val(tx); 
     $(".types_list").slideUp('fast'); 
     if ((curname == 'name_propid')||(curname == 'name_valmdid')) {
@@ -817,36 +834,26 @@ $('body').on('click', '#filter', function (e)
     var $data;
     var $el_cur  = $("tr#"+curid).find("td#"+curcol);
     var $el_fval = $("input[name='param_val']");
-    var filter_val=$el_fval.val();
-    var curval='';
+    var filter_val = $el_fval.val();
+    var curval = '';
     var fval  = $el_cur.html();
     var fid   = $el_cur.attr("it");
     $("input[name='param_id']").val(curcol); 
-    if (fid !== '')
-    {
+    if (fid !== '') {
         $el_fval.val(fid); 
         curval = fid;
-    }
-    else 
-    {
+    } else {
         $el_fval.val(fval); 
         curval = fval;
     }
-    if (curval !== "") 
-    {
-        if (filter_val != curval) 
-        {
+    if (curval !== "") {
+        if (filter_val != curval) {
             $el_fval.val(curval); 
-        }
-        else 
-        {
+        } else {
             $el_fval.val(''); 
         }    
-    }
-    else 
-    {
-        if (filter_val !== "") 
-        {
+    } else  {
+        if (filter_val !== "") {
             $el_fval.val(''); 
         }    
     }    
@@ -868,15 +875,15 @@ function show_history(result)
 {
     var $mt = $("#modallist");
     var $mh = $("#modalhead");
-    var len=0;
+    var len = 0;
     $mh.empty();
     $mt.empty();
     var s_html = '';
     for(var j in result['PSET']) 
     {
-        if(result['PSET'].hasOwnProperty(j))
-        {
-            s_html = s_html +"<th class=\""+result['PSET'][j].class+"\">"+result['PSET'][j].synonym+"</th>";
+        if(result['PSET'].hasOwnProperty(j)){
+            s_html = s_html +"<th class=\""+result['PSET'][j].class+
+                    "\">"+result['PSET'][j].synonym+"</th>";
         }    
     }
     if (s_html !== '') {
@@ -893,7 +900,8 @@ function show_history(result)
             {
                 if(result['PSET'].hasOwnProperty(j))
                 {
-                    s_html = s_html + "<td class=\""+result['PSET'][j].class+"\">"+result['LDATA'][i][result['PSET'][j].name].name+"</td>";
+                    s_html = s_html + "<td class=\""+result['PSET'][j].class+
+                    "\">"+result['LDATA'][i][result['PSET'][j].name].name+"</td>";
                 }    
             }
             s_html = s_html + '</tr>';
@@ -964,13 +972,13 @@ $('body').on('click', '#print', function (e)
 {
     var itemid = $("input[name='itemid']").val();
     var setid = $("input[name='setid']").val();
-    var href='';
+    var href = '';
     e.preventDefault();
     var dop = '';
     if (setid !== '') {
         dop = '?propid='+setid;
     }
-    href=getprefix()+'/'+itemid+'/print'+dop;
+    href = getprefix()+'/'+itemid+'/print'+dop;
     var otherWindow = window.open(href,"_blank");
     otherWindow.opener = null;
 });
@@ -1019,26 +1027,20 @@ function before_save_success(result)
     shtml = '';
     shtml = "<tr><th>Реквизит</th><th>Значение было</th><th>Новое значение</th></tr>";
     mh.append(shtml)
-    if (Object.keys(result).length) 
-    {
+    if (Object.keys(result).length) {
         shtml = '';
-        $.each(result, function(key, val) 
-        {
-            if (key!='handlername')
-            {
+        $.each(result, function(key, val) {
+            if (key != 'handlername') {
                 shtml = shtml +'<tr><td>'+val.name+'</td><td>'+val.pval+'</td><td>'+val.nval+'</td></tr>';
                 len++;
             }
         });    
         $mt.append(shtml);
     }
-    if (len)
-    {    
+    if (len) {    
         $(".modal-title").text('Saving the modified data');
         $('body').one('click', '#dcsModalOK', save);
-    }    
-    else 
-    {
+    } else {
         $(".modal-title").text('Saving data is not required');
         $('body').one('click', '#dcsModalOK', function () {
             $('#dcsModal').modal('hide');

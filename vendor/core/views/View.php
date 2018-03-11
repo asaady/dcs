@@ -64,81 +64,59 @@ class View implements I_View
         $type = $t['name_type'];
         echo "<div class=\"$hclass\">";
             echo "<div class=\"form-group\">";
-                if ($t['class']!='hidden')
-                {
+                if ($t['class']!='hidden') {
                     echo "<label for=\"$t[id]\" class=\"control-label col-md-4\">$t[synonym]</label>";
                 }   
                 echo "<div class=\"col-md-8\">";
-                    $itype='text';
+                    $itype = 'text';
                     $readonly = '';
-                    if ($mode=='VIEW')
-                    {    
+                    if ($mode == 'VIEW') {    
                         $readonly = ' readonly';
-                        if ($t['class']=='hidden')
-                        {
+                        if ($t['class'] == 'hidden') {
                             $itype = 'hidden';
                         }
                     } else {    
-                        if($type=='int') 
-                        {    
+                        if($type == 'int') {    
                             $itype = 'number';
-                        } 
-                        elseif($type=='float') 
-                        {
+                        } elseif($type == 'float') {
                             $itype = 'number\" step=\"any';
-                        }    
-                        elseif($type=='date') 
-                        {    
+                        } elseif($type == 'date') {    
                             $itype = 'date';
                         }
-                        if ($t['class']=='hidden')
-                        {
+                        if ($t['class'] == 'hidden') {
                             $itype = 'hidden';
-                        }
-                        elseif ($t['class']=='readonly') 
-                        {
+                        } elseif ($t['class'] == 'readonly') {
                             $readonly = ' readonly';
                         }
                     }    
-                    if (($type=='id')||($type=='cid')||($type=='mdid'))
-                    {
+                    if (($type == 'id')||($type == 'cid')||($type == 'mdid')) {
                         echo "<input type=\"hidden\" class=\"form-control\" "
-                        . "id=\"$t[id]\" name=\"$t[id]\" it=\"$type\" "
-                                . "vt=\"$t[valmdid]\" value=\"\">\n";
+                        . "id=\"$t[id]\" name=\"$t[id]\" it=\"$t[valmdid]\" "
+                                . "vt=\"$type\" value=\"\">\n";
                         echo "<input type=\"$itype\" class=\"form-control\" "
                                 . "st=\"active\" id=\"name_$t[id]\" "
-                                . "name=\"name_$t[id]\" it=\"$type\" "
-                                . "vt=\"$t[valmdid]\" value=\"\"$readonly>\n";
-                        if (($itype != 'hidden')||($readonly == ''))
-                        {
+                                . "name=\"name_$t[id]\" it=\"$t[valmdid]\" "
+                                . "vt=\"$type\" value=\"\"$readonly>\n";
+                        if (($itype != 'hidden')||($readonly == '')) {
                             echo "<ul class=\"types_list\">";
                                 echo "<li id=\"\"></li>";
                             echo "</ul>";
                         }    
-                    }
-                    else 
-                    {
-                        if (($itype != 'hidden')||($readonly == ''))
-                        {
-                            if ($type=='date')  
-                            {
-                                echo "<input type=\"$itype\" class=\"form-control datepicker\" st=\"active\" id=\"$t[id]\" name=\"$t[id]\" it=\"$type\" valid=\"\" vt=\"\" value=\"\"$readonly>\n";
-                            }
-                            else
-                            {
-                                echo "<input type=\"$itype\" class=\"form-control\" st=\"active\" id=\"$t[id]\" name=\"$t[id]\" it=\"$type\" valid=\"\" vt=\"\" value=\"\"$readonly>\n";
+                    } else {
+                        if (($itype != 'hidden')||($readonly == '')) {
+                            if ($type == 'date') {
+                                echo "<input type=\"$itype\" class=\"form-control datepicker\" st=\"active\" id=\"$t[id]\" name=\"$t[id]\" it=\"\" valid=\"\" vt=\"$type\" value=\"\"$readonly>\n";
+                            } else {
+                                echo "<input type=\"$itype\" class=\"form-control\" st=\"active\" id=\"$t[id]\" name=\"$t[id]\" it=\"\" valid=\"\" vt=\"$type\" value=\"\"$readonly>\n";
                             }    
-                            if ($type=='bool') 
-                            {    
+                            if ($type == 'bool') {    
                                 echo "<ul class=\"types_list\">";
                                     echo "<li id=\"true\">true</li>";
                                     echo "<li id=\"false\">false</li>";
                                 echo "</ul>";
                             }
-                        }
-                        else 
-                        {
-                            echo "<input type=\"$itype\" class=\"form-control\" st=\"active\" id=\"$t[id]\" name=\"$t[id]\" valid=\"\" vt=\"\" value=\"\"$readonly>\n";                    
+                        } else {
+                            echo "<input type=\"$itype\" class=\"form-control\" st=\"active\" id=\"$t[id]\" name=\"$t[id]\" valid=\"\" vt=\"$type\" value=\"\"$readonly>\n";                    
                         }
                     }
                 echo "</div>";
@@ -152,27 +130,21 @@ class View implements I_View
         for($i=0, $props=$data['PLIST'], $size=count($props); $i<$size; $i++)
         {
             $t=$props[$i];
-            if($t['rank']==0) continue;
-            if($t['rank']%2)
-            {
+            if($t['rank'] == 0) continue;
+            if($t['rank'] % 2) {
                 $this->outfield($t,'col-md-4',$this->context['MODE']);
-                if (($i+1) < $size)
-                {
-                    if(($props[$i+1]['rank']%2)==0)
-                    {
+                if (($i+1) < $size) {
+                    if(($props[$i+1]['rank'] % 2) == 0) {
                         $i++;
-                        $t=$props[$i];
+                        $t = $props[$i];
                         $this->outfield($t,'col-md-4',$this->context['MODE']);
                     }
                 }
-            } 
-            else 
-            {
+            } else {
                 $this->outfield($t,'col-md-offset-4 col-md-4',$this->context['MODE']);
             }
         }
-        if ($context['MODE'] != 'PRINT')
-        {    
+        if ($context['MODE'] != 'PRINT') {    
             echo "<div class=\"col-md-1\">";
             echo "<button id=\"build\" type=\"button\" class=\"btn btn-info\">Сформировать</button>";     
             echo "</div>";

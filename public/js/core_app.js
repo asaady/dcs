@@ -710,10 +710,16 @@ $('body').on('click','a#create', function ()
     if (itemid === '') {
         return;
     }    
-    var curid = $("ul#dcsTab").find("li.active a").attr('href').substring(1);
-    if (curid === undefined || curid === null) {
+    var curid = null;
+    var href = null;
+    var $e = $("ul#dcsTab").find("li.active a");
+    if ($e !== undefined && $e !== null) {
+        href = $e.attr('href');
+    }
+    if (href === undefined || href === null) {
         location.href=getprefix()+'/'+itemid+"/create";
     } else {
+        curid = href.substring(1);
         $("input[name='curid']").val(curid);    
         $("input[name='command']").val('create'); 
         $data = $('.ajax').serializeArray();
@@ -1079,8 +1085,8 @@ function activate_pickadate()
         (action === 'CREATE')) {
         $('input.form-control[it=date]').pickadate({
                     selectMonths: true,
-                    format: 'yyyy-mm-dd',
-                    formatSubmit: 'yyyy-mm-dd'
+                    format: 'dd.mm.yyyy',
+                    formatSubmit: 'dd.mm.yyyy'
                   });
     }              
 };

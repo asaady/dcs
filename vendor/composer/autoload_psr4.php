@@ -9,6 +9,7 @@ return array(
     'Dcs\\Vendor\\Core\\Views\\' => array($vendorDir . '/core/views'),
     'Dcs\\Vendor\\Core\\Models\\' => array($vendorDir . '/core/models'),
     'Dcs\\Vendor\\Core\\Controllers\\' => array($vendorDir . '/core/controllers'),
+    'Dcs\\App\\Templates\\' => array($baseDir . '/app/templates'),
     'Dcs\\App\\Components\\Utils\\Uploadset\\' => array($baseDir . '/app/components/utils/uploadset'),
     'Dcs\\App\\Components\\Utils\\Uploadobject\\' => array($baseDir . '/app/components/utils/uploadobject'),
     'Dcs\\App\\Components\\Trigs\\' => array($baseDir . '/app/components/trigs'),

@@ -49,39 +49,6 @@ function onchoice(data)
     curinp.val(data['name']); 
     curinp.attr('it',data['id']); 
 }
-$('a').on('show.bs.tab', function (e) {
-    $('div#ivalue').hide();
-    var itemid = $("input[name='itemid']").val(); 
-    var activeid = $(e.target).attr('href').substring(1);
-    var dop = '';
-    if (activeid !== 'entityhead') {   
-        $("input[name='setid']").val(activeid); 
-        dop = '?propid='+activeid;
-    } else {
-        $("input[name='setid']").val(''); 
-        $("input[name='propid']").val(''); 
-    }    
-    var $x = $('div#ivalue');
-    $x.empty();
-    $x.hide();
-    $("input[name='command']").val('load'); 
-    $data = $('.ajax').serializeArray();
-    $.ajax(
-    {
-        url: getprefix()+'/ajax/'+itemid,
-        type: 'get',
-        dataType: 'json',
-        data: $data,
-        error: function(xhr, error){
-                console.debug(xhr); console.debug(error);
-        },                
-        success: function(response) {
-            onLoadValID(response);
-            window.history.pushState({},null, getprefix()+'/'+itemid+dop);            
-        }
-    });      
-});
-
 function onGetMdData(data)
 {
     $.each(data.items, function(key, val) {
@@ -703,7 +670,6 @@ $("#dcsTab a").click(function(e){
   $(this).tab('show');
 });
 
-
 $('body').on('click','a#create', function () 
 {
     var itemid = $("input[name='itemid']").val();    
@@ -1078,25 +1044,36 @@ function logout()
         }
     })      
 };
+function saymsg(msg)
+{
+    console.log(msg);
+}
 function activate_pickadate()
 {
     var action = $("input[name='action']").val();
     if ((action === 'EDIT')||
         (action === 'CREATE')) {
-        $('input.form-control[it=date]').pickadate({
-                    selectMonths: true,
-                    format: 'dd.mm.yyyy',
-                    formatSubmit: 'dd.mm.yyyy'
-                  });
+        $('.datepicker').datepicker();
+ //       $("input.form-control[vt='date']").pickadate({
+ //                   selectMonths: true,
+ //                   format: 'dd.mm.yyyy',
+ //                   formatSubmit: 'dd.mm.yyyy'
+ //                 });
     }              
 };
+$('body').on('click', "input.form-control", function (e) 
+{
+    console.log("ku");
+});
+
+
 $(document).ready(function() 
 { 
     var itemid = $("input[name='itemid']").val(); 
     var action = $("input[name='action']").val(); 
     var prefix = $("input[name='prefix']").val();
     var command = $("input[name='command']").val();
-    activate_pickadate();
+//    activate_pickadate();
     if (command !== '') {
         var $data = $('.ajax').serializeArray();
         $.ajax({

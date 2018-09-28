@@ -64,7 +64,7 @@ trait T_Sheet {
     }        
     public function get_property($propid)
     {
-        if (array_key_exists($propid, $this->properties) === FALSE) {
+        if (array_key_exists($propid, $this->properties) === false) {
             return NULL;
         }
         return $this->properties[$propid];
@@ -80,11 +80,9 @@ trait T_Sheet {
         $sql = "select * from tt_out";
         $sth = DataManager::dm_query($sql);        
         $arr_e = array();
-        while($row = $sth->fetch(PDO::FETCH_ASSOC)) 
-        {
+        while($row = $sth->fetch(PDO::FETCH_ASSOC)) {
             $this->data['id'] = array('id'=>'','name'=>$row['id']);
-            foreach($this->properties as $prow)
-            {
+            foreach($this->properties as $prow) {
                 $rowname = $this->rowname($prow);
                 if (array_key_exists('id_'.$rowname, $row)) {
                     $this->data[$prow['id']] = array(
@@ -95,7 +93,7 @@ trait T_Sheet {
                             if (($row["id_$rowname"])&&
                                 ($row["id_$rowname"] != DCS_EMPTY_ENTITY)) {
                                 if (!in_array($row["id_$rowname"],$arr_e)){
-                                    $arr_e[]=$row["id_$rowname"];
+                                    $arr_e[] = $row["id_$rowname"];
                                 }
                             }    
                         }    
@@ -118,10 +116,8 @@ trait T_Sheet {
     }            
     public function fill_entname(&$data,$arr_e) {
         $arr_entities = $this->getAllEntitiesToStr($arr_e);
-        foreach($arr_entities as $rid=>$prow)
-        {
-            foreach($data as $id=>$row) 
-            {
+        foreach($arr_entities as $rid=>$prow) {
+            foreach($data as $id=>$row) {
                 if ($row['id'] == $rid) {
                     $data[$id]['name'] = $prow['name'];
                 }        
@@ -146,9 +142,8 @@ trait T_Sheet {
     public function getattr($propid) 
     {
         $val = '';
-	if(array_key_exists($propid, $this->data))
-        {
-	  $val=$this->data[$propid]['name'];
+	if(array_key_exists($propid, $this->data)) {
+	  $val = $this->data[$propid]['name'];
 	}  
 	return $val;
     }
@@ -162,9 +157,9 @@ trait T_Sheet {
     }
     function getattrbyname($name)
     {
-        $val='';
+        $val = '';
         $key = array_search($name, array_column($this->properties,'name','id'));
-        if ($key !== FALSE) {
+        if ($key !== false) {
             $val = $this->getattrid($key);
         }
 	return $val;
@@ -172,8 +167,7 @@ trait T_Sheet {
     public function setattr($propid,$valname,$valid='') 
     {
         $val='';
-	if(array_key_exists($propid, $this->data))
-        {
+	if(array_key_exists($propid, $this->data)) {
 	  $this->data[$propid]['name'] = $valname;
           $this->data[$propid]['id'] = $valid;
 	}  
@@ -198,7 +192,7 @@ trait T_Sheet {
     public function update($data)     
     {
         $res = $this->update_properties($data);
-        if ($res['status']=='OK')
+        if ($res['status'] == 'OK')
         {
             $res1 = $this->update_dependent_properties($res['objs']);
             if (is_array($res1['objs'])) {
@@ -218,17 +212,18 @@ trait T_Sheet {
         $prefix = $context['PREFIX'];
         if ($prefix == 'CONFIG') {
             if (strpos($classname,'Property') > 0) {
-                $pset = $this->getProperties(TRUE,'toset');
+                $plist = $this->getProperties(false);
             } else {
-                $plist = $this->getProperties(FALSE);
+                $pset = $this->getProperties(true,'toset');
             }
         } else {
-            if (strpos($classname,'Set') === FALSE) {
-                $plist = $this->getProperties(FALSE);
+            if (strpos($classname,'Set') > 0) {
+                $pset = $this->getProperties(true,'toset');
             } else {
-                $pset = $this->getProperties(TRUE,'toset');
+                $plist = $this->getProperties(false);
             }
         }
+      
         $objs['PLIST'] = $plist;
         $objs['PSET'] = $pset;
         $objs['SETS'] = $sets;
@@ -272,13 +267,13 @@ trait T_Sheet {
         $arr_rd = $res->fetchAll(PDO::FETCH_ASSOC);
         $ar_wr = array_filter($arr_rd,function($item) { 
             return ((strtolower($item['name']) == 'write')&&
-                    ($item['val'] === TRUE));});
+                    ($item['val'] === true));});
         if ($ar_wr) {
             return "write";
         }
         $ar_rd = array_filter($arr_rd,function($item) { 
             $res = ((strtolower($item['name']) == 'read')&&
-                    ($item['val'] === TRUE));});
+                    ($item['val'] === true));});
         if ($ar_rd) {
             return "read";
         }

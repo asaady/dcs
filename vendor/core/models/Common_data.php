@@ -4,6 +4,7 @@ require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)
 
 class Common_data {
     protected $arPROP_TYPE;
+    protected $arDESIGN;
     public function __construct() {
     $this->arPROP_TYPE = array('STR'=>'str',
                                 'FLOAT'=>'float',
@@ -13,6 +14,8 @@ class Common_data {
                                 'ID'=>'id',
                                 'DATE'=>'date',
                                 'FILE'=>'file');
+    $this->arDESIGN = array('BOOTSTRAP'=>'bootstrap',
+                            'MATERIALIZE'=>'materialize');
     }
     
     static function check_uuid($var)

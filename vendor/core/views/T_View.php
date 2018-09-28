@@ -4,153 +4,265 @@ namespace Dcs\Vendor\Core\Views;
 trait T_View {
     public function generate($data = null)
     {
-        echo "<!DOCTYPE html>";
-        echo "<html lang=\"ru\">";
-        echo "<head>";
-            $this->head_view();
-        echo "</head>";
-        echo "<body data-spy=\"scroll\">";    
-            echo "<header data-target=\"#dcs-nav\" data-offset=\"50\">";
-                $this->body_header_view($data);
-            echo "</header>";
-            echo "<main>";
-                $this->body_main_view($data);
-            echo "</main>";
-            echo "<footer>";
-                $this->body_footer_view();
-            echo "</footer>";
-            $this->body_script_view();
-        echo "</body>";
-        echo "</html>";
+        $skelet = "<!DOCTYPE html>\n"
+                . "<html lang=\"ru\">\n"
+                . "<head>\n"
+                . "<!--head-->"
+                . "</head>\n"
+                . "<body>\n"
+                . "<header>\n"
+                . "<!--body_header-->"
+                . "</header>\n"
+                . "<main>\n"
+                . "<!--body_action_list-->"
+                . "<!--body_content-->"
+                . "<!--body_ivalue-->"
+                . "<!--body_form_result-->"
+                . "<!--body_modal_form-->"
+                . "<!--body_loader_form-->"
+                . "</main>\n"
+                . "<footer>\n"
+                . "<!--body_footer-->"
+                . "</footer>\n"
+                . "<!--body_script-->"
+                . "</body>\n"
+                . "</html>";
+        $skelet = str_replace("<!--head-->", $this->template->get_head($this->context), $skelet);
+        $skelet = str_replace("<!--body_header-->", $this->template->get_body_header($this->context, $data), $skelet);
+        $skelet = str_replace("<!--body_action_list-->", $this->template->get_body_action_list(), $skelet);
+        $skelet = str_replace("<!--body_content-->", $this->template->get_body_content($this->context, $data), $skelet);
+        $skelet = str_replace("<!--body_ivalue-->", $this->template->get_body_ivalue(), $skelet);
+        $skelet = str_replace("<!--body_form_result-->", $this->template->get_body_form_result(), $skelet);
+        $skelet = str_replace("<!--body_modal_form-->", $this->template->get_body_modal_form(), $skelet);
+        $skelet = str_replace("<!--body_loader_form-->", $this->template->get_body_loader_form(), $skelet);
+        $skelet = str_replace("<!--body_footer-->", $this->template->get_body_footer(), $skelet);
+        $skelet = str_replace("<!--body_script-->", $this->template->get_body_script($this->context), $skelet);
+        $skelet = str_replace("<!--body_items-->", $this->item_view($data), $skelet);
+        echo $skelet;
     }
-    public function head_view()
-    {
-        echo "<meta charset=\"utf-8\">";
-        echo "<meta name=\"author\" content=\"".DCS_COMPANY_NAME."\">";
-        echo "<meta name=\"description\" content=\"".DCS_COMPANY_NAME."\">";
-        echo "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=Edge\">";
-        echo "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no\">";
-        echo "<title>".$this->context['TITLE']."</title>";
-        echo "<!-- css stylesheets -->";
-        echo "<link href=\"/public/css/normalize.css\" rel=\"stylesheet\" type=\"text/css\">";
-        echo "<link href=\"/public/css/bootstrap.min.css\" rel=\"stylesheet\" type=\"text/css\">";
-        echo "<link href=\"/public/css/bootstrap-select.min.css\" rel=\"stylesheet\" type=\"text/css\">";
-        echo "<link href=\"/public/css/default.css\" id=\"theme_base\" rel=\"stylesheet\">";
-        echo "<link href=\"/public/css/default.date.css\" id=\"theme_date\" rel=\"stylesheet\">";
-        echo "<link href=\"/public/css/default.time.css\" id=\"theme_time\" rel=\"stylesheet\">";
-        echo "<link href=\"/public/css/style.css\" rel=\"stylesheet\" type=\"text/css\">";
-        echo "<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->";
-        echo "<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->";
-        echo "<!--[if lt IE 9]>";
-        echo "<script src=\"https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js\"></script>";
-        echo "<script src=\"https://oss.maxcdn.com/respond/1.4.2/respond.min.js\"></script>";
-        echo "<![endif]-->";
-    }        
-    public function body_header_view($data)
-    {
-        $this->out_navbar($data);
-    }
-    public function body_main_view($data)
-    {
-        $this->content_view($data);
-        echo "<div id=\"ivalue\" class=\"input-group\"></div>";
-        echo "<div id=\"form_result\"></div>";
-        $this->modal_view();    
-        echo "<div id=\"loader\">";
-        echo "<img  style=\"display: none;\" width=\"10\" height=\"10\" "
-                    . "alt=\"loading\" src=\"data:image/gif;base64,R0lGODlhEAAQAPIAAP///zqHrc/h6mylwjqHrYW0zJ7D1qrL2yH+GkNyZWF0ZWQgd2l0aCBhamF4bG9hZC5pbmZvACH5BAAKAAAAIf8LTkVUU0NBUEUyLjADAQAAACwAAAAAEAAQAAADMwi63P4wyklrE2MIOggZnAdOmGYJRbExwroUmcG2LmDEwnHQLVsYOd2mBzkYDAdKa+dIAAAh+QQACgABACwAAAAAEAAQAAADNAi63P5OjCEgG4QMu7DmikRxQlFUYDEZIGBMRVsaqHwctXXf7WEYB4Ag1xjihkMZsiUkKhIAIfkEAAoAAgAsAAAAABAAEAAAAzYIujIjK8pByJDMlFYvBoVjHA70GU7xSUJhmKtwHPAKzLO9HMaoKwJZ7Rf8AYPDDzKpZBqfvwQAIfkEAAoAAwAsAAAAABAAEAAAAzMIumIlK8oyhpHsnFZfhYumCYUhDAQxRIdhHBGqRoKw0R8DYlJd8z0fMDgsGo/IpHI5TAAAIfkEAAoABAAsAAAAABAAEAAAAzIIunInK0rnZBTwGPNMgQwmdsNgXGJUlIWEuR5oWUIpz8pAEAMe6TwfwyYsGo/IpFKSAAAh+QQACgAFACwAAAAAEAAQAAADMwi6IMKQORfjdOe82p4wGccc4CEuQradylesojEMBgsUc2G7sDX3lQGBMLAJibufbSlKAAAh+QQACgAGACwAAAAAEAAQAAADMgi63P7wCRHZnFVdmgHu2nFwlWCI3WGc3TSWhUFGxTAUkGCbtgENBMJAEJsxgMLWzpEAACH5BAAKAAcALAAAAAAQABAAAAMyCLrc/jDKSatlQtScKdceCAjDII7HcQ4EMTCpyrCuUBjCYRgHVtqlAiB1YhiCnlsRkAAAOwAAAAAAAAAAAA==\" />";
-        echo "</div>";    
-    }
-    public function body_footer_view()
-    {
-        echo "<div class=\"container\">";
-        echo "<div class=\"row-fluid\"><a href=\"/\">Copyright &copy;".DCS_COMPANY_NAME." 2017.</a></div>";
-        echo "</div>";
-    }
-    public function body_script_view()
-    {
-        echo "<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->";
-        echo "<script src=\"/public/js/jquery-3.2.1.min.js\"></script>";
-        echo "<script src=\"/public/js/bootstrap.min.js\"></script>";
-        echo "<script src=\"/public/js/moment.js\"></script>";
-        echo "<script src=\"/public/js/core_app.js\"></script>";
-        if (($this->context['ACTION'] == 'EDIT')||
-            ($this->context['ACTION'] == 'CREATE')) {
-            echo "<script src=\"/public/js/picker.js\"></script>";
-            echo "<script src=\"/public/js/picker.date.js\"></script>";
-            echo "<script src=\"/public/js/picker.time.js\"></script>";
+    public function outfield($t,$hclass,$mode='')
+    {        
+        $type = $t['name_type'];
+        $result = "<div class=\"$hclass\">\n"
+                . "<div class=\"form-group\">\n";
+        if ($t['class']!='hidden') {
+            $result .= "<label for=\"$t[id]\" class=\"control-label col-md-4\">$t[synonym]</label>\n";
+        }   
+        $result .= "<div class=\"col-md-8\">\n";
+        $itype = 'text';
+        $readonly = '';
+        if ($mode == 'VIEW') {    
+            $readonly = ' readonly';
+            if ($t['class'] == 'hidden') {
+                $itype = 'hidden';
+            }
+        } else {    
+            if($type == 'int') {    
+                $itype = 'number';
+            } elseif($type == 'float') {
+                $itype = 'number\" step=\"any';
+            } elseif($type == 'date') {    
+                $itype = 'text';
+            }
+            if ($t['class'] == 'hidden') {
+                $itype = 'hidden';
+            } elseif ($t['class'] == 'readonly') {
+                $readonly = ' readonly';
+            }
+        }    
+        if (($type == 'id')||($type == 'cid')||($type == 'mdid')) {
+            $result .= "<input type=\"hidden\" class=\"form-control\" "
+            . "id=\"$t[id]\" name=\"$t[id]\" it=\"$t[valmdid]\" "
+                    . "vt=\"$type\" value=\"\" autocomplete=\"newvalue\">\n";
+            $result .= "<input type=\"$itype\" class=\"form-control\" "
+                    . "st=\"active\" id=\"name_$t[id]\" "
+                    . "name=\"name_$t[id]\" it=\"$t[valmdid]\" "
+                    . "vt=\"$type\" value=\"\"$readonly autocomplete=\"newvalue\">\n";
+            if (($itype != 'hidden')||($readonly == '')) {
+                $result .= "<ul class=\"types_list\">\n"
+                         . "<li id=\"\"></li>\n"
+                         . "</ul>\n";
+            }    
+        } else {
+            if (($itype != 'hidden')||($readonly == '')) {
+                if ($type == 'date') {
+                    $result .= "<input type=\"$itype\" class=\"form-control datepicker\""
+                            . " st=\"active\" id=\"$t[id]\" name=\"$t[id]\""
+                            . " it=\"\" valid=\"\" vt=\"$type\" value=\"\"$readonly"
+                            . " autocomplete=\"newvalue\">\n";
+                } else {
+                    $result .= "<input type=\"$itype\" class=\"form-control\""
+                            . " st=\"active\" id=\"$t[id]\" name=\"$t[id]\""
+                            . " it=\"\" valid=\"\" vt=\"$type\" value=\"\"$readonly"
+                            . " autocomplete=\"newvalue\">\n";
+                }    
+                if ($type == 'bool') {    
+                    $result .= "<ul class=\"types_list\">\n"
+                        . "<li id=\"true\">true</li>\n"
+                        . "<li id=\"false\">false</li>\n"
+                        . "</ul>\n";
+                }
+            } else {
+                $result .= "<input type=\"$itype\" class=\"form-control\" "
+                        . "st=\"active\" id=\"$t[id]\" name=\"$t[id]\" valid=\"\""
+                        . " vt=\"$type\" value=\"\"$readonly"
+                        . " autocomplete=\"newvalue\">\n";
+            }
         }
-    }        
-    public function modal_view()
+        $result .= "</div>\n"
+            . "</div>\n"
+            . "</div>\n";
+        return $result;
+    }    
+    public function item_view($data) 
     {
-        echo "<div id=\"dcsModal\" class=\"modal fade\" tabindex=\"-1\" role=\"dialog\" aria-labelledby=\"dcsModalLabel\" aria-hidden=\"true\">";
-        echo "<div class=\"modal-dialog\">";
-        echo "<div class=\"modal-content\">";
-            echo "<div class=\"modal-header\">";
-            echo "<button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\">&times;</button>";
-            echo "<h4 class=\"modal-title\" id=\"dcsModalLabel\">Saving the modified data</h4>";
-            echo "</div>";
-            echo "<div class=\"modal-body\">";
-                echo "<table class=\"table table-border\">";
-                    echo "<caption></caption>";
-                    echo "<thead id=\"modalhead\">";
-                    echo "<tr><th id=\"name\">Props</th><th id=\"prev\">Prev.value</th><th id=\"value\">new value</th></tr>";
-                    echo "</thead>"; 
-                    echo "<tbody id=\"modallist\"><tr></tr></tbody>";
-                echo "</table>";
-            echo "</div>";
-            echo "<div class=\"modal-footer\">";
-                echo "<button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\">Закрыть</button>";
-                echo "<button type=\"button\" id=\"dcsModalOK\" class=\"btn btn-primary\">OK</button>";
-            echo "</div>";
-        echo "</div><!-- /.modal-content -->";
-        echo "</div><!-- /.modal-dialog -->";
-        echo "</div><!-- /.modal -->";
-    }        
-    public function context_view($data)
-    {
-        echo "<div class=\"dcs-context\">";
-        echo "<input class=\"form-control\" name=\"prefix\" type=\"hidden\" value=\"".$this->context['PREFIX']."\">";
-        echo "<input class=\"form-control\" name=\"mode\" type=\"hidden\" value=\"".$this->context['MODE']."\">";
-        echo "<input class=\"form-control\" name=\"itemid\" type=\"hidden\" value=\"".$this->context['ITEMID']."\">";
-        echo "<input class=\"form-control ajax\" name=\"setid\" type=\"hidden\" value=\"".$this->context['SETID']."\">";
-        echo "<input class=\"form-control ajax\" name=\"curid\" type=\"hidden\" value=\"".$this->context['CURID']."\">";
-        echo "<input class=\"form-control ajax\" name=\"action\" type=\"hidden\" value=\"".$this->context['ACTION']."\">";
-        echo "<input class=\"form-control ajax\" name=\"version\" type=\"hidden\" value=\"".$data['version']."\">";
-        echo "<input class=\"form-control ajax\" name=\"page\" type=\"hidden\" value=\"".$this->context['PAGE']."\">";
-        echo "<input class=\"form-control ajax\" name=\"command\" type=\"hidden\" value=\"".$this->context['COMMAND']."\">";
-        echo "<input class=\"form-control ajax\" name=\"param_id\" type=\"hidden\" value=\"\">";
-        echo "<input class=\"form-control ajax\" name=\"param_val\" type=\"hidden\" value=\"\">";
-        echo "<input class=\"form-control ajax\" name=\"param_type\" type=\"hidden\" value=\"\">";
-        $docid = '';
-        if (array_key_exists('docid', $this->context['DATA']) !== FALSE) {
-            $docid = $this->context['DATA']['docid']['id'];
+        $show_tab = false;
+        $show_head = false;
+        $show_set = false;
+        $show_tabheader = false;
+        $key_set = '';
+        if ((array_key_exists('PLIST', $data) !== false)&&(count($data['PLIST'])>0)) {
+            $show_head = true;
+        }  
+        if ((array_key_exists('PSET', $data) === true)&&(count($data['PSET'])>0)) {
+            $show_set = true;
         }   
-        echo "<input class=\"form-control ajax\" name=\"docid\" type=\"hidden\" value=\"$docid\">";
-        $propid = '';
-        if (array_key_exists('propid', $this->context['DATA']) !== FALSE) {
-            $propid = $this->context['DATA']['propid']['id'];
+        if (($show_head)&&(!$show_set)) {
+            if (array_key_exists('SETS', $data) !== false) {
+                if (count($data['SETS'])>0) {
+                    if ((count($data['SETS']) == 1)&&
+                    ($this->context['SETID'] !== '')) {
+                        $key_set = array_search($this->context['SETID'], array_column($data['PLIST'],'id'));
+                        $show_tabheader = true;
+                    } else {
+                        $show_tab = true;
+                    }    
+                }    
+            }  
+        }
+        $result = '';
+        if ($show_tab) {
+            $result .= "<ul id=\"dcsTab\" class=\"nav nav-tabs\">\n";
+                $dop = " class=\"active\"";
+                $dopfade = " in active";
+                $propid = '';
+                if (isset($this->context['DATA']['propid'])) {
+                    if ($this->context['DATA']['propid']['id'] !== '') {
+                        $dop = '';
+                        $dopfade = '';
+                        $propid = $this->context['DATA']['propid']['id'];
+                    }    
+                }    
+                $result .= "<li$dop><a href=\"#entityhead\">Заголовок</a></li>\n";
+                if ($this->context['ACTION'] !== 'CREATE')
+                {    
+                    for($i=0, $props = $data['PLIST'], $size = count($props); $i<$size; $i++)
+                    {
+                        $t=$props[$i];
+                        if ($t['valmdtypename'] !== 'Sets') {
+                            continue;
+                        }  
+                        $dop='';
+                        if (($propid !== '')&&($propid == $t['id'])) {
+                            $dop=" class=\"active\"";
+                        }    
+                        $result .= "<li$dop><a href=\"#$t[id]\">$t[synonym]</a></li>\n";
+                    }
+                }    
+            $result .= "</ul>\n"
+                . "<div class=\"tab-content\">\n"
+                . "<div id=\"entityhead\" class=\"tab-pane fade$dopfade\">\n";
         }   
-        echo "<input class=\"form-control ajax\" name=\"propid\" type=\"hidden\" value=\"$propid\">";
-        echo "</div>"; 
-    }        
-    public function actionlist_view()
+        if ($show_head) {
+            $result .= "<form class=\"form-inline\" role=\"form\" autocomplete=\"off\">\n";
+            for($i=0, $props=$data['PLIST'], $size=count($props); $i<$size; $i++) {
+                $t=$props[$i];
+                if ($t['valmdtypename'] === 'Sets') {
+                    continue;
+                }    
+                if ($t['rank'] == 0) {
+                    continue;
+                }    
+                $type = $t['name_type'];
+                if ($type=='text') {
+                    $result .= "<div class=\"row\">\n"
+                             . "<div class=\"col-md-12\">\n"      
+                             . "<div class=\"form-group\">\n"
+                             . "<label for=\"$t[id]\" class=\"control-label col-md-2\">$t[synonym]</label>\n"
+                             . "<div class=\"col-md-10\">\n"
+                             . "<textarea class=\"form-control\" rows=\"2\" st=\"active\" id=\"$t[id]\" name=\"$t[id]\" it=$type></textarea>\n"
+                             . "</div>\n"
+                             . "</div>\n"
+                             . "</div>\n"
+                             . "</div>\n";    
+                } else {
+                    if($t['rank']%2) {
+                        $result .= "<div class=\"row\">\n";
+                        $result .= $this->outfield($t,'col-md-6',$this->context['ACTION']);
+                        if (($i+1) < $size) {
+                            if (($props[$i+1]['rank']%2 == 0)&&($props[$i+1]['rank'] > 0)) {
+                                $i++;
+                                $t = $props[$i];
+                                $type = $t['name_type'];
+                                $result .= $this->outfield($t,'col-md-6',$this->context['ACTION']);
+                            }
+                        }
+                        $result .= "</div>\n";
+                    } else {
+                        $result .= "<div class=\"row\">\n";
+                        $result .= $this->outfield($t,'col-md-offset-6 col-md-6',$this->context['ACTION']);
+                        $result .= "</div>\n";        
+                    }
+                }
+            }
+            $result .= "</form>\n";
+        }    
+        if ($show_set||$show_tabheader) {
+            if ($show_set) {
+                $result .= "<div id=\"entityset\">\n";
+                $result .= $this->set_view($data['PSET']);
+            } elseif ($show_tabheader) {
+                $title = $data['PLIST'][$key_set]['synonym'];
+                $result .= "<p class=\"dcs-tabtitle\">$title</p>\n"
+                         . "<div id=\"".$this->context['SETID']."\">\n";
+                $result .= $this->set_view($data['SETS'][$this->context['SETID']],'dcs-items');
+            }
+            $result .= "</div>\n";
+        } elseif ($show_tab) {
+            $result .= "</div>\n";
+            if ($this->context['ACTION'] !== 'CREATE') {    
+                for($i=0, $props = $data['PLIST'], $size = count($props); $i<$size; $i++) {
+                    $t = $props[$i];
+                    if ($t['valmdtypename'] !== 'Sets') {
+                        continue;
+                    }    
+                    $dop='';
+                    if (($propid !== '')&&($propid == $t['id'])) {
+                        $dop=" active in";
+                    }    
+                    $result .= "<div id=\"$t[id]\" class=\"tab-pane fade$dop\">\n";
+                    $result .= $this->set_view($data['SETS'][$t['id']],'dcs-items');
+                    $result .= "</div>\n";
+                }
+            }    
+            $result .= "</div>\n";
+        }
+        return $result;
+    }    
+    public function set_view($pset,$tbodyid='dcs-list')
     {
-        echo "<nav id=\"dcs-nav\" class=\"navbar\" data-spy=\"affix\" data-offset-top=\"150\">";
-        echo "<div class=\"container\">";
-        echo "<ul class=\"nav nav-tabs pull-right\" id=\"actionlist\"><li></li></ul>";
-        echo "</div>";
-        echo "</nav>";
+        $result = "<table class=\"table table-border table-hover\">\n"
+                . "<thead  id=\"tablehead\"><tr>\n";
+        foreach($pset as $key=>$val) {    
+            $cls = $val['class'];
+            if ($cls == '') {
+                $cls = 'active';
+            }    
+            $result .= "<th class=\"$cls\" id=\"$key\">$val[synonym]</th>\n";
+        }
+        $result .= "</tr></thead>\n"
+                 . "<tbody id=\"$tbodyid\" class=\"entitylist\"></tbody>\n"
+                 . "</table>\n";
+         return $result;
     }        
-    public function content_view($data) 
-    {
-        $this->actionlist_view();
-        echo "<div class=\"container\">";
-        echo "<div class=\"row-fluid\">";
-        $this->context_view($data);
-        $this->item_view($data);
-        echo "<br class=\"clearfix\" />";
-        echo "</div>"; 
-        echo "</div>"; 
-    }
 }

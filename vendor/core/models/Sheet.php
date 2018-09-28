@@ -31,6 +31,7 @@ abstract class Sheet extends Model implements I_Sheet
                     " constructor: id is empty",DCS_ERROR_WRONG_PARAMETER);
         }
         $arData = $this->getDetails($id);
+
         $this->mdid = $id;
         if ($arData['id'] === '') {
             throw new DcsException("Class ".get_called_class().

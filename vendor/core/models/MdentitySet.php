@@ -21,10 +21,10 @@ class MdentitySet extends Sheet implements I_Sheet
     public function loadProperties() 
     {
         return array(
-            'id'=>array('id'=>'id','name'=>'id','synonym'=>'ID','rank'=>0,'ranktoset'=>1,'ranktostring'=>0,'type'=>'str','valmdtypename'=>'','class'=>'hidden','field'=>1),
-            'name'=>array('id'=>'name','name'=>'name','synonym'=>'NAME','rank'=>1,'ranktoset'=>2,'ranktostring'=>1,'type'=>'str','valmdtypename'=>'','class'=>'active','field'=>1),
-            'synonym'=>array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM','rank'=>3,'ranktoset'=>3,'ranktostring'=>0,'type'=>'str','valmdtypename'=>'','class'=>'active','field'=>1),
-            'mditem'=>array('id'=>'mditem','name'=>'mditem','synonym'=>'MDITEM','rank'=>4,'ranktoset'=>0,'ranktostring'=>0,'type'=>'cid','valmdtypename'=>'Cols','class'=>'hidden','field'=>1)
+            'id'=>array('id'=>'id','name'=>'id','synonym'=>'ID','rank'=>0,'ranktoset'=>1,'ranktostring'=>0,'type'=>'str','name_type'=>'str','valmdid'=>'','valmdtypename'=>'','class'=>'hidden','field'=>1),
+            'name'=>array('id'=>'name','name'=>'name','synonym'=>'NAME','rank'=>1,'ranktoset'=>2,'ranktostring'=>1,'type'=>'str','name_type'=>'str','valmdid'=>'','valmdtypename'=>'','class'=>'active','field'=>1),
+            'synonym'=>array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM','rank'=>3,'ranktoset'=>3,'ranktostring'=>0,'type'=>'str','name_type'=>'str','valmdid'=>'','valmdtypename'=>'','class'=>'active','field'=>1),
+            'mditem'=>array('id'=>'mditem','name'=>'mditem','synonym'=>'MDITEM','rank'=>4,'ranktoset'=>0,'ranktostring'=>0,'type'=>'cid','name_type'=>'cid','valmdid'=>'','valmdtypename'=>'Cols','class'=>'hidden','field'=>1)
             );        
     }        
     function head()

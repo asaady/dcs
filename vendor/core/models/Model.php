@@ -95,7 +95,10 @@ abstract class Model implements I_Model
             'synonym'=>array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM','type'=>'str'),
             'rank'=>array('id'=>'rank','name'=>'rank','synonym'=>'RANK','type'=>'int'),
             'type'=>array('id'=>'type','name'=>'type','synonym'=>'TYPE','type'=>'str'),
+            'name_type'=>array('id'=>'name_type','name'=>'name_type','synonym'=>'NAME_TYPE','type'=>'str'),
             'class'=>array('id'=>'class','name'=>'class','synonym'=>'CLASS','type'=>'str'),
+            'valmdid'=>array('id'=>'valmdid','name'=>'valmdid','synonym'=>'VALMDID','type'=>'str'),
+            'valmdtypename'=>array('id'=>'valmdtypename','name'=>'valmdtypename','synonym'=>'VALMDTYPENAME','type'=>'str'),
             'field'=>array('id'=>'field','name'=>'field','synonym'=>'FIELD','type'=>'int')
             );        
     }

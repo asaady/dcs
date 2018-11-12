@@ -1,9 +1,9 @@
 <?php
 date_default_timezone_set('Europe/Moscow');
 define("DCS_DBHOST","127.0.0.1");
-define("DCS_DBNAME","tezdb");
+define("DCS_DBNAME","sm24");
 define("DCS_DBUSER","postgres");
-define("DCS_DBPASS","3141592");
+define("DCS_DBPASS","3@141592");
 define("DCS_COMPANY_SHORTNAME","S2B");
 define("DCS_COMPANY_NAME","S2B Websystems");
 define("DCS_COMPANY_FULLNAME","S2B Websystems");

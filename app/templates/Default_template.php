@@ -214,10 +214,10 @@ class Default_Template extends Template implements I_Template
     public function get_body_script($context)
     {
         //echo "<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->";
-        $result = "<script src=\"/public/js/jquery-3.2.1.min.js\"></script>\n"
-                . "<script src=\"/public/js/bootstrap.min.js\"></script>\n"
-                . "<script src=\"/public/js/moment.js\"></script>\n"
-                . "<script src=\"/public/js/core_app.js\"></script>\n";
+        $result = "<script type=\"text/javascript\" src=\"/public/js/jquery-3.3.1.min.js\"></script>\n"
+                . "<script type=\"text/javascript\" src=\"/public/js/bootstrap.min.js\"></script>\n"
+                . "<script type=\"text/javascript\" src=\"/public/js/moment.js\"></script>\n"
+                . "<script type=\"text/javascript\" src=\"/public/js/core_app.js\"></script>\n";
         if (($context['ACTION'] == 'EDIT')||
             ($context['ACTION'] == 'CREATE')) {
             $result .= "<script src=\"/public/js/picker.js\"></script>\n"

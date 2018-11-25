@@ -61,7 +61,7 @@ trait T_Template {
     public function body_script_view()
     {
         //echo "<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->";
-        echo "<script src=\"/public/js/jquery-3.2.1.min.js\"></script>";
+        echo "<script src=\"/public/js/jquery-3.3.1.min.js\"></script>";
         //echo "<script src=\"/public/js/bootstrap.min.js\"></script>";
         echo "<script src=\"/public/js/materialize.min.js\"></script>";
         echo "<script src=\"/public/js/moment.js\"></script>";

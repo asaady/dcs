@@ -34,7 +34,7 @@ class Controller_Auth extends Controller
         $this->action_index($context);
     }
     function action_login($context)
-    {       
+    {  
         $data = $context['DATA'];
         setcookie("sid", "");
         if (empty($data['username']['name'])) {

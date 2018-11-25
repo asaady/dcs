@@ -214,7 +214,7 @@ class Default_Template extends Template implements I_Template
     public function get_body_script($context)
     {
         //echo "<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->";
-        $result = "<script type=\"text/javascript\" src=\"/public/js/jquery-3.3.1.min.js\"></script>\n"
+        $result = "<script type=\"text/javascript\" src=\"/public/js/jquery-3.2.1.js\"></script>\n"
                 . "<script type=\"text/javascript\" src=\"/public/js/bootstrap.min.js\"></script>\n"
                 . "<script type=\"text/javascript\" src=\"/public/js/moment.js\"></script>\n"
                 . "<script type=\"text/javascript\" src=\"/public/js/core_app.js\"></script>\n";
@@ -247,6 +247,15 @@ class Default_Template extends Template implements I_Template
                     . "<button id=\"submit\" type=\"button\""
                     . " class=\"btn btn-info form-control-sm\">Войти</button>\n";
         }
+        return $result;
+    }        
+    public function error_view($data)
+    {
+        $result = "<div class=\"row\">\n"
+                . "<h1>".$data['name']."</h1>\n"
+                . "<h3>".$data['synonym']."</h3>\n"
+                . "<a href=\"/\">на главную</a>\n"
+                . "</div>\n";
         return $result;
     }        
 }

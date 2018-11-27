@@ -134,7 +134,7 @@ class DataManager {
         return $sth->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public static function getstrwhere($filter, $type, $name, &$params) 
+    public static function getstrwhere($filter, $type, $name, &$params,$colname='it',$parname='propid') 
     {
         $strwhere = '';
         if (!($filter instanceof Filter)) {
@@ -153,7 +153,7 @@ class DataManager {
                     break;
             }
             $params['pid'.$strpid] = $pid;
-            $strwhere .= " $filterval and it.propid=:pid$strpid";
+            $strwhere .= " $filterval and $colname.$parname=:pid$strpid";
         }
         return $strwhere;
     }

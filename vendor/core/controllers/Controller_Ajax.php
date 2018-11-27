@@ -41,7 +41,7 @@ class Controller_Ajax extends Controller
         $cont = Route::getContentByID($id,$prefix);
         $modelname = "\\Dcs\\Vendor\\Core\\Models\\".$cont['classname'];
         $this->model = $get_model($modelname);
-    }
+   }
     function action_view($context)
     {
         echo json_encode($this->model->getItemsByFilter($context));

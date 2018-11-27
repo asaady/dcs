@@ -5,7 +5,7 @@ use PDO;
 use DateTime;
 use Exception;
 
-class CollectionSet extends Sheet implements I_Sheet, I_Property
+class CollectionSet extends Sheet implements I_Sheet, I_Set, I_Property
 {
     use T_Sheet;
     use T_Set;
@@ -56,6 +56,8 @@ class CollectionSet extends Sheet implements I_Sheet, I_Property
         $ftype='';
         $dbtable = '';
         $propid = '';
+        $strwhere = '';
+        $col_filter = array();
         if (count($filter)>0) {
             $propid = $filter['param_id']['id'];
             if ($propid != '') {
@@ -65,18 +67,26 @@ class CollectionSet extends Sheet implements I_Sheet, I_Property
                     return array();
                 }
                 $dbtable = "CPropValue_$ftype";
+                $col_filter[$propid] = new Filter($this->properties[$propid],$filter['param_val']['id']);
             }
         }    
         $params = array();
-        $strwhere = DataManager::getstrwhere($filter,$ftype,'pv.value',$params);
+        if ($col_filter) {
+            if (count($col_filter) > 0) {
+                foreach ($col_filter as $prop => $flt) {
+                    $ptype = $this->properties[$prop]['name_type'];
+                    $sw = DataManager::getstrwhere($flt,$ptype,'pv.value',$params,'pv','pid');
+                    if ($sw !== '') {
+                        $strwhere .= "AND $sw"; 
+                    }    
+                }
+                $strwhere = substr($strwhere, strlen("AND"));
+            }
+        }    
         
-        if ($strwhere != '')
-        {
-            $sql = "SELECT DISTINCT pv.id as cid FROM \"$dbtable\" as pv WHERE $strwhere and pv.pid=:propid"; 
-            $params['propid'] = $propid;
-        }
-        else
-        {
+        if ($strwhere != '') {
+            $sql = "SELECT DISTINCT pv.id as cid FROM \"$dbtable\" as pv WHERE $strwhere"; 
+        } else {
             $sql = "SELECT et.id as cid FROM \"CTable\" as et WHERE et.mdid=:mdid LIMIT ".DCS_COUNT_REC_BY_PAGE; 
             $params = array('mdid'=>$this->id);
         }    
@@ -172,7 +182,8 @@ class CollectionSet extends Sheet implements I_Sheet, I_Property
         $strwhere='';
         if ($filtername!='')
         {
-            $strwhere = DataManager::getstrwhere($filter,$filtertype,$filtername,$params);
+            $col_filter = new Filter($this->properties[$filter['param_id']['id']],$filter['param_val']['id']);
+            $strwhere = DataManager::getstrwhere($col_filter,$filtertype,$filtername,$params);
         }
         $str0_req .=" FROM tt_et as et";
         $sql = $str0_req.$str_req;
@@ -189,6 +200,7 @@ class CollectionSet extends Sheet implements I_Sheet, I_Property
                 $params['userid'] = $_SESSION['user_id'];
             }    
         }    
+
 	$res = DataManager::dm_query($sql,$params);
         while($row = $res->fetch(PDO::FETCH_ASSOC)) {
             $objs[$row['id']]=array();

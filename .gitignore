@@ -44,3 +44,4 @@ Thumbs.db
 /common/controllers
 /common/js
 /common/views
+/app/dcs_const.php

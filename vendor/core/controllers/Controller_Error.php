@@ -26,6 +26,8 @@ class Controller_Error extends Controller
     }
     function action_json($context)
     {
+        header('HTTP/1.1 500 Internal Server Error');
+        header('Content-Type: application/json; charset=UTF-8');        
         echo json_encode(array('msg' => 'error'));
     }
     function action_error($context)

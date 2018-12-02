@@ -64,34 +64,40 @@ class Route {
         try {
             $controller = new $controllername($this->context->getcontext());
         } catch (DcsException $ex) {
-            $this->action_name = 'action_error';
-            if ($ex->getCode() === DCS_DENY_ACCESS) {
-                $this->action_name = 'action_denyaccess';
-            }
+            $this->action_name = $this->get_action_error($ex->getCode());
             $this->seterrorcontext();
             $controller = new Controller_Error($this->context->getcontext());
         }
         $action = $this->action_name;
         if(!method_exists($controller, $action)) {
-            $action = 'action_error';
+            $action = $this->get_action_error();
+            $this->seterrorcontext();
+            $controller = new Controller_Error($this->context->getcontext());
         }
         try {
             $controller->$action($this->context->getcontext());
         } catch (DcsException $ex) {
-            $this->action_name = 'action_error';
+            $this->action_name = $this->get_action_error();
             $action = $this->action_name;
             $this->seterrorcontext();
             $controller = new Controller_Error($this->context->getcontext());
             $controller->$action($this->context->getcontext());
         }    
     }    
+    function get_action_error($ex_code = '')
+    {
+        if ($this->context->getattr('MODE') === 'AJAX') {
+            return 'action_json';
+        }
+        if ($ex_code === DCS_DENY_ACCESS) {
+            return 'action_denyaccess';
+        }
+        return 'action_error';
+    }
     function seterrorcontext()
     {
         $this->context->setattr('PREFIX','ERROR');
         $this->context->setattr('COMMAND','');
-        if ($this->context->getattr('MODE') === 'AJAX') {
-            $this->context->setattr('COMMAND','JSON');
-        }
     }
     public static function getContentByID($itemid, $prefix='') 
     {

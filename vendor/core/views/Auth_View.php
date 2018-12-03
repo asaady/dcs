@@ -7,7 +7,7 @@ class Auth_View extends View implements I_View
 {
     use T_View;
     
-    public function item_view($data)
+    public function body_content_view($data)
     {
         return $this->template->auth_view();
     }        

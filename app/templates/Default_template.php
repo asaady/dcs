@@ -95,11 +95,9 @@ class Default_Template extends Template implements I_Template
              . "</div>\n"
              . "</nav>\n";
     }        
-    public function get_body_content($context, $data)
+    public function get_body_context($context, $data)
     {
-        $result = "<div class=\"container\">\n"
-                . "<div class=\"row-fluid\">\n"
-                . "<div class=\"dcs-context\">\n"
+        $result = "<div class=\"dcs-context\">\n"
                 . "<input class=\"form-control\" name=\"prefix\" type=\"hidden\""
                 . " value=\"".$context['PREFIX']."\">\n"
                 . "<input class=\"form-control\" name=\"mode\" type=\"hidden\""
@@ -136,10 +134,6 @@ class Default_Template extends Template implements I_Template
         }   
         $result .= "<input class=\"form-control ajax\" name=\"propid\""
                 . " type=\"hidden\" value=\"$propid\">\n"
-                . "</div>\n"; 
-        $result .= "<!--body_items-->";
-        $result .= "<br class=\"clearfix\" />\n"
-                . "</div>\n"
                 . "</div>\n"; 
         return $result;
     }
@@ -211,6 +205,13 @@ class Default_Template extends Template implements I_Template
              . "<div class=\"row-fluid\"><a href=\"/\">Copyright &copy;".DCS_COMPANY_NAME." 2017.</a></div>\n"
              . "</div>\n";
     }
+    public function get_body_script_toprint()
+    {
+        return "<script src=\"/public/js/jquery-3.2.1.min.js\"></script>\n"
+                . "<script src=\"/public/js/bootstrap.min.js\"></script>\n"
+                . "<script src=\"/public/js/moment.js\"></script>\n"
+                . "<script src=\"/public/js/core_print.js\"></script>\n";
+    }        
     public function get_body_script($context)
     {
         //echo "<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->";
@@ -256,6 +257,365 @@ class Default_Template extends Template implements I_Template
                 . "<h3>".$data['synonym']."</h3>\n"
                 . "<a href=\"/\">на главную</a>\n"
                 . "</div>\n";
+        return $result;
+    }        
+    public function outfield($t,$hclass,$mode='')
+    {        
+        $type = $t['name_type'];
+        $result = "<div class=\"$hclass\">\n"
+                . "<div class=\"form-group\">\n";
+        if ($t['class']!='hidden') {
+            $result .= "<label for=\"$t[id]\" class=\"control-label col-md-4\">$t[synonym]</label>\n";
+        }   
+        $result .= "<div class=\"col-md-8\">\n";
+        $itype = 'text';
+        $readonly = '';
+        if ($mode == 'VIEW') {    
+            $readonly = ' readonly';
+            if ($t['class'] == 'hidden') {
+                $itype = 'hidden';
+            }
+        } else {    
+            if($type == 'int') {    
+                $itype = 'number';
+            } elseif($type == 'float') {
+                $itype = 'number\" step=\"any';
+            } elseif($type == 'date') {    
+                $itype = 'text';
+            }
+            if ($t['class'] == 'hidden') {
+                $itype = 'hidden';
+            } elseif ($t['class'] == 'readonly') {
+                $readonly = ' readonly';
+            }
+        }    
+        if (($type == 'id')||($type == 'cid')||($type == 'mdid')) {
+            $result .= "<input type=\"hidden\" class=\"form-control\" "
+                    . "id=\"$t[id]\" name=\"$t[id]\" it=\"$t[valmdid]\" "
+                    . "vt=\"$type\" value=\"\" autocomplete=\"newvalue\">\n";
+            $result .= "<input type=\"$itype\" class=\"form-control\" "
+                    . "st=\"active\" id=\"name_$t[id]\" "
+                    . "name=\"name_$t[id]\" it=\"$t[valmdid]\" "
+                    . "vt=\"$type\" value=\"\"$readonly autocomplete=\"newvalue\">\n";
+            if (($itype != 'hidden')||($readonly == '')) {
+                $result .= "<ul class=\"types_list\">\n"
+                         . "<li id=\"\"></li>\n"
+                         . "</ul>\n";
+            }    
+        } else {
+            if (($itype != 'hidden')||($readonly == '')) {
+                if ($type == 'date') {
+                    $result .= "<input type=\"$itype\" class=\"form-control datepicker\""
+                            . " st=\"active\" id=\"$t[id]\" name=\"$t[id]\""
+                            . " it=\"\" valid=\"\" vt=\"$type\" value=\"\"$readonly"
+                            . " autocomplete=\"newvalue\">\n";
+                } else {
+                    $result .= "<input type=\"$itype\" class=\"form-control\""
+                            . " st=\"active\" id=\"$t[id]\" name=\"$t[id]\""
+                            . " it=\"\" valid=\"\" vt=\"$type\" value=\"\"$readonly"
+                            . " autocomplete=\"newvalue\">\n";
+                }    
+                if ($type == 'bool') {    
+                    $result .= "<ul class=\"types_list\">\n"
+                        . "<li id=\"true\">true</li>\n"
+                        . "<li id=\"false\">false</li>\n"
+                        . "</ul>\n";
+                }
+            } else {
+                $result .= "<input type=\"$itype\" class=\"form-control\" "
+                        . "st=\"active\" id=\"$t[id]\" name=\"$t[id]\" valid=\"\""
+                        . " vt=\"$type\" value=\"\"$readonly"
+                        . " autocomplete=\"newvalue\">\n";
+            }
+        }
+        $result .= "</div>\n"
+            . "</div>\n"
+            . "</div>\n";
+        return $result;
+    }    
+    public function get_body_content($context,$data) 
+    {
+        $show_tab = false;
+        $show_head = false;
+        $show_set = false;
+        $show_tabheader = false;
+        $key_set = '';
+        if ((array_key_exists('PLIST', $data) !== false)&&(count($data['PLIST'])>0)) {
+            $show_head = true;
+        }  
+        if ((array_key_exists('PSET', $data) === true)&&(count($data['PSET'])>0)) {
+            $show_set = true;
+        }   
+        if (($show_head)&&(!$show_set)) {
+            if (array_key_exists('SETS', $data) !== false) {
+                if (count($data['SETS'])>0) {
+                    if ((count($data['SETS']) == 1)&&
+                    ($context['SETID'] !== '')) {
+                        $key_set = array_search($context['SETID'], array_column($data['PLIST'],'id'));
+                        $show_tabheader = true;
+                    } else {
+                        $show_tab = true;
+                    }    
+                }    
+            }  
+        }
+        $result = '';
+        if ($show_tab) {
+            $result .= "<ul id=\"dcsTab\" class=\"nav nav-tabs\">\n";
+                $dop = " class=\"active\"";
+                $dopfade = " in active";
+                $propid = '';
+                if (isset($context['DATA']['propid'])) {
+                    if ($context['DATA']['propid']['id'] !== '') {
+                        $dop = '';
+                        $dopfade = '';
+                        $propid = $context['DATA']['propid']['id'];
+                    }    
+                }    
+                $result .= "<li$dop><a href=\"#entityhead\">Заголовок</a></li>\n";
+                if ($context['ACTION'] !== 'CREATE')
+                {    
+                    for($i=0, $props = $data['PLIST'], $size = count($props); $i<$size; $i++)
+                    {
+                        $t=$props[$i];
+                        if ($t['valmdtypename'] !== 'Sets') {
+                            continue;
+                        }  
+                        $dop='';
+                        if (($propid !== '')&&($propid == $t['id'])) {
+                            $dop=" class=\"active\"";
+                        }    
+                        $result .= "<li$dop><a href=\"#$t[id]\">$t[synonym]</a></li>\n";
+                    }
+                }    
+            $result .= "</ul>\n"
+                . "<div class=\"tab-content\">\n"
+                . "<div id=\"entityhead\" class=\"tab-pane fade$dopfade\">\n";
+        }   
+        if ($show_head) {
+            $result .= "<form class=\"form-inline\" role=\"form\" autocomplete=\"off\">\n";
+            for($i=0, $props=$data['PLIST'], $size=count($props); $i<$size; $i++) {
+                $t=$props[$i];
+                if ($t['valmdtypename'] === 'Sets') {
+                    continue;
+                }    
+                if ($t['rank'] == 0) {
+                    continue;
+                }    
+                $type = $t['name_type'];
+                if ($type=='text') {
+                    $result .= "<div class=\"row\">\n"
+                             . "<div class=\"col-md-12\">\n"      
+                             . "<div class=\"form-group\">\n"
+                             . "<label for=\"$t[id]\" class=\"control-label col-md-2\">$t[synonym]</label>\n"
+                             . "<div class=\"col-md-10\">\n"
+                             . "<textarea class=\"form-control\" rows=\"2\" st=\"active\" id=\"$t[id]\" name=\"$t[id]\" it=$type></textarea>\n"
+                             . "</div>\n"
+                             . "</div>\n"
+                             . "</div>\n"
+                             . "</div>\n";    
+                } else {
+                    if($t['rank']%2) {
+                        $result .= "<div class=\"row\">\n";
+                        $result .= $this->outfield($t,'col-md-6',$context['ACTION']);
+                        if (($i+1) < $size) {
+                            if (($props[$i+1]['rank']%2 == 0)&&($props[$i+1]['rank'] > 0)) {
+                                $i++;
+                                $t = $props[$i];
+                                $type = $t['name_type'];
+                                $result .= $this->outfield($t,'col-md-6',$context['ACTION']);
+                            }
+                        }
+                        $result .= "</div>\n";
+                    } else {
+                        $result .= "<div class=\"row\">\n";
+                        $result .= $this->outfield($t,'col-md-offset-6 col-md-6',$context['ACTION']);
+                        $result .= "</div>\n";        
+                    }
+                }
+            }
+            $result .= "</form>\n";
+        }    
+        if ($show_set||$show_tabheader) {
+            if ($show_set) {
+                $result .= "<div id=\"entityset\">\n";
+                $result .= $this->set_view($data['PSET']);
+            } elseif ($show_tabheader) {
+                $title = $data['PLIST'][$key_set]['synonym'];
+                $result .= "<p class=\"dcs-tabtitle\">$title</p>\n"
+                         . "<div id=\"".$context['SETID']."\">\n";
+                $result .= $this->set_view($data['SETS'][$context['SETID']],'dcs-items');
+            }
+            $result .= "</div>\n";
+        } elseif ($show_tab) {
+            $result .= "</div>\n";
+            if ($context['ACTION'] !== 'CREATE') {    
+                for($i=0, $props = $data['PLIST'], $size = count($props); $i<$size; $i++) {
+                    $t = $props[$i];
+                    if ($t['valmdtypename'] !== 'Sets') {
+                        continue;
+                    }    
+                    $dop='';
+                    if (($propid !== '')&&($propid == $t['id'])) {
+                        $dop=" active in";
+                    }    
+                    $result .= "<div id=\"$t[id]\" class=\"tab-pane fade$dop\">\n";
+                    $result .= $this->set_view($data['SETS'][$t['id']],'dcs-items');
+                    $result .= "</div>\n";
+                }
+            }    
+            $result .= "</div>\n";
+        }
+        return $result;
+    }    
+    public function set_view($pset,$tbodyid='dcs-list')
+    {
+        $result = "<table class=\"table table-border table-hover\">\n"
+                . "<thead  id=\"tablehead\"><tr>\n";
+        foreach($pset as $key=>$val) {    
+            $cls = $val['class'];
+            if ($cls == '') {
+                $cls = 'active';
+            }    
+            $result .= "<th class=\"$cls\" id=\"$key\">$val[synonym]</th>\n";
+        }
+        $result .= "</tr></thead>\n"
+                 . "<tbody id=\"$tbodyid\" class=\"entitylist\"></tbody>\n"
+                 . "</table>\n";
+         return $result;
+    }        
+    public function set_toprint($pset)
+    {
+        $result = "<table class=\"table toprint\">\n";
+        $result .= "<thead  id=\"tablehead\">\n";
+        $result .= "<tr>\n";
+        foreach($pset as $key => $val) {    
+            $cls = $val['class'];
+            if ($cls == 'hidden') {
+                continue;
+            }
+            $result .= "<th class=\"dcs-tablehead-print\" id=\"$key\">$val[synonym]</th>\n";
+        }
+        $result .= "</tr>\n";
+        $result .= "</thead>\n";
+        $result .= "<tbody id=\"entitylist\" class=\"list\"></tbody>\n";
+        $result .= "</table>\n";
+        return $result;
+    }        
+    public function outfield_toprint($t,$hclass)
+    {        
+        $result = '';
+        $type = $t['name_type'];
+        $result .= "<div class=\"$hclass\">\n";
+        $result .= "<div class=\"form-group\">\n";
+        $result .= "<label for=\"$t[id]\" class=\"control-label col-md-4\">$t[synonym]</label>\n";
+        $result .= "<div class=\"col-md-8\">\n";
+        if (($type=='id')||($type=='cid')||($type=='mdid')) {
+            $result .= "<input type=\"hidden\" class=\"form-control\""
+                    . "id=\"$t[id]\" name=\"$t[id]\" it=\"$type\" "
+                    . "vt=\"$t[valmdid]\" value=\"\">\n";
+            $result .= "<input type=\"text\" class=\"form-control\" "
+                    . "st=\"active\" id=\"name_$t[id]\" "
+                    . "name=\"name_$t[id]\" it=\"$type\" "
+                    . "vt=\"$t[valmdid]\" value=\"\" readonly>\n";
+        } else {
+            $result .= "<input type=\"text\" class=\"form-control\" st=\"active\" id=\"$t[id]\" name=\"$t[id]\" valid=\"\" vt=\"\" value=\"\" readonly>\n";                    
+        }
+        $result .= "</div>\n";
+        $result .= "</div>\n";
+        $result .= "</div>\n";
+        return $result;
+    }    
+    public function get_body_toprint_content($context, $data)
+    {
+        $props=$data['PLIST'];
+        $size=count($props);
+        if (!$size) {    
+            return;
+        }    
+        $show_tab = FALSE;
+        $show_head = FALSE;
+        $show_set = FALSE;
+        $show_tabheader = FALSE;
+        $key_set = '';
+        if ((array_key_exists('PLIST', $data) !== FALSE)&&(count($data['PLIST'])>0)) {
+            $show_head = TRUE;
+        }  
+        if ((array_key_exists('PSET', $data) === TRUE)&&(count($data['PSET'])>0)) {
+            $show_set = TRUE;
+        }   
+        if (($show_head)&&(!$show_set)) {
+            if (array_key_exists('SETS', $data) !== FALSE) {
+                if (count($data['SETS'])>0) {
+                    if ($context['SETID'] !== '') {
+                        $key_set = array_search($context['SETID'], array_column($data['PLIST'],'id'));
+                        $show_tabheader = TRUE;
+                    }    
+                }    
+            }  
+        }
+        $result = '';
+        if ($show_head) {
+            $result .= "<form class=\"form-inline\" role=\"form\">\n";
+            for($i=0 ; $i<$size; $i++)
+            {
+                $t=$props[$i];
+                $type = $t['name_type'];
+                if ($t['class'] == 'hidden') {
+                    continue;
+                }
+                if($t['rank']==0) {
+                    continue;
+                }
+                if ($t['valmdtypename'] === 'Sets') {
+                    continue;
+                }    
+                if ($type == 'text')
+                {
+                    $result .= "<div class=\"row\">\n";
+                    $result .= "<div class=\"col-md-12\">\n";      
+                    $result .= "<div class=\"form-group\">\n";
+                    $result .= "<label for=\"$t[id]\" class=\"control-label col-md-2\">$t[synonym]</label>\n";
+                    $result .= "<div class=\"col-md-10\">\n";
+                    $result .= "<textarea class=\"form-control\" rows=\"2\" st=\"active\" id=\"$t[id]\" name=\"$t[id]\" it=\"text\"></textarea>\n";
+                    $result .= "</div>\n";
+                    $result .= "</div>\n";
+                    $result .= "</div>\n";
+                    $result .= "</div>\n";    
+                    continue;
+                }    
+                $result .= "<div class=\"row\">\n";
+                if($t['rank']%2)
+                {
+                    $result .= $this->outfield_toprint($t,'col-md-6');
+                    if (($i+1) < $size)
+                    {
+                        if(($props[$i+1]['rank']%2)==0)
+                        {
+                            $i++;
+                            $t=$props[$i];
+                            $result .= $this->outfield_toprint($t,'col-md-6');
+                        }
+                    }
+                } else {
+                    $result .= $this->outfield_toprint($t,'col-md-offset-6 col-md-6');
+                }
+                $result .= "</div>\n";    
+            }
+            $result .= "</form>\n";
+        }
+        if ($show_set||$show_tabheader) {
+            if ($show_set) {
+                $result .= "<div id=\"entityset\">\n";
+                $result .= $this->set_toprint($data['PSET']);
+            } elseif ($show_tabheader) {
+                $title = $data['PLIST'][$key_set]['synonym'];
+                $result .= "<p class=\"dcs-tabtitle\">$title</p>\n";
+                $result .= "<div id=\"".$context['SETID']."\">\n";
+                $result .= $this->set_toprint($data['SETS'][$context['SETID']]);
+            }
+            $result .= "</div>\n";
+        }    
         return $result;
     }        
 }

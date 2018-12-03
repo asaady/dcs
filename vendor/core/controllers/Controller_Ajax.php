@@ -54,6 +54,10 @@ class Controller_Ajax extends Controller
     {
         echo json_encode($this->model->getItemsByName($context['DATA']['param_val']['name']));
     }
+    function action_before_save($context)
+    {
+        die(print_r($context));
+    }
     function action_field_save($context)
     {
         $data=array();

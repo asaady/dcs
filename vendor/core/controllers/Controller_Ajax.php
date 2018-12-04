@@ -56,7 +56,11 @@ class Controller_Ajax extends Controller
     }
     function action_before_save($context)
     {
-        die(print_r($context));
+        echo json_encode($this->model->before_save($context,$context['DATA']));
+    }
+    function action_save($context)
+    {
+        echo json_encode($this->model->update($context,$context['DATA']));
     }
     function action_field_save($context)
     {

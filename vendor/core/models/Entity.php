@@ -5,7 +5,7 @@ use PDO;
 use DateTime;
 use Dcs\Vendor\Core\Models\DcsException;
 
-class Entity extends Sheet implements I_Sheet, I_Property 
+class Entity extends Sheet implements I_Sheet, I_Property, I_Item 
 {
     use T_Sheet;
     use T_Entity;
@@ -225,10 +225,10 @@ class Entity extends Sheet implements I_Sheet, I_Property
         $objs['PSET'] = $pset;
         $objs['SETS'] = $sets;
     } 
-    public function update_dependent_properties($data)
+    public function update_dependent_properties($context,$data)
     {
-        $res = array();
-        $ar_propid = array_column($this->properties(), 'propid','id');
+        $res = array('status'=>'', 'id'=>$this->id, 'objs'=>array());
+        $ar_propid = array_column($this->properties, 'propid','id');
         foreach ($data as $pid => $val) {
             $prop = $this->properties[$pid];
             $ar_rel = DataManager::get_related_fields($prop['propid']);
@@ -294,13 +294,13 @@ class Entity extends Sheet implements I_Sheet, I_Property
             }
         }    
         if (count($res) > 0) {
-            $res = $this->update_properties($res,1);
+            $res = $this->update_properties($context,$res,1);
         }
         return $res;
     }        
-    public function update_properties($data,$n=0)     
+    public function update_properties($context,$data,$n=0)     
     {
-        $objs = $this->before_save($data);
+        $objs = $this->before_save($context,$data);
         $id = $this->id;
         $vals = array();
         //первый проход дополним значениями зависимых реквизитов
@@ -351,9 +351,10 @@ class Entity extends Sheet implements I_Sheet, I_Property
                 $vals[$propid]=array('id'=>'','name'=>$propval['nval']);
             }    
 	}
-        $objs = $this->before_save($vals);
+        $objs = $this->before_save($context,$vals);
 	$res = DataManager::dm_query("BEGIN");
         $upd = array();
+        $cnt = 0;
 	foreach($objs as $propval){
             $propid = $propval['id'];
             if ($propid =='id')
@@ -399,7 +400,7 @@ class Entity extends Sheet implements I_Sheet, I_Property
             $cnt++;
             $upd[$propid] = array('value'=>$t_val,'type'=>$type, 'name'=>$vals[$propid]['name']);
 	}
-        if ($cnt>0)
+        if ($cnt > 0)
         {    
             $res = DataManager::dm_query("COMMIT");	
             $status = 'OK';
@@ -759,5 +760,59 @@ class Entity extends Sheet implements I_Sheet, I_Property
                 . "inner join \"PropValue_id\" as pv on it.id=pv.id";
         $res = DataManager::dm_query($sql,array('id'=>$this->id, 'propid'=>$propid));
         return $res->fetchAll(PDO::FETCH_ASSOC);
+    }
+    public function before_save($context,$data) 
+    {
+        $sql = '';
+        $objs = array();
+        $this->load_data($context);
+        foreach ($this->properties as $prop)
+        {    
+            $propid = $prop['id'];
+            if ($propid == 'id') continue;
+            if (!array_key_exists($propid, $data))
+            {        
+                continue;
+            }
+            $nval = $data[$propid]['name'];
+            $nvalid = $data[$propid]['id'];
+            $pval = $this->data[$propid]['name'];
+            $pvalid = '';
+            if ($prop['name_type'] == 'id') 
+            {
+                $pvalid = $this->data[$propid]['id'];
+                if ($pvalid == $nvalid) 
+                {
+                    continue;
+                }    
+                if (($pvalid == DCS_EMPTY_ENTITY)&&($nvalid==''))
+                {
+                    continue;
+                }
+            }
+            elseif ($prop['name_type'] == 'date') 
+            {
+                if (substr($pval,0,19) == substr($nval,0,19)) 
+                {
+                    continue;
+                }    
+            } 
+            elseif ($prop['name_type']=='bool') 
+            {
+                if ((bool)$pval==(bool)$nval) 
+                {
+                    continue;
+                }   
+            } 
+            else 
+            {
+                if ($pval==$nval) 
+                {
+                    continue;
+                }    
+            }
+            $objs[]=array('id'=>$propid, 'name'=>$prop['name'],'pvalid'=>$pvalid, 'pval'=>$pval, 'nvalid'=>$nvalid, 'nval'=>$nval);
+        }       
+	return $objs;
     }
 }

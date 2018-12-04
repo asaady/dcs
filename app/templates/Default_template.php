@@ -290,10 +290,10 @@ class Default_Template extends Template implements I_Template
             }
         }    
         if (($type == 'id')||($type == 'cid')||($type == 'mdid')) {
-            $result .= "<input type=\"hidden\" class=\"form-control\" "
+            $result .= "<input type=\"hidden\" class=\"form-control ajax\" "
                     . "id=\"$t[id]\" name=\"$t[id]\" it=\"$t[valmdid]\" "
                     . "vt=\"$type\" value=\"\" autocomplete=\"newvalue\">\n";
-            $result .= "<input type=\"$itype\" class=\"form-control\" "
+            $result .= "<input type=\"$itype\" class=\"form-control ajax\" "
                     . "st=\"active\" id=\"name_$t[id]\" "
                     . "name=\"name_$t[id]\" it=\"$t[valmdid]\" "
                     . "vt=\"$type\" value=\"\"$readonly autocomplete=\"newvalue\">\n";
@@ -305,12 +305,12 @@ class Default_Template extends Template implements I_Template
         } else {
             if (($itype != 'hidden')||($readonly == '')) {
                 if ($type == 'date') {
-                    $result .= "<input type=\"$itype\" class=\"form-control datepicker\""
+                    $result .= "<input type=\"$itype\" class=\"form-control datepicker ajax\""
                             . " st=\"active\" id=\"$t[id]\" name=\"$t[id]\""
                             . " it=\"\" valid=\"\" vt=\"$type\" value=\"\"$readonly"
                             . " autocomplete=\"newvalue\">\n";
                 } else {
-                    $result .= "<input type=\"$itype\" class=\"form-control\""
+                    $result .= "<input type=\"$itype\" class=\"form-control ajax\""
                             . " st=\"active\" id=\"$t[id]\" name=\"$t[id]\""
                             . " it=\"\" valid=\"\" vt=\"$type\" value=\"\"$readonly"
                             . " autocomplete=\"newvalue\">\n";
@@ -322,7 +322,7 @@ class Default_Template extends Template implements I_Template
                         . "</ul>\n";
                 }
             } else {
-                $result .= "<input type=\"$itype\" class=\"form-control\" "
+                $result .= "<input type=\"$itype\" class=\"form-control ajax\" "
                         . "st=\"active\" id=\"$t[id]\" name=\"$t[id]\" valid=\"\""
                         . " vt=\"$type\" value=\"\"$readonly"
                         . " autocomplete=\"newvalue\">\n";

@@ -189,12 +189,12 @@ trait T_Sheet {
         $s_class = explode('\\',get_called_class());
         return end($s_class);
     }
-    public function update($data)     
+    public function update($context,$data)     
     {
-        $res = $this->update_properties($data);
+        $res = $this->update_properties($context,$data);
         if ($res['status'] == 'OK')
         {
-            $res1 = $this->update_dependent_properties($res['objs']);
+            $res1 = $this->update_dependent_properties($context,$res['objs']);
             if (is_array($res1['objs'])) {
                 $res['objs'] += $res1['objs'];
             }

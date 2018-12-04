@@ -998,7 +998,7 @@ function before_save_success(result)
     $mt.empty();
     shtml = '';
     shtml = "<tr><th>Реквизит</th><th>Значение было</th><th>Новое значение</th></tr>";
-    mh.append(shtml)
+    $mh.append(shtml)
     if (Object.keys(result).length) {
         shtml = '';
         $.each(result, function(key, val) {
@@ -1019,7 +1019,7 @@ function before_save_success(result)
         });
     }    
     $('#dcsModal').modal('show');
-}   
+};  
 $('body').on('click','#save',function(e) {
     var action = $("input[name='action']").val();  
     if (action==='EDIT') {
@@ -1047,7 +1047,7 @@ function logout()
 function saymsg(msg)
 {
     console.log(msg);
-}
+};
 function activate_pickadate()
 {
     var action = $("input[name='action']").val();
@@ -1061,12 +1061,6 @@ function activate_pickadate()
  //                 });
     }              
 };
-$('body').on('click', "input.form-control", function (e) 
-{
-    console.log("ku");
-});
-
-
 $(document).ready(function() 
 { 
     var itemid = $("input[name='itemid']").val(); 

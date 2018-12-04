@@ -5,7 +5,7 @@ use PDO;
 use DateTime;
 use Exception;
 
-class CollectionItem extends Sheet implements I_Sheet, I_Property 
+class CollectionItem extends Sheet implements I_Sheet, I_Property, I_Item
 {
     use T_Sheet;
     use T_Collection;
@@ -209,7 +209,8 @@ class CollectionItem extends Sheet implements I_Sheet, I_Property
             $ares = array('status'=>'ERROR', 'msg'=>$sql);
         }
     }    
-    function before_save($data) {
+    public function before_save($context,$data) 
+    {
         $pdata = $this->getData();
         $objs = array();
         foreach($pdata['SDATA'] as $prow)
@@ -314,4 +315,16 @@ class CollectionItem extends Sheet implements I_Sheet, I_Property
     {
         
     }
+    public function update_dependent_properties($objs)
+    {
+        
+    }        
+    public function save_new()
+    {
+        
+    }        
+    public function update_properties($data)
+    {
+        
+    }        
 }

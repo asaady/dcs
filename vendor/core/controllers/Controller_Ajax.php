@@ -19,18 +19,21 @@ class Controller_Ajax extends Controller
 {
     function __construct($context)
     {
-        $id = $context['ITEMID'];
-        $get_model = function($modelname) use ($id) { return new $modelname($id); };
         if ($context['COMMAND'] == 'FIND') {
             $id = $context['DATA']['param_id']['id'];
+            $get_model = function($modelname) use ($id) { return new $modelname($id); };
         } elseif ($context['COMMAND'] == 'FIELD_SAVE') {
             $id = $context['DATA']['curid']['id'];
+            $get_model = function($modelname) use ($id) { return new $modelname($id); };
         } elseif ($context['COMMAND'] == 'LIST') {
             $id = $context['DATA']['param_val']['id'];
             $get_model = function($modelname) use ($id) { 
                 $ent = new $modelname($id); 
                 return $ent->head();
             };
+        } else {
+            $id = $context['ITEMID'];
+            $get_model = function($modelname) use ($id) { return new $modelname($id); };
         }
         $validation = Common_data::check_uuid($id);
         if (!$validation) {
@@ -70,6 +73,10 @@ class Controller_Ajax extends Controller
         $ent->update($data);
     }
     function action_choice($context)
+    {
+        echo json_encode(array('msg'=>'OK'));
+    }
+    function action_after_choice($context)
     {
         echo json_encode(array('msg'=>'OK'));
     }

@@ -228,137 +228,18 @@ class CollectionSet extends Sheet implements I_Sheet, I_Set, I_Property
     public function getItemsByName($name)
     {
         $mdid = $this->id;
-        $artt = array();
-        if (!User::isAdmin())
+        $sql = "select ct.id, ct.name, ct.synonym FROM \"CTable\" as ct
+		WHERE ct.mdid=:mdid AND (ct.name ILIKE :name OR ct.synonym ILIKE :name) LIMIT 5";  
+	$res = DataManager::dm_query($sql,array('mdid'=>$mdid, 'name'=>"%$name%"));
+	$rows = $res->fetchAll(PDO::FETCH_ASSOC);
+        if (!count($rows))
         {
-            $access_prop = self::get_access_prop();
-            $arr_prop = array_unique(array_column($access_prop,'propid'));
-        }
-        else 
-        {
-            $access_prop = array();
-            $arr_prop = array();
-        }
-        $mdentity = new Mdentity($this->id);
-        if ($mdentity->getmditemname()=='Docs')
-        {
-            $sql = "select et.id, pv.value as name, it.dateupdate FROM \"PropValue_int\" as pv
-                    inner join \"IDTable\" as it
-                        inner join \"ETable\" as et
-                        on it.entityid=et.id
-                        inner join \"MDProperties\" as mp
-                            inner join \"CTable\" as pt
-                            on mp.propid=pt.id
-                        on it.propid=mp.id
-                    on pv.id=it.id";
-            $str_where = " WHERE et.mdid=:mdid and mp.mdid = et.mdid and pv.value = :name LIMIT 30";  
-            $params = array('mdid'=>$mdid, 'name'=>$name);
-        }   
-        else
-        {
-            $sql = "select et.id, pv.value as name, it.dateupdate FROM \"PropValue_str\" as pv
-                    inner join \"IDTable\" as it
-                        inner join \"ETable\" as et
-                        on it.entityid=et.id
-                        inner join \"MDProperties\" as mp
-                            inner join \"CTable\" as pt
-                            on mp.propid=pt.id
-                        on it.propid=mp.id
-                    on pv.id=it.id";
-            $str_where = " WHERE et.mdid=:mdid and mp.mdid = et.mdid and pv.value ILIKE :name LIMIT 30";  
-            $params = array('mdid'=>$mdid, 'name'=>"%$name%");
-        }    
-        $params_fin = array();
-        $sql_rls = '';
-        if (count($access_prop))
-        {
-            $arr_prop = array_unique(array_column($access_prop,'propid'));
-            $arr_eprop = array_column($mdentity->getarProps(), 'propid','id');
-            foreach ($arr_prop as $prop)
-            {
-                $isprop = array_search($prop, $arr_eprop);
-                if ($isprop===FALSE)
-                {
-                    //в текущем объекте нет реквизита с таким значением $prop
-                    continue;
-                }    
-                $str_val='';
-                foreach ($access_prop as $ap)
-                {
-                    if ($prop!=$ap['propid'])
-                    {
-                       continue;
-                    }    
-                    $propname = $ap['propname'];
-                    $rls_type = $ap['name_type'];
-                    if (($ap['rd']===true)||($ap['wr']===true))
-                    {
-                        $str_val .= ",'"."$ap[value]"."'";
-                    }    
-                }    
-                if ($str_val=='')
-                {
-                    return '';
-                }    
-                $str_val = "(".substr($str_val,1).")";
-                $props_templ = new PropsTemplate($prop);
-                if ($props_templ->getvalmdentity()->getid()==$mdid)    
-                {
-                    $sql_rls .= " INNER JOIN \"ETable\" as et_$propname ON et_$propname.id=et.id AND et_$propname.id IN $str_val";
-                }    
-                else
-                {    
-                    if (!in_array($prop, $params))
-                    {        
-                        $sql_rls .= " INNER JOIN \"IDTable\" as it_$propname inner join \"MDProperties\" as mp_$propname on it_$propname.propid=mp_$propname.id AND mp_$propname.propid=:$propname inner join \"PropValue_$rls_type\" as pv_$propname ON pv_$propname.id=it_$propname.id AND pv_$propname.value in $str_val ON it_$propname.entityid=et.id";
-                        $params[$propname]=$prop;
-                        $params_fin[$propname]=$prop;
-                    }    
-                }    
-          }    
-        }   
-        if ($sql_rls<>'')
-        {
-            $sql .= $sql_rls;
-        }    
-        $sql .= $str_where;
-        
-        $artt[] = DataManager::createtemptable($sql,'tt_et',$params);   
-        
-//        $sqlr = "select * from tt_et";
-//	$res = DataManager::dm_query($sqlr);
-//	die(var_dump($res->fetchAll(PDO::FETCH_ASSOC))." sql = ".$sql. var_dump($params));
-        
-        
-	$sql = "select id, max(dateupdate) as dateupdate FROM tt_et group by id";
-        $artt[] = DataManager::createtemptable($sql,'tt_nml');   
-        
-	$sql = "select et.id, et.name FROM tt_et as et inner join tt_nml as nm on et.id=nm.id and et.dateupdate=nm.dateupdate";
-        $artt[] = DataManager::createtemptable($sql,'tt_nm');   
-
-        
-	$sql = "select et.id, et.name, COALESCE(pv.value,TRUE) as activity, COALESCE(it.dateupdate,'epoch'::timestamp) as dateupdate FROM tt_nm as et 
-                left join \"IDTable\" as it
-                    inner join \"MDProperties\" as mp
-                    on it.propid=mp.id
-                    and mp.name='activity'
-                    inner join \"PropValue_bool\" as pv
-                    on it.id=pv.id
-                on et.id=it.entityid";  
-        $artt[] = DataManager::createtemptable($sql,'tt_act');   
-        
-	$sql = "select id, max(dateupdate) as dateupdate FROM tt_act group by id";
-        $artt[] = DataManager::createtemptable($sql,'tt_actl');   
-	$sql = "select et.id, et.name FROM tt_act as et inner join tt_actl as nm on et.id=nm.id and et.dateupdate=nm.dateupdate and et.activity";
-        if ($sql_rls<>'')
-        {
-            $sql .= $sql_rls;
-        }    
-        $sql .= " LIMIT 5";
-	$res = DataManager::dm_query($sql,$params_fin);
-	$objs = $res->fetchAll(PDO::FETCH_ASSOC);
-        DataManager::droptemptable($artt);
-        return $objs;
+            $sql = "select ct.id, ct.name, ct.synonym FROM \"CTable\" as ct inner join \"CTable\" as md on ct.mdid=md.mdid
+                    WHERE md.id=:mdid AND (ct.name ILIKE :name OR ct.synonym ILIKE :name) LIMIT 5";  
+            $res = DataManager::dm_query($sql,array('mdid'=>$mdid, 'name'=>"%$name%"));
+            $rows = $res->fetchAll(PDO::FETCH_ASSOC);
+        }  
+        return $rows;
     }
 }
 

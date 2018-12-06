@@ -67,135 +67,7 @@ class CollectionItem extends Sheet implements I_Sheet, I_Property, I_Item
         $artemptable = array();
         $artemptable[] = DataManager::createtemptable($sql,'tt_out',$params);   
         return $artemptable;
-   }        
-    function update($data) 
-    {
-        if ($this->head->getname()=='Users')
-        {
-            $user = new User;
-            $ares = $user->update($data);
-            $objs['status']='OK';
-            $objs['id']=$this->id;
-            return $objs;
-        }    
-        $pdata = $this->getData();
-        $objs = array();
-        $objs['id'] = $this->id;
-        foreach($pdata['SDATA'] as $prow)
-        {    
-            $id = 'name';
-            $sql = '';
-            $params = array();
-            if (array_key_exists($id, $data))
-            {
-                $dataname = $data[$id]['name'];
-                $valname = $prow[$id]['name'];
-                if ($dataname!=$valname)
-                {
-                    $sql .= ", $id=:$id";
-                    $params[$id] = $dataname;
-                }    
-            }    
-            $id = 'synonym';
-            if (array_key_exists($id, $data))
-            {
-                $dataname = $data[$id]['name'];
-                $valname = $prow[$id]['name'];
-                if ($dataname!=$valname)
-                {
-                    $sql .= ", $id=:$id";
-                    $params[$id] = $dataname;
-                }    
-            }    
-            if ($sql != '')
-            {
-                $sql = substr($sql,1);
-                $sql = "UPDATE \"CTable\" SET$sql WHERE id=:id";
-                $params['id'] = $this->id;
-                DataManager::dm_query($sql,$params) or 
-                        DcsException::doThrow('$sql: '.$sql, DCS_ERROR_SQL);
-            }    
-            
-            foreach($pdata['PLIST'] as $row)
-            {
-                $key = $row['name'];
-                $id = $row['id'];
-                $type = $row['name_type'];
-                if (($key=='id')||($key=='name')||($key=='synonym')) {
-                    continue;
-                }    
-                if (array_key_exists($id, $data)) {
-
-                    $dataname = $data[$id]['name'];
-                    $valname = $prow[$id]['name'];
-                    $dataid = $data[$id]['id'];
-                    $valid = $prow[$id]['id'];
-                    if (($type=='id')||($type=='cid')||($type=='mdid')) 
-                    {
-                        if ($dataid!='')
-                        {
-                            if ($dataid===$valid)
-                            {
-                                continue;
-                            }    
-                            $val = $dataid;
-                        }
-                        else 
-                        {
-                            if ($valid!='')
-                            {
-                                $val = TZ_EMPTY_ENTITY;
-                            }
-                            else
-                            {
-                                continue;
-                            }    
-                        }
-                    }    
-                    else
-                    {
-                        if (isset($dataname))
-                        {
-                            if ($dataname===$valname)
-                            {
-                                continue;
-                            }    
-                            if (($dataname=='')&&($valname==''))
-                            {
-                                continue;
-                            }    
-                            $val = $dataname;
-                        }
-                        else
-                        {
-                            continue;
-                        }    
-                    }    
-                    $params = array();
-                    $sql = "SELECT value FROM \"CPropValue_$type\" WHERE id=:id and pid=:pid";
-                    $params['id'] = $this->id;
-                    $params['pid'] = $id;
-                    $res = DataManager::dm_query($sql,$params);
-                    $rw = $res->fetch(PDO::FETCH_ASSOC);
-                    if ($rw) {    
-                        $sql = "UPDATE \"CPropValue_$type\" SET value=:val, userid=:userid, dateupdate=DEFAULT WHERE id=:id and pid=:pid returning \"id\"";
-                    } else {
-                        $sql = "INSERT INTO \"CPropValue_$type\" (id, pid, value, userid) VALUES (:id, :pid, :val, :userid) returning \"id\"";
-                    }    
-                    $params['val'] = $val;
-                    $params['userid']=$_SESSION["user_id"];
-                    
-                    $res = DataManager::dm_query($sql,$params) or 
-                        DcsException::doThrow('$sql: '.$sql, DCS_ERROR_SQL);
-                    $res->fetch(PDO::FETCH_ASSOC) or 
-                        DcsException::doThrow('$sql: '.$sql, DCS_ERROR_SQL);
-                    $objs['status']='OK';
-                    $objs['id']=$this->id;
-                }    
-            }    
-        }
-	return $objs;
-    }
+    }        
     function before_delete() {
         return array($this->id=>array('id'=>$this->id,'name'=>"Элемент коллекции ".$this->head->getsynonym(),'pval'=>$this->synonym,'nval'=>'Удалить'));
     }    
@@ -211,41 +83,39 @@ class CollectionItem extends Sheet implements I_Sheet, I_Property, I_Item
     }    
     public function before_save($context,$data) 
     {
-        $pdata = $this->getData();
+        $this->load_data($context);
+        $plist = $this->getProperties(true);
         $objs = array();
-        foreach($pdata['SDATA'] as $prow)
+        foreach($plist as $row)
         {    
-            foreach($pdata['PLIST'] as $row)
+            $key = $row['name'];
+            $id = $row['id'];
+            $type = $row['name_type'];
+            if ($key=='id') 
             {
-                $key = $row['name'];
-                $id = $row['id'];
-                $type = $row['name_type'];
-                if ($key=='id') 
+                continue;
+            }    
+            if (array_key_exists($id, $data))
+            {
+                $dataname = $data[$id]['name'];
+                $valname = $this->data[$id]['name'];
+                $dataid = $data[$id]['id'];
+                $valid = $this->data[$id]['id'];
+                if (($type=='id')||($type=='cid')||($type=='mdid')) 
                 {
-                    continue;
+                    if ($dataid==$valid)
+                    {
+                        continue;
+                    }    
                 }    
-                if (array_key_exists($id, $data))
+                else
                 {
-                    $dataname = $data[$id]['name'];
-                    $valname = $prow[$id]['name'];
-                    $dataid = $data[$id]['id'];
-                    $valid = $prow[$id]['id'];
-                    if (($type=='id')||($type=='cid')||($type=='mdid')) 
+                    if ($dataname==$valname)
                     {
-                        if ($dataid==$valid)
-                        {
-                            continue;
-                        }    
+                        continue;
                     }    
-                    else
-                    {
-                        if ($dataname==$valname)
-                        {
-                            continue;
-                        }    
-                    }    
-                    $objs[]=array('name'=>$key, 'pval'=>$valname, 'nval'=>$dataname);
                 }    
+                $objs[]=array('name'=>$key, 'pval'=>$valname, 'nval'=>$dataname);
             }    
         }
  	return $objs;
@@ -313,7 +183,7 @@ class CollectionItem extends Sheet implements I_Sheet, I_Property, I_Item
     }
     public function getItemsByName($name)
     {
-        
+        return NULL;        
     }
     public function update_dependent_properties($context,$data)
     {
@@ -325,7 +195,7 @@ class CollectionItem extends Sheet implements I_Sheet, I_Property, I_Item
     }        
     public function update_properties($context,$data,$n=0)
     {
-        if ($this->collectionset->getname()=='Users')
+        if ($this->head->getname()=='Users')
         {
             $user = new User;
             $ares = $user->update($data);
@@ -333,134 +203,131 @@ class CollectionItem extends Sheet implements I_Sheet, I_Property, I_Item
             $objs['id']=$this->id;
             return $objs;
         }    
-        $pdata = $this->getData();
+        $this->load_data($context);
+        $plist = $this->getProperties(true);
         $objs = array();
         $objs['id'] = $this->id;
-        foreach($pdata['SDATA'] as $prow)
+        $id = 'name';
+        $sql = '';
+        $params = array();
+        if (array_key_exists($id, $data))
+        {
+            $dataname = $data[$id]['name'];
+            $valname = $this->data[$id]['name'];
+            if ($dataname!=$valname)
+            {
+                $sql .= ", $id=:$id";
+                $params[$id] = $dataname;
+            }    
+        }    
+        $id = 'synonym';
+        if (array_key_exists($id, $data))
+        {
+            $dataname = $data[$id]['name'];
+            $valname = $this->data[$id]['name'];
+            if ($dataname!=$valname)
+            {
+                $sql .= ", $id=:$id";
+                $params[$id] = $dataname;
+            }    
+        }    
+        if ($sql != '')
+        {
+            $sql = substr($sql,1);
+            $sql = "UPDATE \"CTable\" SET$sql WHERE id=:id";
+            $params['id'] = $this->id;
+            $res = DataManager::dm_query($sql,$params);
+            if(!$res) 
+            {
+                $objs['status']='ERROR';
+                $objs['msg']=$sql;
+                return $objs;
+            }
+        }    
+        foreach($plist as $row)
         {    
-            $id = 'name';
-            $sql = '';
-            $params = array();
+            $key = $row['name'];
+            $id = $row['id'];
+            if (($key=='id')||($key=='name')||($key=='synonym'))
+            {
+                continue;
+            }    
             if (array_key_exists($id, $data))
             {
                 $dataname = $data[$id]['name'];
-                $valname = $prow[$id]['name'];
-                if ($dataname!=$valname)
+                $valname = $this->data[$id]['name'];
+                $dataid = $data[$id]['id'];
+                $valid = $this->data[$id]['id'];
+                if (($row['name_type']=='id')||($row['name_type']=='cid')||($row['name_type']=='mdid')) 
                 {
-                    $sql .= ", $id=:$id";
-                    $params[$id] = $dataname;
-                }    
-            }    
-            $id = 'synonym';
-            if (array_key_exists($id, $data))
-            {
-                $dataname = $data[$id]['name'];
-                $valname = $prow[$id]['name'];
-                if ($dataname!=$valname)
-                {
-                    $sql .= ", $id=:$id";
-                    $params[$id] = $dataname;
-                }    
-            }    
-            if ($sql != '')
-            {
-                $sql = substr($sql,1);
-                $sql = "UPDATE \"CTable\" SET$sql WHERE id=:id";
-                $params['id'] = $this->id;
-                $res = DataManager::dm_query($sql,$params);
-                if(!$res) 
-                {
-                    $objs['status']='ERROR';
-                    $objs['msg']=$sql;
-                    break;
-                }
-            }    
-            
-            foreach($pdata['PLIST'] as $row)
-            {
-                $key = $row['name'];
-                $id = $row['id'];
-                if (($key=='id')||($key=='name')||($key=='synonym'))
-                {
-                    continue;
-                }    
-                if (array_key_exists($id, $data))
-                {
-                    $dataname = $data[$id]['name'];
-                    $valname = $prow[$id]['name'];
-                    $dataid = $data[$id]['id'];
-                    $valid = $prow[$id]['id'];
-                    if (($row['type']=='id')||($row['type']=='cid')||($row['type']=='mdid')) 
+                    if ($dataid!='')
                     {
-                        if ($dataid!='')
+                        if ($dataid===$valid)
                         {
-                            if ($dataid===$valid)
-                            {
-                                continue;
-                            }    
-                            $val = $dataid;
-                        }
-                        else 
-                        {
-                            if ($valid!='')
-                            {
-                                $val = TZ_EMPTY_ENTITY;
-                            }
-                            else
-                            {
-                                continue;
-                            }    
-                        }
-                    }    
-                    else
+                            continue;
+                        }    
+                        $val = $dataid;
+                    }
+                    else 
                     {
-                        if (isset($dataname))
+                        if ($valid!='')
                         {
-                            if ($dataname===$valname)
-                            {
-                                continue;
-                            }    
-                            if (($dataname=='')&&($valname==''))
-                            {
-                                continue;
-                            }    
-                            $val = $dataname;
+                            $val = TZ_EMPTY_ENTITY;
                         }
                         else
                         {
                             continue;
                         }    
-                    }    
-                    $params = array();
-                    $sql = "SELECT value FROM \"CPropValue_$row[type]\" WHERE id=:id and pid=:pid";
-                    $params['id'] = $this->id;
-                    $params['pid'] = $id;
-                    $res = DataManager::dm_query($sql,$params);
-                    $rw = $res->fetch(PDO::FETCH_ASSOC);
-                    if ($rw)
-                    {    
-                        $sql = "UPDATE \"CPropValue_$row[type]\" SET value=:val, userid=:userid, dateupdate=DEFAULT WHERE id=:id and pid=:pid returning \"id\"";
+                    }
+                }    
+                else
+                {
+                    if (isset($dataname))
+                    {
+                        if ($dataname===$valname)
+                        {
+                            continue;
+                        }    
+                        if (($dataname=='')&&($valname==''))
+                        {
+                            continue;
+                        }    
+                        $val = $dataname;
                     }
                     else
                     {
-                        $sql = "INSERT INTO \"CPropValue_$row[type]\" (id, pid, value, userid) VALUES (:id, :pid, :val, :userid) returning \"id\"";
+                        continue;
                     }    
-                    $params['val'] = $val;
-                    $params['userid']=$_SESSION["user_id"];
-                    
-                    $res = DataManager::dm_query($sql,$params);
-                    $rw = $res->fetch(PDO::FETCH_ASSOC);
-                    if(!$rw) 
-                    {
-                        $objs['status']='ERROR';
-                        $objs['msg']=$sql;
-                        break;
-                    }
-                    $objs['status']='OK';
-                    $objs['id']=$this->id;
                 }    
+                $params = array();
+                $sql = "SELECT value FROM \"CPropValue_$row[name_type]\" WHERE id=:id and pid=:pid";
+                $params['id'] = $this->id;
+                $params['pid'] = $id;
+                $res = DataManager::dm_query($sql,$params);
+                $rw = $res->fetch(PDO::FETCH_ASSOC);
+                if ($rw)
+                {    
+                    $sql = "UPDATE \"CPropValue_$row[name_type]\" SET value=:val, userid=:userid, dateupdate=DEFAULT WHERE id=:id and pid=:pid returning \"id\"";
+                }
+                else
+                {
+                    $sql = "INSERT INTO \"CPropValue_$row[name_type]\" (id, pid, value, userid) VALUES (:id, :pid, :val, :userid) returning \"id\"";
+                }    
+                $params['val'] = $val;
+                $params['userid']=$_SESSION["user_id"];
+                $res = DataManager::dm_query($sql,$params);
+                $rw = $res->fetch(PDO::FETCH_ASSOC);
+                if(!$rw) 
+                {
+                    $objs['status']='ERROR';
+                    $objs['msg']=$sql;
+                    return $objs;
+                }
+                $objs['status']='OK';
+                $objs['id']=$this->id;
             }    
         }
+
 	return $objs;        
     }        
 }

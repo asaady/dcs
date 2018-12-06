@@ -63,7 +63,7 @@ class Controller_Ajax extends Controller
     }
     function action_save($context)
     {
-        echo json_encode($this->model->update($context,$context['DATA']));
+        echo json_encode($this->model->update_properties($context,$context['DATA']));
     }
     function action_field_save($context)
     {

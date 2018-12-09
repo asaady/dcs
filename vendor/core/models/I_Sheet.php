@@ -12,4 +12,7 @@ interface I_Sheet
     public static function txtsql_access();  
     public function setnamesynonym();
     public function getaccessright_id();
- }
+    public function item_classname();
+    public function create_object($id,$mdid,$name,$synonym='');
+    public function getNameFromData($data);
+}

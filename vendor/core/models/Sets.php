@@ -64,6 +64,10 @@ class Sets extends Entity implements I_Sheet, I_Property
     {
         return new Item($this->id);
     }
+    public function item_classname()
+    {
+        return 'Item';
+    }        
     public function gettoString() 
     {
         return $this->mdsynonym;

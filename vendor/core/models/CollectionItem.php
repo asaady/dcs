@@ -32,6 +32,11 @@ class CollectionItem extends Sheet implements I_Sheet, I_Property, I_Item
     function item() {
         return NULL;
     }
+    public function item_classname()
+    {
+        return NULL;
+    }        
+    
     public function get_tt_sql_data()
     {
         $sql = "SELECT ct.id, ct.name, ct.synonym, ct.mdid";
@@ -120,64 +125,79 @@ class CollectionItem extends Sheet implements I_Sheet, I_Property, I_Item
         }
  	return $objs;
     }
+    public function create_object($id,$mdid,$name,$synonym='')
+    {
+        $sql ="INSERT INTO \"CTable\" (name, synonym, mdid) "
+                . "VALUES (:name, :synonym, :mdid) RETURNING \"id\"";
+        $params = array(
+                'name' => $name, 
+                'synonym'=>$synonym,
+                'mdid'=> $mdid
+                );
+        if ($id) {
+            $sql ="INSERT INTO \"CTable\" (id, name, synonym, mdid) "
+                    . "VALUES (:id, :name, :synonym, :mdid) RETURNING \"id\"";
+            $params['id'] = $id;
+        }
+        $res = DataManager::dm_query($sql,$params);
+        if ($res) {
+            $row = $res ->fetch(PDO::FETCH_ASSOC);
+            return $row['id'];
+        }
+        throw new DcsException("Class ".get_called_class().
+            " create_object: unable to create new record",DCS_ERROR_WRONG_PARAMETER);
+    }        
+
     function create($data)
     {
         
         $curname = $data['name']['name'];
-        if ($curname=='')
-        {
-            $ares = array('status'=>'ERROR', 'msg'=>'Name is empty');
+        if ($curname=='') {
+            return array('status'=>'ERROR', 'msg'=>'Name is empty');
         }    
-        else
-        {
-            if ($this->head->getname()=='Users')
+        if ($this->head->getname()=='Users') {
+            $user = new User;
+            return $user->create($data);
+        }    
+        $sql ="INSERT INTO \"CTable\" (name, synonym, mdid) "
+                . "VALUES (:name, :synonym, :mdid) RETURNING \"id\"";
+        $params = array('name' => $curname, 
+                'synonym'=>$data['synonym']['name'],
+                'mdid'=> $this->head->getid());
+        $res = DataManager::dm_query($sql,$params);
+        $row = $res ->fetch(PDO::FETCH_ASSOC);
+        $id = $row['id'];
+        $ares = array('status'=>'OK', 'id'=>$id);
+        $plist = $this->properties;
+        foreach ($plist as $f)
+        {   
+            if (!array_key_exists($f['id'],$data)) continue;
+            $dataname= $data[$f['id']];
+            $type= $f['name_type'];
+            if ($dataname['name']=='')
             {
-                $user = new User;
-                $ares = $user->create($data);
-            }    
-            else 
-            {
-                $sql ="INSERT INTO \"CTable\" (name, synonym, mdid) "
-                        . "VALUES (:name, :synonym, :mdid) RETURNING \"id\"";
-                $params = array('name' => $curname, 
-                        'synonym'=>$data['synonym']['name'],
-                        'mdid'=> $this->head->getid());
-                $res = DataManager::dm_query($sql,$params);
-                $row = $res ->fetch(PDO::FETCH_ASSOC);
-                $id = $row['id'];
-                $ares = array('status'=>'OK', 'id'=>$id);
-                $plist = $this->properties;
-                foreach ($plist as $f)
-                {   
-                    if (!array_key_exists($f['id'],$data)) continue;
-                    $dataname= $data[$f['id']];
-                    $type= $f['name_type'];
-                    if ($dataname['name']=='')
-                    {
-                        continue;
-                    }
-                    $val = $dataname['name'];
-                    if ($type == 'bool') {
-                        if ($val == 't') {
-                            $val = 'true';
-                        }
-                        if ($val != 'true') {
-                            $val = 'false';
-                        }
-                    } elseif (($type == 'id')||($type == 'cid')||($type == 'mdid')) {
-                        $val = $dataname['id'];
-                    }    
-
-                    $sql = "INSERT INTO \"CPropValue_$type\" (id, pid, value) "
-                            . "VALUES (:id, :pid, :value) RETURNING \"id\"";
-                    $params = array();
-                    $params['id'] = $id;
-                    $params['pid'] = $f['id'];
-                    $params['value'] = $val;
-                    DataManager::dm_query($sql,$params) or 
-                        DcsException::doThrow('$sql: '.$sql, DCS_ERROR_SQL);
-                }    
+                continue;
             }
+            $val = $dataname['name'];
+            if ($type == 'bool') {
+                if ($val == 't') {
+                    $val = 'true';
+                }
+                if ($val != 'true') {
+                    $val = 'false';
+                }
+            } elseif (($type == 'id')||($type == 'cid')||($type == 'mdid')) {
+                $val = $dataname['id'];
+            }    
+
+            $sql = "INSERT INTO \"CPropValue_$type\" (id, pid, value) "
+                    . "VALUES (:id, :pid, :value) RETURNING \"id\"";
+            $params = array();
+            $params['id'] = $id;
+            $params['pid'] = $f['id'];
+            $params['value'] = $val;
+            DataManager::dm_query($sql,$params) or 
+                DcsException::doThrow('$sql: '.$sql, DCS_ERROR_SQL);
         }    
         return $ares;
     }
@@ -329,5 +349,9 @@ class CollectionItem extends Sheet implements I_Sheet, I_Property, I_Item
         }
 
 	return $objs;        
+    }        
+    public function getNameFromData($data)
+    {
+        return $this->synonym;
     }        
 }

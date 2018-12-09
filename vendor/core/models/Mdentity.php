@@ -30,6 +30,10 @@ class Mdentity extends Sheet implements I_Sheet, I_Set, I_Property
     {
         return new Mdproperty($this->id);
     }
+    public function item_classname()
+    {
+        return 'Mdproperty';
+    }        
     public function load_data($context)
     {
         return NULL;
@@ -185,4 +189,12 @@ class Mdentity extends Sheet implements I_Sheet, I_Set, I_Property
         }    
 	return $objs;
     }
+    public function create_object($id,$mdid,$name,$synonym='')
+    {
+        return NULL;
+    }        
+    public function getNameFromData($data)
+    {
+        return $this->synonym;
+    }        
 }

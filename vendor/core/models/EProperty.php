@@ -28,4 +28,20 @@ class EProperty extends Sheet implements I_Sheet, I_Property
     {
         return new Mdentity($this->mdid);
     }
+    public function item()
+    {
+        return NULL;
+    }        
+    public function item_classname()
+    {
+        return NULL;
+    }        
+    public function create_object($id,$mdid,$name,$synonym='')
+    {
+        return NULL;
+    }        
+    public function getNameFromData($data)
+    {
+        return $this->synonym;
+    }        
 }

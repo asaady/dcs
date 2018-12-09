@@ -29,6 +29,10 @@ class Mdcollection extends Sheet implements I_Sheet, I_Set, I_Property
     {
         return new CProperty($this->id);
     }
+    public function item_classname()
+    {
+        return 'CProperty';
+    }        
     public function load_data()
     {
         return NULL;
@@ -42,4 +46,12 @@ class Mdcollection extends Sheet implements I_Sheet, I_Set, I_Property
     function before_save($data) 
     {
     }
+    public function create_object($id,$mdid,$name,$synonym='')
+    {
+        return NULL;
+    }        
+    public function getNameFromData($data)
+    {
+        return $this->synonym;
+    }        
 }

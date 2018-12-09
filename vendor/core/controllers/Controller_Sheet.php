@@ -13,11 +13,16 @@ class Controller_Sheet extends Controller
 
     function __construct($context)
     {
-        $modelname = "\\Dcs\\Vendor\\Core\\Models\\".$context['CLASSNAME'];
+        $modelname = $context['CLASSNAME'];
+        if (strpos($modelname,"Dcs\\Vendor\\Core\\Models\\") === false) {
+            $modelname = "Dcs\\Vendor\\Core\\Models\\".$context['CLASSNAME'];
+        }
+        $modelname = "\\".$modelname;
         try {
             $this->model = new $modelname($context['ITEMID']);
-        } catch (Exception $e) {
-            die($modelname.':'.$e->getMessage());
+        } catch (DcsException $e) {
+            throw new DcsException("Class ".get_called_class().
+                    " constructor: id is not valid",DCS_ERROR_WRONG_PARAMETER);
         }
         $this->view = new View();
     }

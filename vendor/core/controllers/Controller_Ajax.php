@@ -29,7 +29,7 @@ class Controller_Ajax extends Controller
             $id = $context['DATA']['param_val']['id'];
             $get_model = function($modelname) use ($id) { 
                 $ent = new $modelname($id); 
-                return $ent->head();
+                return $ent->get_head();
             };
         } else {
             $id = $context['ITEMID'];
@@ -42,7 +42,17 @@ class Controller_Ajax extends Controller
         }
         $prefix = $context['PREFIX'];
         $cont = Route::getContentByID($id,$prefix);
-        $modelname = "\\Dcs\\Vendor\\Core\\Models\\".$cont['classname'];
+        if ($cont) {
+            $modelname = "\\Dcs\\Vendor\\Core\\Models\\".$cont['classname'];
+        } else {
+            $newobj = DataManager::getNewObjectById($id);
+            if (!$newobj) {
+                throw new DcsException("Class ".get_called_class().
+                    " constructor: id is not valid",DCS_ERROR_WRONG_PARAMETER);
+            } else {
+                $modelname = "\\Dcs\\Vendor\\Core\\Models\\".$newobj['classname'];
+            }
+        }
         $this->model = $get_model($modelname);
    }
     function action_view($context)
@@ -52,6 +62,10 @@ class Controller_Ajax extends Controller
     function action_load($context)
     {
         $this->action_view($context);
+    }
+    function action_create($context)
+    {
+        echo json_encode($this->model->create($context));
     }
     function action_find($context)
     {
@@ -63,7 +77,7 @@ class Controller_Ajax extends Controller
     }
     function action_save($context)
     {
-        echo json_encode($this->model->update_properties($context,$context['DATA']));
+        echo json_encode($this->model->update($context,$context['DATA']));
     }
     function action_field_save($context)
     {
@@ -89,17 +103,9 @@ class Controller_Ajax extends Controller
     {
         echo json_encode($this->model->getItemData($context));
     }
-    function action_denyaccess($context)
-    {
-        echo json_encode(array('msg'=>'Deny access'));
-    }
     function action_history($context)
     {
         $mdprop = new Mdproperty($context['DATA']['PROPID']['id']);
         echo json_encode($mdprop->get_history_data($context['ITEMID'],$context['MODE']));
-    }
-    function action_error($context)
-    {
-        echo json_encode(array('msg'=>'error'));
     }
 }    

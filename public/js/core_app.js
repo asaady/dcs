@@ -672,6 +672,7 @@ $("#dcsTab a").click(function(e){
 
 $('body').on('click','a#create', function () 
 {
+var callback;
     var itemid = $("input[name='itemid']").val();    
     if (itemid === '') {
         return;
@@ -682,27 +683,29 @@ $('body').on('click','a#create', function ()
     if ($e !== undefined && $e !== null) {
         href = $e.attr('href');
     }
-    if (href === undefined || href === null) {
-        location.href=getprefix()+'/'+itemid+"/create";
-    } else {
+    callback = function(result) {
+                    location.href=result['redirect'];        
+               };
+    if (href) {
         curid = href.substring(1);
         $("input[name='curid']").val(curid);    
-        $("input[name='command']").val('create'); 
-        $data = $('.ajax').serializeArray();
-        $.ajax(
-        {
-            url: getprefix()+'/ajax/'+itemid,
-            type: 'get',
-            dataType: 'json',
-            data: $data,
-            error: function(xhr, error){
-                    console.debug(xhr); console.debug(error);
-            },                
-            success: function(result) {
-                onLoadValID(result);
-            }
-        });
-    }   
+        callback = function(result) {
+            onLoadValID(result);
+        };
+    }    
+    $("input[name='command']").val('create'); 
+    $data = $('.ajax').serializeArray();
+    $.ajax(
+    {
+        url: getprefix()+'/ajax/'+itemid,
+        type: 'get',
+        dataType: 'json',
+        data: $data,
+        error: function(xhr, error){
+            console.debug(xhr); console.debug(error);
+        },                
+        success: callback
+    });
 });
 $('body').on('click', '#edit', function () {
     tr_dblclick($('#dcs-list tr.info'));
@@ -980,7 +983,8 @@ function save()
       type: 'get',
       dataType: 'json',
       data: $data,
-        success: save_success
+        success: save_success,
+        error: function(data) {console.log(data);}
     });
 };
 function save_success (result)

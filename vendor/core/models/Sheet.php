@@ -25,33 +25,32 @@ abstract class Sheet extends Model implements I_Sheet
     
     public function __construct($id)
     {
-        
-        if ($id == '') {
+        if ($id === '') {
             throw new DcsException("Class ".get_called_class().
                     " constructor: id is empty",DCS_ERROR_WRONG_PARAMETER);
         }
+        $this->id = $id;
         $arData = $this->getDetails($id);
-        $this->mdid = $id;
-        if ($arData['id'] === '') {
+        if (!$arData) {
             throw new DcsException("Class ".get_called_class().
-                    " constructor: id not found ",DCS_ERROR_WRONG_PARAMETER);
-        }    
-        $this->id = $arData['id']; 
+                " constructor: id is wrong",DCS_ERROR_WRONG_PARAMETER);
+        }
+        $this->mdid = $arData['mdid'];
         $this->name = $arData['name']; 
         $this->synonym = $arData['synonym']; 
-        $this->mdid = $arData['mdid'];
         $this->mdname = $arData['mdname'];
         $this->mdsynonym = $arData['mdsynonym'];
-        if (!$this->mdid) {
-            $this->mdid = $this->id;
-        }
         $this->mditem = $arData['mditem'];
-        if (!$this->mditem) {
-            $this->mditem = $this->id;
-        }
         $this->mdtypename = $arData['mdtypename'];
+        $this->head = $this->get_head();
+        if ($this->name === '_new_') {
+            $arData = $this->head->getDetails($this->mdid);
+            $this->mdname = $arData['name'];
+            $this->mdsynonym = $arData['synonym'];
+            $this->mditem = $arData['mditem'];
+            $this->mdtypename = $arData['mdtypename'];
+        }    
         $this->properties = $this->loadProperties();
-        $this->head = $this->head();
         $this->data = array();
         $this->version = time();
         

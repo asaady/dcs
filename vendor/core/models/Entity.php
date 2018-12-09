@@ -22,8 +22,6 @@ class Entity extends Sheet implements I_Sheet, I_Property, I_Item
     {
         $this->edate = $this->getdate();
         $this->enumber = $this->getnumber();
-        $this->name = $this->head->getname();
-        $this->synonym = $this->gettoString();
     }        
     public static function txtsql_access() 
     {
@@ -57,53 +55,51 @@ class Entity extends Sheet implements I_Sheet, I_Property, I_Item
     {
         return NULL;
     }
-    public function gettoString() 
+    public function item_classname()
+    {
+        return NULL;
+    }        
+    public function getNameFromData($data)
     {
         $artoStr = array();
+        $isDocs = $this->mdtypename === 'Docs';
         foreach($this->properties as $prop)
         {
+            if (!array_key_exists($prop['id'],$data)) {
+                continue;
+            }
             if ($prop['ranktostring'] > 0) 
             {
               $artoStr[$prop['id']] = $prop['ranktostring'];
             }
         }
+//        die(print_r($artoStr));
         if (!count($artoStr)) {
-            foreach($this->properties as $prop) {
-                if ($prop['rank'] > 0) {
-                  $artoStr[$prop['id']] = $prop['rank'];
-                }  
-            }
-            if (count($artoStr)) {
-              asort($artoStr);
-              array_splice($artoStr,1);
-            }  
-        } else {
-            asort($artoStr);
-        }
-        $isDocs = $this->mdtypename === 'Docs';
-        if (count($artoStr)) {
-            $res = '';
-            foreach($artoStr as $prop => $rank) {
-                if ($isDocs && ($this->properties[$prop]['isenumber'] ||
-                                $this->properties[$prop]['isedate'])) {
-                    continue;
-                }    
-                $name = $this->data[$prop]['name'];
-                if ($this->properties[$prop]['name_type'] == 'date') {
-                    $name = substr($name,0,10);
-                }
-                $res .= ' '.$name;
-            }
-            if ($isDocs) {
-                $datetime = new DateTime($this->edate);
-                $res = $this->head->getsynonym()." №".$this->enumber." от ".$datetime->format('d-m-y').$res;
-            } elseif ($res != '') {
-                    $res = substr($res, 1);
+            return '';
+        }    
+        asort($artoStr);
+        $res = '';
+        foreach($artoStr as $pr => $rank) {
+            if ($isDocs && ($this->properties[$pr]['isenumber'] ||
+                            $this->properties[$pr]['isedate'])) {
+                continue;
             }    
-            return $res;
-        } else {
-            return $this->name;
+            if (!array_key_exists($pr,$data)) {
+                continue;
+            }
+            $name = $data[$pr]['name'];
+            if ($this->properties[$pr]['name_type'] == 'date') {
+                $name = substr($name,0,10);
+            }
+            $res .= ' '.$name;
         }
+        if ($isDocs) {
+            $datetime = new DateTime($this->edate);
+            $res = $this->head->getsynonym()." №".$this->enumber." от ".$datetime->format('d-m-y').$res;
+        } elseif ($res != '') {
+                $res = substr($res, 1);
+        }    
+        return $res;
     }
     //ret: array temp table names 
     public function get_tt_sql_data()
@@ -452,17 +448,17 @@ class Entity extends Sheet implements I_Sheet, I_Property, I_Item
             return array('status'=>'NONE','msg'=>"Нет измененных записей ");
         }    
     }    
-    public function save_new()
+    public function save_new_()
     {
 	if ($this->id!=''){
             return array('status'=>'ERROR','msg'=>'this in not new object');
         }    
         if ($this->getname()==''){
-            return array('status'=>'ERROR','msg'=>'name is empty');
+            $this->setname('new object');
         }    
         $edate = $this->edate;
         $enumber = $this->enumber;
-        if ($this->head->getmditemname()=='Docs')
+        if ($this->head->getmdtypename()=='Docs')
         {
             if ($edate=='') {
                 return array('status'=>'ERROR','msg'=>'date is empty');
@@ -616,76 +612,95 @@ class Entity extends Sheet implements I_Sheet, I_Property, I_Item
             }
 
     }	
+    public function create_object($id,$mdid,$name,$synonym='') 
+    {
+        if (!$mdid) {
+            throw new DcsException("Class ".get_called_class().
+                " create_object: mdid is empty",DCS_ERROR_WRONG_PARAMETER);
+        }
+        $sql = "INSERT INTO \"ETable\" (mdid) VALUES (:mdid)"
+                . " RETURNING \"id\"";
+        $params = array();
+        $params['mdid']= $mdid;
+        if ($name) {
+            $sql = "INSERT INTO \"ETable\" (mdid, name) "
+                    . "VALUES (:mdid, :name) RETURNING \"id\"";
+            $params['name']= $name;
+        }
+        if ($id) {
+            $sql = "INSERT INTO \"ETable\" (id, mdid, name) "
+                    . "VALUES (:id, :mdid, :name) RETURNING \"id\"";
+            $params['id']= $id;
+        }
+        $res = DataManager::dm_query($sql,$params); 
+        if ($res) {
+            $rowid = $res->fetch(PDO::FETCH_ASSOC);
+            return $rowid['id'];
+        }
+        throw new DcsException("Class ".get_called_class().
+            " create_object: unable to create new record",DCS_ERROR_WRONG_PARAMETER);
+    }
+
     public function createItem($name,$prefix='')
     {
         $arSetItemProp = self::getMDSetItem($this->mdentity->getid());
         $mdid = $arSetItemProp['valmdid'];
         $objs = array();
         $objs['PSET'] = $this->getProperties(true,'toset');
-        $sql = "INSERT INTO \"ETable\" (mdid, name) VALUES (:mdid, :name) RETURNING \"id\"";
-        $params = array();
-        $params['mdid']=$this->head->getid;
-        $params['name']= str_replace('Set','Item', $name);
-        $res = DataManager::dm_query($sql,$params); 
-        if ($res)
-        {
-            $row = $res->fetch(PDO::FETCH_ASSOC);
-            $childid = $row['id'];
-            
-            $rank = DataManager::saveItemToSetDepList($this->id,$childid);
-            if ($rank>=0)
-            {    
-                $item = new Entity($childid);
-                $arPropsUse = self::getPropsUse($item->head->getmditem());
-                $irank=0;
-                foreach ($arPropsUse as $prop)
-                {
-                    $irank++;
-                    $row = $this->isExistTheProp($prop['propid']);
-                    if (!$row)
-                    {    
-                        $data = array();
-                        $data['name'] = $prop['name'];
-                        $data['synonym'] = $prop['synonym'];
-                        $data['mdid']=$item->mdentity->getid();
-                        $data['rank']=$irank;
-                        $data['ranktoset']=$irank;
-                        $data['ranktostring']=$irank;
-                        if (isset($prop['length']))
-                        {
-                            $data['length'] = $prop['length'];
-                        }   
-                        if (isset($prop['prec']))
-                        {
-                            $data['prec'] = $prop['prec'];
-                        }   
-                        $data['pid'] = $prop['propid'];
-                        if ($prop['name_type']=='date')
-                        {    
-                            $data['isedate']='true';
-                        }
-                        $row = $this->createProperty($data);
-                    }    
-                    if ($row)
+        $childid = $this->create_object('',$this->head->getid(),str_replace('Set','Item', $name));
+        $rank = DataManager::saveItemToSetDepList($this->id,$childid);
+        if ($rank>=0)
+        {    
+            $item = new Entity($childid);
+            $arPropsUse = self::getPropsUse($item->head->getmditem());
+            $irank=0;
+            foreach ($arPropsUse as $prop)
+            {
+                $irank++;
+                $row = $this->isExistTheProp($prop['propid']);
+                if (!$row)
+                {    
+                    $data = array();
+                    $data['name'] = $prop['name'];
+                    $data['synonym'] = $prop['synonym'];
+                    $data['mdid']=$item->mdentity->getid();
+                    $data['rank']=$irank;
+                    $data['ranktoset']=$irank;
+                    $data['ranktostring']=$irank;
+                    if (isset($prop['length']))
                     {
-                        if (strtolower($prop['name'])==='rank')
+                        $data['length'] = $prop['length'];
+                    }   
+                    if (isset($prop['prec']))
+                    {
+                        $data['prec'] = $prop['prec'];
+                    }   
+                    $data['pid'] = $prop['propid'];
+                    if ($prop['name_type']=='date')
+                    {    
+                        $data['isedate']='true';
+                    }
+                    $row = $this->createProperty($data);
+                }    
+                if ($row)
+                {
+                    if (strtolower($prop['name'])==='rank')
+                    {
+                        $sql="INSERT INTO \"IDTable\" (entityid, propid, userid) VALUES (:entityid, :propid, :userid) RETURNING \"id\"";
+                        $params = array();
+                        $params['entityid']=$childid;
+                        $params['propid']=$row['id'];
+                        $params['userid']=$_SESSION["user_id"];
+                        $res = DataManager::dm_query($sql,$params); 
+                        $rowid = $res->fetch(PDO::FETCH_ASSOC);
+                        if ($rowid)
                         {
-                            $sql="INSERT INTO \"IDTable\" (entityid, propid, userid) VALUES (:entityid, :propid, :userid) RETURNING \"id\"";
+                            $sql="INSERT INTO \"PropValue_int\" (id, value) VALUES (:id, :value)";
                             $params = array();
-                            $params['entityid']=$childid;
-                            $params['propid']=$row['id'];
-                            $params['userid']=$_SESSION["user_id"];
+                            $params['id']=$rowid['id'];
+                            $params['value']=$rank;
                             $res = DataManager::dm_query($sql,$params); 
                             $rowid = $res->fetch(PDO::FETCH_ASSOC);
-                            if ($rowid)
-                            {
-                                $sql="INSERT INTO \"PropValue_int\" (id, value) VALUES (:id, :value)";
-                                $params = array();
-                                $params['id']=$rowid['id'];
-                                $params['value']=$rank;
-                                $res = DataManager::dm_query($sql,$params); 
-                                $rowid = $res->fetch(PDO::FETCH_ASSOC);
-                            }    
                         }    
                     }    
                 }    
@@ -727,14 +742,14 @@ class Entity extends Sheet implements I_Sheet, I_Property, I_Item
         $strval = 'Новый';
         if ($this->id) {
             $strkey = $this->id;
-            $strval = sprintf("%s",$this);
+            $strval = $this->getNameFromData($this->data);
         }    
         if ($context['PREFIX'] !== 'CONFIG') {
             if (isset($context['DATA']['setid'])) {
                 $propid = $context['DATA']['setid']['id'];
                 if ($propid !== '') {
                     $this->add_navlist($navlist);
-                    $navlist[] = array('id'=>$this->id,'name' => sprintf("%s",$this));
+                    $navlist[] = array('id'=>$this->id,'name' => sprintf("%s",$strval));
                     $strkey .= "?propid=".$propid;
                     $strval = $this->properties[$propid]['synonym'];
                 }    
@@ -769,29 +784,28 @@ class Entity extends Sheet implements I_Sheet, I_Property, I_Item
         foreach ($this->properties as $prop)
         {    
             $propid = $prop['id'];
-            if ($propid == 'id') continue;
-            if (!array_key_exists($propid, $data))
-            {        
+            if ($propid == 'id') {
+                continue;
+            }    
+            if (!array_key_exists($propid, $data)) {        
                 continue;
             }
             $nval = $data[$propid]['name'];
             $nvalid = $data[$propid]['id'];
-            $pval = $this->data[$propid]['name'];
             $pvalid = '';
-            if ($prop['name_type'] == 'id') 
-            {
+            $pval = '';
+            if (array_key_exists($propid, $this->data)) {        
+                $pval = $this->data[$propid]['name'];
                 $pvalid = $this->data[$propid]['id'];
-                if ($pvalid == $nvalid) 
-                {
+            }
+            if ($prop['name_type'] == 'id') {
+                if ($pvalid == $nvalid) {
                     continue;
                 }    
-                if (($pvalid == DCS_EMPTY_ENTITY)&&($nvalid==''))
-                {
+                if (($pvalid == DCS_EMPTY_ENTITY)&&($nvalid=='')) {
                     continue;
                 }
-            }
-            elseif ($prop['name_type'] == 'date') 
-            {
+            } elseif ($prop['name_type'] == 'date') {
                 if (substr($pval,0,19) == substr($nval,0,19)) 
                 {
                     continue;

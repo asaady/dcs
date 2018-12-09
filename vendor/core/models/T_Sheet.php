@@ -23,19 +23,38 @@ trait T_Sheet {
     public function setnamesynonym()
     {
     }        
-    function get_head()
-    {
-        return $this->head;
-    }
     public function get_navid() 
     {
         return $this->id;
     }
+    function getnewid()
+    {
+	$res = DataManager::dm_query("BEGIN");
+        $headid = $this->getid();
+        $sql = "INSERT INTO \"NewObjects\" (headid,classname) VALUES (:headid,:classname) RETURNING \"id\"";
+        $res=DataManager::dm_query($sql,array('headid'=>$headid,'classname'=>$this->item_classname()));
+        if(!$res) {
+            $res = DataManager::dm_query("ROLLBACK");
+            throw new DcsException("Class ".get_called_class().
+                    " getnewid: new row insert unable",DCS_ERROR_SQL);
+        }    
+        $row = $res->fetch(PDO::FETCH_ASSOC);
+	$res = DataManager::dm_query("COMMIT");
+        return $row['id'];
+    }
     function create($context) 
     {
-        $entity = $this->item();
-        $entity->set_data($context);
-        return $entity->save_new();
+        $id = $this->getnewid();
+        $redirect = '/'.$context['PREFIX'].'/'.$id;
+        return array('status'=>'OK', 'id'=>$id, 'redirect'=>$redirect);
+    }
+    public function save_new($context,$data)
+    {
+    }        
+
+    public function render()
+    {
+        return array('status'=>'OK', 'id'=>$this->id);
     }
     public function search_by_name($name)
     {
@@ -56,7 +75,7 @@ trait T_Sheet {
         $strval = 'Новый';
         if ($this->id) {
             $strkey = $this->id;
-            $strval = sprintf("%s",$this);
+            $strval = $this->getNameFromData($this->data);
         }    
         $this->add_navlist($navlist);
         $navlist[] = array('id' => $strkey,'name' => sprintf("%s",$strval));
@@ -110,7 +129,7 @@ trait T_Sheet {
         }
         $this->version = time();
         DataManager::droptemptable($artemptable);
-        $this->head = $this->head();
+        $this->head = $this->get_head();
         $this->setnamesynonym();
         $this->check_right($context);
     }            
@@ -173,16 +192,29 @@ trait T_Sheet {
 	}  
         return $this;
     }
-    public static function getDetails($id) 
+    public function getDetails($id) 
     {
-        $objs = array('id'=>'','mdid'=>'','mditem'=>'');
         $sql = self::txtsql_forDetails();
         $sth = DataManager::dm_query($sql,array('id'=>$id));   
         $res = $sth->fetch(PDO::FETCH_ASSOC);
-	if($res) {
-            $objs = $res;
-	}
-        return $objs;
+        if (!$res) {
+            $newobj = DataManager::getNewObjectById($id);
+            if (!$newobj) {
+                throw new DcsException("Class ".get_called_class().
+                   " getDetails: id:".$id.' is wrong',DCS_ERROR_WRONG_PARAMETER);
+            } else {
+                $res = array('id' => $id, 
+                             'name' => '_new_',
+                             'synonym' => 'Новый',
+                             'mdid' => $newobj['headid'],
+                             'mdname' => $newobj['classname'],
+                             'mdsynonym' => '',
+                             'mditem' => '',
+                             'mdtypename' => '',
+                             'mdtypedescription' => '');
+            }
+        }
+        return $res;
     }
     public function get_classname() 
     {
@@ -191,6 +223,11 @@ trait T_Sheet {
     }
     public function update($context,$data)     
     {
+        $name = $this->getNameFromData($data);
+        if (!$this->create_object($this->id,$this->mdid,$name)) {
+            throw new DcsException("Class ".get_called_class().
+                " save_new: unable to save new object",DCS_ERROR_SQL);
+        }
         $res = $this->update_properties($context,$data);
         if ($res['status'] == 'OK')
         {
@@ -200,6 +237,12 @@ trait T_Sheet {
             }
         }    
         return $res;
+    }
+    public function get_head() {
+        if (!$this->head) {
+            return $this->head();
+        }
+        return $this->head;
     }
     public function prop_to_Data(&$context,&$objs)
     {        

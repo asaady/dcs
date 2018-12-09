@@ -9,7 +9,7 @@ class Controller_Error extends Controller
     {
         $this->view = new Error_View();
     }
-    function action_index($context)
+    function action_index($context,$data='')
     {
         $data = array();
         $data['id'] = '';
@@ -20,21 +20,21 @@ class Controller_Error extends Controller
         $this->view->setcontext($context);
         $this->view->generate($data);
     }
-    function action_view($context)
+    function action_view($context,$data='')
     {
-        $this->action_index($context);
+        $this->action_index($context,$data);
     }
-    function action_json($context)
+    function action_json($context,$data='')
     {
         header('HTTP/1.1 500 Internal Server Error');
         header('Content-Type: application/json; charset=UTF-8');        
-        echo json_encode(array('msg' => 'error'));
+        echo json_encode($data);
     }
-    function action_error($context)
+    function action_error($context,$data='')
     {
-        $this->action_index($context);
+        $this->action_index($context,$data);
     }
-    function action_denyaccess($context)
+    function action_denyaccess($context,$data='')
     {
         $data = array();
         $data['id'] = '';

@@ -20,7 +20,7 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
     public static function txtsql_forDetails() 
     {
         return "SELECT mdt.id, mdt.name, mdt.synonym, "
-                    . "NULL as mdid, '' as mdname, '' as mdsynonym, "
+                    . "mdt.id as mdid, mdt.name as mdname, mdt.synonym as mdsynonym, "
                     . "mdi.name as mdtypename, "
                     . "mdt.mditem, mdi.synonym as mdtypedescription "
                     . "FROM \"MDTable\" AS mdt "
@@ -36,6 +36,10 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
     {
         return new Entity($this->id);
     }
+    public function item_classname()
+    {
+        return 'Entity';
+    }        
     public function load_data($context)
     {
         return NULL;
@@ -557,5 +561,13 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
         $sql .= " LIMIT $rec_limit";
         return DataManager::createtemptable($sql,$ttname,$params);
     }    
+    public function create_object($id,$mdid,$name,$synonym='')
+    {
+        return NULL;
+    }        
+    public function getNameFromData($data)
+    {
+        return $this->synonym;
+    }        
 }
 

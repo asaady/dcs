@@ -49,6 +49,14 @@ class Item extends Entity implements I_Sheet, I_Property
     {
         return new Sets($this->get_set_by_item());
     }
+    public function item()
+    {
+        return NULL;
+    }        
+    public function item_classname()
+    {
+        return NULL;
+    }        
     public function gettoString() 
     {
         $artoStr = array();

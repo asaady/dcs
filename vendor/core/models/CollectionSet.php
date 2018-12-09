@@ -32,10 +32,18 @@ class CollectionSet extends Sheet implements I_Sheet, I_Set, I_Property
     {
         return new CollectionItem($this->id);
     }
+    public function item_classname()
+    {
+        return 'CollectionItem';
+    }        
     public function load_data($context)
     {
         return NULL;
     }    
+    public function create_object($id,$mdid,$name,$synonym='')
+    {
+        return NULL;
+    }        
     public function createtemptable_all($entities)
     {
         $str_entities = "('".implode("','", $entities)."')";
@@ -241,5 +249,9 @@ class CollectionSet extends Sheet implements I_Sheet, I_Set, I_Property
         }  
         return $rows;
     }
+    public function getNameFromData($data)
+    {
+        return $this->synonym;
+    }        
 }
 

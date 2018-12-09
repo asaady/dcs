@@ -35,6 +35,10 @@ class MdentitySet extends Sheet implements I_Sheet
     {
         return new Mdentity($this->id);
     }
+    public function item_classname()
+    {
+        return 'Mdentity';
+    }        
     function load_data($context) 
     {
         return NULL;
@@ -111,5 +115,13 @@ class MdentitySet extends Sheet implements I_Sheet
     {
         
     }
+    public function create_object($id,$mdid,$name,$synonym='')
+    {
+        return NULL;
+    }        
+    public function getNameFromData($data)
+    {
+        return $this->synonym;
+    }        
 }
 

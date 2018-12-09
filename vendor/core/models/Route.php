@@ -44,10 +44,41 @@ class Route {
         if ($this->context->getattr('ITEMID')) {
             $item = self::getContentByID($this->context->getattr('ITEMID'),
                                          $this->context->getattr('PREFIX'));
-            $this->context->setattr('CLASSNAME', $item['classname']);
+            $classname =  $item['classname'];
+            if (!$item) {
+                $newobj = DataManager::getNewObjectById($this->context->getattr('ITEMID'));
+                if (!$newobj) {
+                    $this->seterrorcontext();
+                } else {
+                    $classname = $newobj['classname'];
+                }
+            }
+            $this->context->setattr('CLASSNAME',$classname);
         }
         $this->controller_path = "/vendor/core/controllers";
     }
+    public function error_route($ex='',$message = '')
+    {
+        $ex_message = 'error';
+        if ($message) {
+            $ex_message = $message;
+        }
+        $ex_code = '';
+        $data = array('msg' => $ex_message);
+        if ($ex) {
+            $ex_code = $ex->getCode();
+            $data = array(
+                'msg' => $ex->getMessage(),
+                'trace' => $ex->getTraceAsString()
+            );
+        }
+        $action = $this->get_action_error($ex_code);
+        $this->seterrorcontext();
+        $context = $this->context->getcontext();
+        $controller = new Controller_Error($context);
+        $controller->$action($context,$data);
+    }        
+
     public function start()
     {
         $this->controller_name = $this->setcontrollername();
@@ -57,31 +88,28 @@ class Route {
         if ($this->context->getattr('MODE') === 'AJAX') {
             $this->action_name = 'action_'.strtolower($this->context->getattr('COMMAND'));
         }
+        $context = $this->context->getcontext();
         if (!class_exists($controllername)) {
-            $this->seterrorcontext();
-            $controllername = 'Controller_Error';
-        }    
-        try {
-            $controller = new $controllername($this->context->getcontext());
-        } catch (DcsException $ex) {
-            $this->action_name = $this->get_action_error($ex->getCode());
-            $this->seterrorcontext();
-            $controller = new Controller_Error($this->context->getcontext());
-        }
+            $this->error_route('','controller '.$controllername.': not exist');
+            return;
+        } else {
+            try {
+                $controller = new $controllername($context);
+            } catch (DcsException $ex) {
+                $this->error_route($ex);
+                return;
+            }
+        }   
         $action = $this->action_name;
         if(!method_exists($controller, $action)) {
-            $action = $this->get_action_error();
-            $this->seterrorcontext();
-            $controller = new Controller_Error($this->context->getcontext());
+            $this->error_route('','controller '.$controllername.': action '.$action.' not exist');
+            return;
         }
         try {
-            $controller->$action($this->context->getcontext());
+            $controller->$action($context);
         } catch (DcsException $ex) {
-            $this->action_name = $this->get_action_error();
-            $action = $this->action_name;
-            $this->seterrorcontext();
-            $controller = new Controller_Error($this->context->getcontext());
-            $controller->$action($this->context->getcontext());
+            $this->error_route($ex);
+            return;
         }    
     }    
     function get_action_error($ex_code = '')
@@ -155,6 +183,9 @@ class Route {
     }
     public function setcontrollername()
     {
+        if ($this->context->getattr('PREFIX') == 'ERROR') {
+            return 'Controller_Error';
+        }
         if ($this->context->getattr('MODE') == 'AJAX') {
             return 'Controller_Ajax';
         }

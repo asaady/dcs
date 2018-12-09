@@ -1215,5 +1215,13 @@ class DataManager {
         }    
         return $rls;
     }
+    public static function getNewObjectById($itemid) 
+    {
+        $sql = "SELECT nob.classname, nob.headid, nob.id "
+                . "FROM \"NewObjects\" as nob "
+                . "WHERE nob.id=:itemid";
 
+        $sth = DataManager::dm_query($sql,array('itemid' => $itemid));
+        return $sth->fetch(PDO::FETCH_ASSOC);
+    }
 }

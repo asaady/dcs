@@ -26,18 +26,132 @@ trait T_Item
     {
         return array();
     }        
+    public function getNameFromData($context, $data='')
+    {
+        if (!count($this->plist)) {
+            $this->plist = $this->getplist($context);
+        }
+        if (!$data) {
+            if (!count($this->data)) {
+                $this->load_data($context);
+            }
+            $data = $this->data;
+        }
+        $artoStr = array();
+        $isDocs = $this->mdtypename === 'Docs';
+        foreach($this->plist as $prop)
+        {
+            if (!array_key_exists($prop['id'],$data)) {
+                continue;
+            }
+            if ($prop['ranktostring'] > 0) 
+            {
+              $artoStr[$prop['id']] = $prop['ranktostring'];
+            }
+        }
+        if (!count($artoStr)) {
+            return array('name' => '',
+                     'synonym' => '');
+        }    
+        asort($artoStr);
+        $res = '';
+        foreach($artoStr as $pr => $rank) {
+            $pkey = array_search($pr, array_column($this->plist,'id'));
+            if ($isDocs && ($this->plist[$pkey]['isenumber'] ||
+                            $this->plist[$pkey]['isedate'])) {
+                continue;
+            }    
+            if (!array_key_exists($pr,$data)) {
+                continue;
+            }
+            $name = $data[$pr]['name'];
+            if ($this->plist[$pkey]['name_type'] == 'date') {
+                $name = substr($name,0,10);
+            }
+            $res .= ' '.$name;
+        }
+        if ($isDocs) {
+            $datetime = new DateTime($this->edate);
+            $res = $this->head->getsynonym()." №".$this->enumber." от ".$datetime->format('d-m-y').$res;
+        } elseif ($res != '') {
+                $res = substr($res, 1);
+        }    
+        return array('name' => $res,
+                     'synonym' => $res);
+    }
+    public function before_save($context,$data) 
+    {
+        $sql = '';
+        $objs = array();
+        if (!count($this->plist)) {
+            $this->getplist($context);
+        }
+        if (!count($this->data)) {
+            $this->load_data($context);
+        }
+        foreach ($this->plist as $prop)
+        {    
+            $propid = $prop['id'];
+            if ($propid == 'id') {
+                continue;
+            }    
+            if (!array_key_exists($propid, $data)) {        
+                continue;
+            }
+            $nval = $data[$propid]['name'];
+            $nvalid = $data[$propid]['id'];
+            $pvalid = '';
+            $pval = '';
+            if (array_key_exists($propid, $this->data)) {        
+                $pval = $this->data[$propid]['name'];
+                $pvalid = $this->data[$propid]['id'];
+            }
+            if ($prop['name_type'] == 'id') {
+                if ($pvalid == $nvalid) {
+                    continue;
+                }    
+                if (($pvalid == DCS_EMPTY_ENTITY)&&($nvalid=='')) {
+                    continue;
+                }
+            } elseif ($prop['name_type'] == 'date') {
+                if (substr($pval,0,19) == substr($nval,0,19)) 
+                {
+                    continue;
+                }    
+            } 
+            elseif ($prop['name_type']=='bool') 
+            {
+                if ((bool)$pval==(bool)$nval) 
+                {
+                    continue;
+                }   
+            } 
+            else 
+            {
+                if ($pval==$nval) 
+                {
+                    continue;
+                }    
+            }
+            $objs[]=array('id'=>$propid, 'name'=>$prop['name'],'pvalid'=>$pvalid, 'pval'=>$pval, 'nvalid'=>$nvalid, 'nval'=>$nval);
+        }       
+	return $objs;
+    }
     public function load_data($context,$data='')
     {
         if (!count($this->plist)) {
             $this->getplist($context);
         }
         if (!$data) {
+            foreach($this->plist as $prow) {
+                $this->data[$prow['id']] = array('id'=>'','name'=>'');
+            }    
             $artemptable = $this->get_tt_sql_data();
             $sql = "select * from tt_out";
             $sth = DataManager::dm_query($sql);        
             $arr_e = array();
             while($row = $sth->fetch(PDO::FETCH_ASSOC)) {
-                $this->data['id'] = array('id'=>'','name'=>$row['id']);
+                $this->data['id'] = array('id'=>$row['id'],'name'=>$row['id']);
                 foreach($this->plist as $prow) {
                     $rowname = $this->rowname($prow);
                     if (array_key_exists('id_'.$rowname, $row)) {
@@ -85,55 +199,43 @@ trait T_Item
         $this->check_right($context);
         return $this->data;
     }            
-    public function getNameFromData($context, $data='')
-    {
-        if (!$data) {
-            if (!count($this->data)) {
-                $this->load_data($context);
-            }
-            $data = $this->data;
-        }
-        $artoStr = array();
-        $isDocs = $this->mdtypename === 'Docs';
-        foreach($this->plist as $prop)
-        {
-            if (!array_key_exists($prop['id'],$data)) {
-                continue;
-            }
-            if ($prop['ranktostring'] > 0) 
-            {
-              $artoStr[$prop['id']] = $prop['ranktostring'];
-            }
-        }
-//        die(print_r($artoStr));
-        if (!count($artoStr)) {
-            return '';
-        }    
-        asort($artoStr);
-        $res = '';
-        foreach($artoStr as $pr => $rank) {
-            $pkey = array_search($pr, array_column($this->plist,'id'));
-            if ($isDocs && ($this->plist[$pkey]['isenumber'] ||
-                            $this->plist[$pkey]['isedate'])) {
-                continue;
-            }    
-            if (!array_key_exists($pr,$data)) {
-                continue;
-            }
-            $name = $data[$pr]['name'];
-            if ($this->plist[$pkey]['name_type'] == 'date') {
-                $name = substr($name,0,10);
-            }
-            $res .= ' '.$name;
-        }
-        if ($isDocs) {
-            $datetime = new DateTime($this->edate);
-            $res = $this->head->getsynonym()." №".$this->enumber." от ".$datetime->format('d-m-y').$res;
-        } elseif ($res != '') {
-                $res = substr($res, 1);
-        }    
-        return array('name' => $res,
-                     'synonym' => $res);
-    }
+//    public function before_save($context,$data) 
+//    {
+//        $this->load_data($context);
+//        $objs = array();
+//        foreach($this->plist as $row)
+//        {    
+//            $key = $row['name'];
+//            $id = $row['id'];
+//            $type = $row['name_type'];
+//            if ($key=='id') 
+//            {
+//                continue;
+//            }    
+//            if (array_key_exists($id, $data))
+//            {
+//                $dataname = $data[$id]['name'];
+//                $valname = $this->data[$id]['name'];
+//                $dataid = $data[$id]['id'];
+//                $valid = $this->data[$id]['id'];
+//                if (($type=='id')||($type=='cid')||($type=='mdid')) 
+//                {
+//                    if ($dataid==$valid)
+//                    {
+//                        continue;
+//                    }    
+//                }    
+//                else
+//                {
+//                    if ($dataname==$valname)
+//                    {
+//                        continue;
+//                    }    
+//                }    
+//                $objs[]=array('name'=>$key, 'pval'=>$valname, 'nval'=>$dataname);
+//            }    
+//        }
+// 	return $objs;
+//    }
 }
 

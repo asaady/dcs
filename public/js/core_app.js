@@ -265,7 +265,7 @@ $('input#type').dblclick(function() {
     $(".types_list").slideUp('fast'); 
     $("#type~.types_list").slideToggle('fast');
 }); 
-$('input.form-control[it=bool]').dblclick(function(e) { 
+$('input.form-control[vt=bool]').dblclick(function(e) { 
     e.preventDefault();
     action = $("input[name='dcs_action']").val();
     if ((action === 'EDIT')||(action === 'CREATE'))

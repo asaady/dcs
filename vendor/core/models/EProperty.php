@@ -9,6 +9,7 @@ class EProperty extends Sheet
 {
     use T_Sheet;
     use T_Item;
+    use T_Property;
     
     public function txtsql_forDetails()
     {
@@ -52,6 +53,9 @@ class EProperty extends Sheet
         $this->data['id'] = array('id'=>'','name'=>$this->id);
         $this->data['name'] = array('id'=>'','name'=>$this->name);
         $this->data['synonym'] = array('id'=>'','name'=>$this->synonym);
+        if (!count($this->plist)) {
+            $this->getplist($context);
+        }
         if (!$data) {
             $sql = $this->get_tt_sql_data();
             $sth = DataManager::dm_query($sql,array('id'=>$this->id));        
@@ -89,25 +93,13 @@ class EProperty extends Sheet
         $this->check_right($context);
         return $this->data;
     }            
-    public function get_select_properties($strwhere)
-    {
-        return NULL;    
-    }        
-    public function txtsql_property($parname)
-    {
-        return NULL;    
-    }        
-    public function txtsql_properties($parname)
-    {
-        return NULL;
-    }        
     public static function txtsql_access()
     {
         return '';
     }        
     public function getplist($context)
     {
-        return array(
+        $plist = array(
             '0'=>array('id'=>'id','name'=>'id','synonym'=>'ID',
                         'rank'=>0,'ranktoset'=>1,'ranktostring'=>0,
                         'name_type'=>'str','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'readonly','field'=>1),
@@ -148,6 +140,8 @@ class EProperty extends Sheet
                         'rank'=>20,'ranktoset'=>9,'ranktostring'=>0,
                         'name_type'=>'str','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'readonly','field'=>0),
              );
+        $this->plist = $plist;
+        return $plist;
     }        
     public function loadProperties()
     {
@@ -286,4 +280,32 @@ class EProperty extends Sheet
         
         return array('LDATA'=>$ardata,'PSET'=>$plist, 'name'=>$this->name,'synonym'=>$this->synonym);
     } 
+    function update($context,$data) {
+        $sql = '';
+        $objs = $this->before_save($context,$data);
+        $params = array();
+        foreach($objs as $row)
+        {    
+            $val = $row['nval'];
+            if ($row['name']=='propid')
+            {
+                $val = $row['nvalid'];
+            }   
+            $sql .= ", $row[name]=:$row[name]";
+            $params[$row['name']] = $val;
+        }
+        $objs['status']='NONE';
+        if ($sql!=''){
+            $objs['status']='OK';
+            $sql = substr($sql,1);
+            $id = $this->id;
+            $sql = "UPDATE \"MDProperties\" SET$sql WHERE id=:id";
+            $params['id']=$id;
+            $res = DataManager::dm_query($sql,$params);
+            if(!$res) {
+                return array('status'=>'ERROR', 'msg'=>$sql);
+            }
+        }
+        return array('status'=>'OK', 'id'=>$this->id);
+    }
 }

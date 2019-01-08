@@ -712,61 +712,6 @@ class Entity extends Sheet implements I_Sheet, I_Item
         $res = DataManager::dm_query($sql,array('id'=>$this->id, 'propid'=>$propid));
         return $res->fetchAll(PDO::FETCH_ASSOC);
     }
-    public function before_save($context,$data) 
-    {
-        $sql = '';
-        $objs = array();
-        if (!count($this->data)) {
-            $this->load_data($context);
-        }
-        foreach ($this->plist as $prop)
-        {    
-            $propid = $prop['id'];
-            if ($propid == 'id') {
-                continue;
-            }    
-            if (!array_key_exists($propid, $data)) {        
-                continue;
-            }
-            $nval = $data[$propid]['name'];
-            $nvalid = $data[$propid]['id'];
-            $pvalid = '';
-            $pval = '';
-            if (array_key_exists($propid, $this->data)) {        
-                $pval = $this->data[$propid]['name'];
-                $pvalid = $this->data[$propid]['id'];
-            }
-            if ($prop['name_type'] == 'id') {
-                if ($pvalid == $nvalid) {
-                    continue;
-                }    
-                if (($pvalid == DCS_EMPTY_ENTITY)&&($nvalid=='')) {
-                    continue;
-                }
-            } elseif ($prop['name_type'] == 'date') {
-                if (substr($pval,0,19) == substr($nval,0,19)) 
-                {
-                    continue;
-                }    
-            } 
-            elseif ($prop['name_type']=='bool') 
-            {
-                if ((bool)$pval==(bool)$nval) 
-                {
-                    continue;
-                }   
-            } 
-            else 
-            {
-                if ($pval==$nval) 
-                {
-                    continue;
-                }    
-            }
-            $objs[]=array('id'=>$propid, 'name'=>$prop['name'],'pvalid'=>$pvalid, 'pval'=>$pval, 'nvalid'=>$nvalid, 'nval'=>$nval);
-        }       
-	return $objs;
-    }
     function before_delete() 
     {
         $nval="удалить";

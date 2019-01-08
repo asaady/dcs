@@ -53,6 +53,9 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
         $sql = "SELECT ct.id, ct.name, ct.synonym, ct.mdid";
         $join = " FROM \"CTable\" AS ct";
         $params = array();
+        if (!count($this->plist)) {
+            $this->getplist($context);
+        }
         foreach ($this->plist as $row)
         {
             if ($row['field'] == 0) {
@@ -100,9 +103,8 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
     public function before_save($context,$data) 
     {
         $this->load_data($context);
-        $plist = $this->getProperties(true);
         $objs = array();
-        foreach($plist as $row)
+        foreach($this->plist as $row)
         {    
             $key = $row['name'];
             $id = $row['id'];
@@ -193,8 +195,7 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
         $row = $res ->fetch(PDO::FETCH_ASSOC);
         $id = $row['id'];
         $ares = array('status'=>'OK', 'id'=>$id);
-        $plist = $this->properties;
-        foreach ($plist as $f)
+        foreach ($this->plist as $f)
         {   
             if (!array_key_exists($f['id'],$data)) continue;
             $dataname= $data[$f['id']];
@@ -240,18 +241,17 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
     }        
     public function update_properties($context,$data,$n=0)
     {
+        $objs = array();
+        $objs['status']='OK';
+        $objs['objs']=array();
+        $objs['id']=$this->id;
         if ($this->head->getname()=='Users')
         {
             $user = new User;
             $ares = $user->update($data);
-            $objs['status']='OK';
-            $objs['id']=$this->id;
             return $objs;
         }    
         $this->load_data($context);
-        $plist = $this->getProperties(true);
-        $objs = array();
-        $objs['id'] = $this->id;
         $id = 'name';
         $sql = '';
         $params = array();
@@ -289,7 +289,7 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
                 return $objs;
             }
         }    
-        foreach($plist as $row)
+        foreach($this->plist as $row)
         {    
             $key = $row['name'];
             $id = $row['id'];
@@ -368,8 +368,6 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
                     $objs['msg']=$sql;
                     return $objs;
                 }
-                $objs['status']='OK';
-                $objs['id']=$this->id;
             }    
         }
 

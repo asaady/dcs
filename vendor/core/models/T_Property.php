@@ -53,10 +53,16 @@ trait T_Property {
 //        }
 //        return $objs;
 //    }
-    public function getProperty($propid) 
+    public function get_select_properties($strwhere)
     {
-        $sql = $this->txtsql_property("propid");
-	$res = DataManager::dm_query($sql,array('propid'=>$propid));
-        return $res->fetch(PDO::FETCH_ASSOC);
-    }    
+        return NULL;    
+    }        
+    public function txtsql_property($parname)
+    {
+        return NULL;    
+    }        
+    public function txtsql_properties($parname)
+    {
+        return NULL;
+    }        
 }

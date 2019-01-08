@@ -20,13 +20,13 @@ class Controller_Ajax extends Controller
     function __construct($context)
     {
         if ($context['COMMAND'] == 'FIND') {
-            $id = $context['DATA']['param_id']['id'];
+            $id = $context['DATA']['dcs_param_id']['id'];
             $get_model = function($modelname) use ($id) { return new $modelname($id); };
         } elseif ($context['COMMAND'] == 'FIELD_SAVE') {
-            $id = $context['DATA']['curid']['id'];
+            $id = $context['DATA']['dcs_curid']['id'];
             $get_model = function($modelname) use ($id) { return new $modelname($id); };
         } elseif ($context['COMMAND'] == 'LIST') {
-            $id = $context['DATA']['param_val']['id'];
+            $id = $context['DATA']['dcs_param_val']['id'];
             $get_model = function($modelname) use ($id) { 
                 $ent = new $modelname($id); 
                 return $ent->get_head();
@@ -44,6 +44,11 @@ class Controller_Ajax extends Controller
         $cont = Route::getContentByID($id,$prefix);
         if ($cont) {
             $modelname = "\\Dcs\\Vendor\\Core\\Models\\".$cont['classname'];
+            if ($context['COMMAND'] == 'FIND') {
+                if ($cont['classname'] == 'Mdcollection') {
+                    $modelname = "\\Dcs\\Vendor\\Core\\Models\\CollectionSet";
+                }
+            }
         } else {
             $newobj = DataManager::getNewObjectById($id);
             if (!$newobj) {
@@ -69,11 +74,21 @@ class Controller_Ajax extends Controller
     }
     function action_find($context)
     {
-        echo json_encode($this->model->getItemsByName($context['DATA']['param_val']['name']));
+        echo json_encode($this->model->getItemsByName($context['DATA']['dcs_param_val']['name']));
     }
     function action_before_save($context)
     {
         echo json_encode($this->model->before_save($context,$context['DATA']));
+    }
+    function action_before_delete($context)
+    {
+        $ent = $this->model->item($context['DATA']['dcs_curid']['id']);
+        echo json_encode($ent->before_delete($context,$context['DATA']));
+    }
+    function action_delete($context)
+    {
+        $ent = $this->model->item($context['DATA']['dcs_curid']['id']);
+        echo json_encode($ent->delete($context,$context['DATA']));
     }
     function action_save($context)
     {
@@ -92,7 +107,7 @@ class Controller_Ajax extends Controller
     }
     function action_after_choice($context)
     {
-        echo json_encode(array('msg'=>'OK'));
+        echo json_encode($this->model->after_choice($context,$context['DATA']));
     }
     function action_list($context)
     {
@@ -105,7 +120,7 @@ class Controller_Ajax extends Controller
     }
     function action_history($context)
     {
-        $mdprop = new Mdproperty($context['DATA']['PROPID']['id']);
-        echo json_encode($mdprop->get_history_data($context['ITEMID'],$context['MODE']));
+        $mdprop = $this->model->property($context['DATA']['dcs_propid']['id'],$this->model->head());
+        echo json_encode($mdprop->get_history_data($context['ITEMID'],$context));
     }
 }    

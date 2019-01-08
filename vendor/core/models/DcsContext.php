@@ -15,6 +15,7 @@ class DcsContext
                             array('name' => "ITEMID", 'validate'=>TRUE),
                             array('name' => "CURID", 'validate'=>TRUE),
                             array('name' => "ACTION", 'validate'=>FALSE),
+                            array('name' => "PROPID", 'validate'=>TRUE),
                         );
     
     function __construct() {
@@ -27,6 +28,7 @@ class DcsContext
         $this->context['ACTION'] = 'VIEW';
         $this->context['ITEMID'] = '';
         $this->context['CURID'] = '';
+        $this->context['PROPID'] = '';
         $this->context['SETID'] = '';
         $this->context['COMMAND'] = 'LOAD';
         $this->context['PAGE'] = 1;
@@ -111,11 +113,25 @@ class DcsContext
         $this->setitems($data, $curval, $validation, $indx, $indd);
         $this->get_context_data();
         if (($this->context['PREFIX'] !== 'AUTH')&&($this->context['PREFIX'] !== 'ERROR')) {
-            if (isset($this->context['DATA']['action'])) {
+            if (isset($this->context['DATA']['dcs_action'])) {
                 //action from get-parameters is valid
-                $action = $this->context['DATA']['action']['name'];
+                $action = $this->context['DATA']['dcs_action']['name'];
                 if ($action !== '') {
                     $this->setattr('ACTION', strtoupper($action));
+                }
+            }
+            if (isset($this->context['DATA']['dcs_setid'])) {
+                //setid from get-parameters is valid
+                $setid = $this->context['DATA']['dcs_setid']['name'];
+                if ($setid !== '') {
+                    $this->setattr('SETID', $setid);
+                }
+            }
+            if (isset($this->context['DATA']['dcs_propid'])) {
+                //setid from get-parameters is valid
+                $propid = $this->context['DATA']['dcs_propid']['name'];
+                if ($propid !== '') {
+                    $this->setattr('PROPID', $propid);
                 }
             }
         }    
@@ -138,7 +154,7 @@ class DcsContext
         if (strpos($key,'name_') === FALSE) {
             $pval = filter_input($src, $key, FILTER_SANITIZE_SPECIAL_CHARS);
             $this->context['DATA'][strtolower($key)] = array('id' => $pval, 'name' => $pval);
-            if (strtolower($key) === 'command') {
+            if (strtolower($key) === 'dcs_command') {
                 $this->setattr('COMMAND', strtoupper($pval));
             }
         }

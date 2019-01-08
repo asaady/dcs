@@ -8,4 +8,18 @@ trait T_Set {
     {
         return NULL;
     }
+    public function getNameFromData($context,$data='')
+    {
+        if (!$data) {
+            return array('name' => $this->name, 'synonym' => $this->synonym);
+        } else {
+            return array('name' => $data['name']['name'],
+                         'synonym' => $data['synonym']['name']);
+        }    
+    }        
+    public function getItemsProp($context) 
+    {
+        return $this->getProperties(TRUE,'toset');
+    }
+
 }

@@ -1,6 +1,6 @@
 function getprefix()
 {
-    var prefix = $("input[name='prefix']").val();    
+    var prefix = $("input[name='dcs_prefix']").val();    
     if (prefix !== 'CONFIG') {
         return "";
     } else {
@@ -51,8 +51,8 @@ function loadset($elist,sdata,pset)
 }
 function onLoadValID(data)
 {
-    var action = $("input[name='action']").val();
-    var setid = $("input[name='setid']").val();
+    var action = $("input[name='dcs_action']").val();
+    var setid = $("input[name='dcs_setid']").val();
     var pset;
     var sdata;
     if ('LDATA' in data) {    
@@ -90,10 +90,10 @@ function onLoadValID(data)
 }
 $(document).ready(function() 
 { 
-    var itemid = $("input[name='itemid']").val(); 
-    var mode = $("input[name='mode']").val();
+    var itemid = $("input[name='dcs_itemid']").val(); 
+    var mode = $("input[name='dcs_mode']").val();
     if ((mode !== 'AUTH')&&(itemid !== '')) {
-        $("input[name='command']").val('load'); 
+        $("input[name='dcs_command']").val('load'); 
         var $data = $('.ajax').serializeArray();
         $.ajax({
           url: getprefix()+'/ajax/'+itemid,

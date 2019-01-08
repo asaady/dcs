@@ -60,7 +60,7 @@ class Default_Template extends Template implements I_Template
                 }
                 if (\Dcs\Vendor\Core\Models\User::isAdmin()&&($context['PREFIX'] !== 'CONFIG')) {    
                     $result .= "<li>\n"
-                             . "<a href=\"/config\">\n"
+                             . "<a href=\"/CONFIG/\">\n"
                              . "<i class=\"material-icons\">settings</i>\n"
                              . "</a>\n"
                              . "</li>\n";
@@ -98,43 +98,38 @@ class Default_Template extends Template implements I_Template
     public function get_body_context($context, $data)
     {
         $result = "<div class=\"dcs-context\">\n"
-                . "<input class=\"form-control\" name=\"prefix\" type=\"hidden\""
+                . "<input class=\"form-control\" name=\"dcs_prefix\" type=\"hidden\""
                 . " value=\"".$context['PREFIX']."\">\n"
-                . "<input class=\"form-control\" name=\"mode\" type=\"hidden\""
+                . "<input class=\"form-control\" name=\"dcs_mode\" type=\"hidden\""
                 . " value=\"".$context['MODE']."\">\n"
-                . "<input class=\"form-control\" name=\"itemid\" type=\"hidden\""
+                . "<input class=\"form-control\" name=\"dcs_itemid\" type=\"hidden\""
                 . " value=\"".$context['ITEMID']."\">\n"
-                . "<input class=\"form-control ajax\" name=\"setid\" type=\"hidden\""
+                . "<input class=\"form-control ajax\" name=\"dcs_setid\" type=\"hidden\""
                 . " value=\"".$context['SETID']."\">\n"
-                . "<input class=\"form-control ajax\" name=\"curid\" type=\"hidden\""
+                . "<input class=\"form-control ajax\" name=\"dcs_curid\" type=\"hidden\""
                 . " value=\"".$context['CURID']."\">\n"
-                . "<input class=\"form-control ajax\" name=\"action\" type=\"hidden\""
+                . "<input class=\"form-control ajax\" name=\"dcs_propid\" type=\"hidden\""
+                . " value=\"".$context['PROPID']."\">\n"
+                . "<input class=\"form-control ajax\" name=\"dcs_action\" type=\"hidden\""
                 . " value=\"".$context['ACTION']."\">\n"
-                . "<input class=\"form-control ajax\" name=\"version\" type=\"hidden\""
+                . "<input class=\"form-control ajax\" name=\"dcs_version\" type=\"hidden\""
                 . " value=\"".$data['version']."\">\n"
-                . "<input class=\"form-control ajax\" name=\"page\" type=\"hidden\""
+                . "<input class=\"form-control ajax\" name=\"dcs_page\" type=\"hidden\""
                 . " value=\"".$context['PAGE']."\">\n"
-                . "<input class=\"form-control ajax\" name=\"command\" type=\"hidden\""
+                . "<input class=\"form-control ajax\" name=\"dcs_command\" type=\"hidden\""
                 . " value=\"".$context['COMMAND']."\">\n"
-                . "<input class=\"form-control ajax\" name=\"param_id\" type=\"hidden\""
+                . "<input class=\"form-control ajax\" name=\"dcs_param_id\" type=\"hidden\""
                 . " value=\"\">\n"
-                . "<input class=\"form-control ajax\" name=\"param_val\" type=\"hidden\""
+                . "<input class=\"form-control ajax\" name=\"dcs_param_val\" type=\"hidden\""
                 . " value=\"\">\n"
-                . "<input class=\"form-control ajax\" name=\"param_type\" type=\"hidden\""
+                . "<input class=\"form-control ajax\" name=\"dcs_param_type\" type=\"hidden\""
                 . " value=\"\">\n";
         $docid = '';
-        if (array_key_exists('docid', $context['DATA']) !== FALSE) {
-            $docid = $context['DATA']['docid']['id'];
+        if (array_key_exists('dcs_docid', $context['DATA']) !== FALSE) {
+            $docid = $context['DATA']['dcs_docid']['id'];
         }   
-        $result .= "<input class=\"form-control ajax\" name=\"docid\""
+        $result .= "<input class=\"form-control ajax\" name=\"dcs_docid\""
                 . " type=\"hidden\" value=\"$docid\">\n";
-        $propid = '';
-        if (array_key_exists('propid', $context['DATA']) !== FALSE) {
-            $propid = $context['DATA']['propid']['id'];
-        }   
-        $result .= "<input class=\"form-control ajax\" name=\"propid\""
-                . " type=\"hidden\" value=\"$propid\">\n"
-                . "</div>\n"; 
         return $result;
     }
     public function get_body_ivalue()
@@ -365,14 +360,14 @@ class Default_Template extends Template implements I_Template
                 $dop = " class=\"active\"";
                 $dopfade = " in active";
                 $propid = '';
-                if (isset($context['DATA']['propid'])) {
-                    if ($context['DATA']['propid']['id'] !== '') {
+                if (isset($context['DATA']['dcs_setid'])) {
+                    if ($context['DATA']['dcs_setid']['id'] !== '') {
                         $dop = '';
                         $dopfade = '';
-                        $propid = $context['DATA']['propid']['id'];
+                        $propid = $context['DATA']['dcs_setid']['id'];
                     }    
                 }    
-                $result .= "<li$dop><a href=\"#entityhead\">Заголовок</a></li>\n";
+                $result .= "<li$dop><a data-toggle=\"tab\" href=\"#entityhead\">Заголовок</a></li>\n";
                 if ($context['ACTION'] !== 'CREATE')
                 {    
                     for($i=0, $props = $data['PLIST'], $size = count($props); $i<$size; $i++)
@@ -385,7 +380,7 @@ class Default_Template extends Template implements I_Template
                         if (($propid !== '')&&($propid == $t['id'])) {
                             $dop=" class=\"active\"";
                         }    
-                        $result .= "<li$dop><a href=\"#$t[id]\">$t[synonym]</a></li>\n";
+                        $result .= "<li$dop><a data-toggle=\"tab\" href=\"#$t[id]\">$t[synonym]</a></li>\n";
                     }
                 }    
             $result .= "</ul>\n"
@@ -435,7 +430,7 @@ class Default_Template extends Template implements I_Template
                 }
             }
             $result .= "</form>\n";
-        }    
+        }  
         if ($show_set||$show_tabheader) {
             if ($show_set) {
                 $result .= "<div id=\"entityset\">\n";
@@ -477,7 +472,7 @@ class Default_Template extends Template implements I_Template
             if ($cls == '') {
                 $cls = 'active';
             }    
-            $result .= "<th class=\"$cls\" id=\"$key\">$val[synonym]</th>\n";
+            $result .= "<th class=\"$cls\" id=\"$key\">".$val['synonym']."</th>\n";
         }
         $result .= "</tr></thead>\n"
                  . "<tbody id=\"$tbodyid\" class=\"entitylist\"></tbody>\n"
@@ -494,7 +489,7 @@ class Default_Template extends Template implements I_Template
             if ($cls == 'hidden') {
                 continue;
             }
-            $result .= "<th class=\"dcs-tablehead-print\" id=\"$key\">$val[synonym]</th>\n";
+            $result .= "<th class=\"dcs-tablehead-print\" id=\"$key\">".$val['synonym']['name']."</th>\n";
         }
         $result .= "</tr>\n";
         $result .= "</thead>\n";

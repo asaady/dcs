@@ -5,19 +5,29 @@ use PDO;
 use DateTime;
 use Dcs\Vendor\Core\Models\DcsException;
 
-class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
+class EntitySet extends Sheet implements I_Sheet, I_Set
 {
     use T_Sheet;
     use T_Set;
     use T_Entity;
-    use T_Property;
-    use T_EProperty;
     
+    public function loadProperties()
+    {
+        $sql = $this->txtsql_properties("mdid");
+        $properties = array();
+        $params = array('mdid'=> $this->mdid);
+        $res = DataManager::dm_query($sql,$params);
+        while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
+            $properties[$row['id']] = $row;
+        }    
+        $this->properties = $properties;
+        return $properties;
+    }        
     public static function txtsql_access() 
     {
         return self::etxtsql_access('RoleAccess', 'mdid');
     }
-    public static function txtsql_forDetails() 
+    public function txtsql_forDetails() 
     {
         return "SELECT mdt.id, mdt.name, mdt.synonym, "
                     . "mdt.id as mdid, mdt.name as mdname, mdt.synonym as mdsynonym, "
@@ -32,17 +42,21 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
     {
         return new MdentitySet($this->mditem);
     }
-    public function item() 
+    public function item($id) 
     {
-        return new Entity($this->id);
+        return new Entity($id,$this);
+    }
+    public function getprop_classname()
+    {
+        return 'EProperty';
     }
     public function item_classname()
     {
         return 'Entity';
     }        
-    public function load_data($context)
+    public function load_data($context,$data='')
     {
-        return NULL;
+        return array();
     }    
     public static function add_filter_val($ent_obj,$mdid,&$ent_filter)
     {
@@ -219,11 +233,11 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
         $entities = array();
         $ent_filter = array();
         if (count($filter) > 0) {
-            $propid = $filter['param_id']['id']; //это уид реквизита отбора для выборки
+            $propid = $filter['dcs_param_id']['id']; //это уид реквизита отбора для выборки
             $docid = (array_key_exists('docid', $filter) ? $filter['docid']['id'] : '');  
             $curid = (array_key_exists('curid', $filter) ? $filter['curid']['id'] : '');  
             if ($propid != '') {
-                $ent_filter[$propid] = new Filter($this->properties[$propid],$filter['param_val']['id']);
+                $ent_filter[$propid] = new Filter($this->properties[$propid],$filter['dcs_param_val']['id']);
             }
         }    
         if (!User::isAdmin())
@@ -274,7 +288,7 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
         $artemptable[] = $tt_et;
         $plist = $this->getProperties(TRUE,'toset');
         $params = array();
-        $sql = $this->sqltext_entitylist($plist,$ent_filter,$arr_prop,$access_prop,$action,$params);
+        $sql = $this->sqltext_entitylist($this->properties,$ent_filter,$arr_prop,$access_prop,$action,$params);
         if ($sql=='')
         {
             return $objs;
@@ -326,6 +340,11 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
 	DataManager::droptemptable($artemptable);
 	return $objs;
     }
+    public function getItemsProp($context) 
+    {
+        return $this->getProperties(TRUE,'toset');
+    }        
+
     public function getItemsByName($name)
     {
         $mdid = $this->id;
@@ -561,13 +580,13 @@ class EntitySet extends Sheet implements I_Sheet, I_Set, I_Property
         $sql .= " LIMIT $rec_limit";
         return DataManager::createtemptable($sql,$ttname,$params);
     }    
-    public function create_object($id,$mdid,$name,$synonym='')
+    public function create_object($name,$synonym='')
     {
         return NULL;
     }        
-    public function getNameFromData($data)
+    public function getplist($context) 
     {
-        return $this->synonym;
+        return array();
     }        
 }
 

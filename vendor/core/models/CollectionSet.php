@@ -10,10 +10,8 @@ class CollectionSet extends Sheet implements I_Sheet, I_Set, I_Property
     use T_Sheet;
     use T_Set;
     use T_Collection;
-    use T_Property;
-    use T_CProperty;
     
-    public static function txtsql_forDetails() 
+    public function txtsql_forDetails() 
     {
         return "SELECT mdt.id, mdt.name, mdt.synonym, "
                     . "NULL as mdid, '' as mdname, '' as mdsynonym, "
@@ -28,19 +26,23 @@ class CollectionSet extends Sheet implements I_Sheet, I_Set, I_Property
     {
         return new MdentitySet($this->mditem);
     }
-    public function item() 
+    public function item($id) 
     {
-        return new CollectionItem($this->id);
+        return new CollectionItem($id,$this);
+    }
+    public function getprop_classname()
+    {
+        return 'CProperty';
     }
     public function item_classname()
     {
         return 'CollectionItem';
     }        
-    public function load_data($context)
+    public function load_data($context,$data='')
     {
         return NULL;
     }    
-    public function create_object($id,$mdid,$name,$synonym='')
+    public function create_object($name,$synonym='')
     {
         return NULL;
     }        
@@ -67,7 +69,7 @@ class CollectionSet extends Sheet implements I_Sheet, I_Set, I_Property
         $strwhere = '';
         $col_filter = array();
         if (count($filter)>0) {
-            $propid = $filter['param_id']['id'];
+            $propid = $filter['dcs_param_id']['id'];
             if ($propid != '') {
                 $arprop = $this->properties[$propid];
                 $ftype = $arprop['name_type'];
@@ -75,7 +77,7 @@ class CollectionSet extends Sheet implements I_Sheet, I_Set, I_Property
                     return array();
                 }
                 $dbtable = "CPropValue_$ftype";
-                $col_filter[$propid] = new Filter($this->properties[$propid],$filter['param_val']['id']);
+                $col_filter[$propid] = new Filter($this->properties[$propid],$filter['dcs_param_val']['id']);
             }
         }    
         $params = array();
@@ -117,6 +119,10 @@ class CollectionSet extends Sheet implements I_Sheet, I_Set, I_Property
         $page = $context['PAGE'];
         $filter = $context['DATA'];
         $mdid = $this->id;
+        if (!isset($this->properties)) {
+            $this->properties = $this->loadProperties();
+        }
+        $plist = $this->properties;
     	$objs = array();
         $filter_id = '';
         $filter_val =  '';
@@ -124,13 +130,13 @@ class CollectionSet extends Sheet implements I_Sheet, I_Set, I_Property
             if (!User::isAdmin())
             {
                 //это уид реквизита user в таблице user_settings
-                $filter['param_id'] = array('id' => '94f6b075-1536-4d16-a548-bc8128791127','name'=>'');
-                $filter['param_val'] = array('id' => $_SESSION['user_id'],'name' => User::getUserName($_SESSION['user_id']));
+                $filter['dcs_param_id'] = array('id' => '94f6b075-1536-4d16-a548-bc8128791127','name'=>'');
+                $filter['dcs_param_val'] = array('id' => $_SESSION['user_id'],'name' => User::getUserName($_SESSION['user_id']));
             }    
         } else {
             if (count($filter) > 0) {
-                $filter_id = $filter['param_id']['id'];
-                $filter_val = $filter['param_val']['id'];
+                $filter_id = $filter['dcs_param_id']['id'];
+                $filter_val = $filter['dcs_param_val']['id'];
             }
         }   
         $entities = $this->findCollByProp($filter);
@@ -140,7 +146,6 @@ class CollectionSet extends Sheet implements I_Sheet, I_Set, I_Property
         }
 	$offset=(int)($page-1)*$limit;
 	$artemptable = $this->createtemptable_all($entities);
-        $plist = $this->properties;
         $str0_req='SELECT et.id, et.name, et.synonym';
         $str_req='';
         $str_p = '';
@@ -190,7 +195,7 @@ class CollectionSet extends Sheet implements I_Sheet, I_Set, I_Property
         $strwhere='';
         if ($filtername!='')
         {
-            $col_filter = new Filter($this->properties[$filter['param_id']['id']],$filter['param_val']['id']);
+            $col_filter = new Filter($this->properties[$filter['dcs_param_id']['id']],$filter['dcs_param_val']['id']);
             $strwhere = DataManager::getstrwhere($col_filter,$filtertype,$filtername,$params);
         }
         $str0_req .=" FROM tt_et as et";
@@ -249,9 +254,13 @@ class CollectionSet extends Sheet implements I_Sheet, I_Set, I_Property
         }  
         return $rows;
     }
-    public function getNameFromData($data)
+    public function getplist($context) 
     {
-        return $this->synonym;
+        return array();
+    }        
+    public function loadProperties()
+    {
+        return $this->getCProperties();
     }        
 }
 

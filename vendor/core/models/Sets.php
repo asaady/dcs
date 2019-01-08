@@ -7,12 +7,9 @@ use PDO;
 use DateTime;
 use Dcs\Vendor\Core\Models\DcsException;
 
-class Sets extends Entity implements I_Sheet, I_Property 
+class Sets extends Entity implements I_Sheet
 {
     use T_Sheet;
-    use T_Entity;
-    use T_Property;
-    use T_EProperty;
     
     protected $docid;
     protected $propid;
@@ -52,17 +49,11 @@ class Sets extends Entity implements I_Sheet, I_Property
         }
         $this->docid = $param[0]['entityid'];
         $this->propid = $param[0]['propid'];
-        $_head = new Entity($this->docid);
-        $context = array();
-        $context['ITEMID'] = $this->docid;
-        $context['ACTION'] = 'VIEW';
-        $context['PREFIX'] = 'ENTERPRISE';
-        $_head->load_data($context);
-        return $_head;
+        return new Entity($this->docid);
     }
-    function item() 
+    function item($id,$hd='') 
     {
-        return new Item($this->id);
+        return new Item($id,$hd);
     }
     public function item_classname()
     {
@@ -75,6 +66,32 @@ class Sets extends Entity implements I_Sheet, I_Property
     function __toString() 
     {
       return $this->mdsynonym;
+    }
+    public function txtsql_getproperties()
+    {
+        return "SELECT mp.id, mp.propid, pr.name as name_propid, mp.name, mp.synonym, 
+            pst.value as type, pt.name as name_type, mp.length, mp.prec, mp.mdid, 
+            mp.rank, mp.ranktostring, mp.ranktoset, mp.isedate, mp.isenumber, 
+            mp.isdepend, pmd.value as valmdid, valmd.name AS name_valmdid, 
+            valmd.synonym AS valmdsynonym, valmd.mditem as valmditem, 
+            mi.name as valmdtypename, 1 as field,'active' as class FROM \"MDProperties\" AS mp
+		  LEFT JOIN \"CTable\" as pr
+		    LEFT JOIN \"CPropValue_mdid\" as pmd
+        		INNER JOIN \"MDTable\" as valmd
+                            INNER JOIN \"CTable\" as mi
+                            ON valmd.mditem = mi.id
+                        ON pmd.value = valmd.id
+		    ON pr.id = pmd.id
+		    LEFT JOIN \"CPropValue_cid\" as pst
+                        INNER JOIN \"CProperties\" as cprs
+                        ON pst.pid = cprs.id
+                        AND cprs.name='type'
+                        INNER JOIN \"CTable\" as pt
+                        ON pst.value = pt.id
+		    ON pr.id = pst.id
+		  ON mp.propid = pr.id
+		WHERE mp.mdid = :mdid
+		ORDER BY rank";
     }
     public function loadProperties()
     {
@@ -199,7 +216,6 @@ class Sets extends Entity implements I_Sheet, I_Property
         $res = DataManager::dm_query($sql, $params);
         $sobjs=array();
         $sobjs['rows']=$res->fetchAll(PDO::FETCH_ASSOC);
-        
         $sql = "SELECT * FROM tt_lv"; 
 	$res = DataManager::dm_query($sql);
         $activity_id = array_search('activity', array_column($pset,'name','id'));
@@ -266,7 +282,6 @@ class Sets extends Entity implements I_Sheet, I_Property
         if (count($arr_e)) {
             $this->fill_entsetname($objs,$arr_e);
         }    
-        
 	DataManager::droptemptable($artemptable);
 	
 	return $objs;

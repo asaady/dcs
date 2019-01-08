@@ -8,11 +8,6 @@ abstract class Model implements I_Model
     protected $name;
     protected $synonym;
     protected $version;
-    protected $properties;
-    
-    function __construct()
-    {
-    }
     function getid() 
     {
       return $this->id;
@@ -42,10 +37,10 @@ abstract class Model implements I_Model
     }
     function setid($val) 
     {
-      if ($this->id=='') 
-	$this->id=$val;
+      if ($this->id == '') 
+	$this->id = $val;
       else
-	throw new Exception('You may not alter the value of the ID field!');
+	throw new DcsException('You may not alter the value of the ID field!');
     }
     function setname($name) 
     {
@@ -63,43 +58,11 @@ abstract class Model implements I_Model
 	} 
         else 
         {
-            throw new Exception("Неверное имя свойства \"$propertyName\"!");
+            throw new DcsException("Неверное имя свойства \"$propertyName\"!");
 	}
     }
-    public function get_properties() 
+    function __toString() 
     {
-	return $this->properties;
-    }
-    public function getProperty($id) 
-    {
-        $res = array();
-        if ($this->isExistTheProp($id))
-        {
-            $res = $this->properties[$id];
-        }
-        return $res;
-    }
-    public function isExistTheProp($id) 
-    {
-        return isset($this->properties[$id]);
-    }
-    public function setproperty($propid,$val)
-    {
-        $this->properties[$propid] = $val;
-    }
-    public function getplist() 
-    {
-        return array(
-            'id'=>array('id'=>'id','name'=>'id','synonym'=>'ID','type'=>'str'),
-            'name'=>array('id'=>'name','name'=>'name','synonym'=>'NAME','type'=>'str'),
-            'synonym'=>array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM','type'=>'str'),
-            'rank'=>array('id'=>'rank','name'=>'rank','synonym'=>'RANK','type'=>'int'),
-            'type'=>array('id'=>'type','name'=>'type','synonym'=>'TYPE','type'=>'str'),
-            'name_type'=>array('id'=>'name_type','name'=>'name_type','synonym'=>'NAME_TYPE','type'=>'str'),
-            'class'=>array('id'=>'class','name'=>'class','synonym'=>'CLASS','type'=>'str'),
-            'valmdid'=>array('id'=>'valmdid','name'=>'valmdid','synonym'=>'VALMDID','type'=>'str'),
-            'valmdtypename'=>array('id'=>'valmdtypename','name'=>'valmdtypename','synonym'=>'VALMDTYPENAME','type'=>'str'),
-            'field'=>array('id'=>'field','name'=>'field','synonym'=>'FIELD','type'=>'int')
-            );        
+      return $this->synonym;
     }
 }

@@ -9,8 +9,6 @@ class Cproperty extends Sheet implements I_Sheet, I_Property
 {
     use T_Sheet;
     use T_Item;
-    use T_Mdproperty;
-    use T_CProperty;
     public function txtsql_forDetails() 
     {
         return "SELECT mp.id, mp.mdid, mp.name, mp.synonym, "
@@ -27,10 +25,14 @@ class Cproperty extends Sheet implements I_Sheet, I_Property
     {
         return new Mdentity($this->mdid);
     }
-    public function item()
+    public function item($id='')
     {
         return NULL;
     }        
+    public function getprop_classname()
+    {
+        return NULL;
+    }
     public function item_classname()
     {
         return NULL;
@@ -39,9 +41,17 @@ class Cproperty extends Sheet implements I_Sheet, I_Property
     {
         return NULL;
     }        
-    public function getNameFromData($data)
+    public function getNameFromData($context,$data='')
     {
         return $this->synonym;
+    }        
+    public function txtsql_property($parname)
+    {
+        return NULL;
+    }        
+    public function txtsql_properties($parname)
+    {
+        return NULL;
     }        
 }
 

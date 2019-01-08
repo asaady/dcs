@@ -19,24 +19,4 @@ trait T_MdSet {
     {
         return NULL;
     }
-    public function getItems($context) 
-    {
-        $sql = $this->txtsql_getproperties();
-        if ($sql === '')
-        {
-            return NULL;
-        }    
-        $params = array('mdid'=> $this->mdid);
-        $res = DataManager::dm_query($sql,$params);
-        $plist = $this->getProperties(TRUE,'toset');
-        $objs = array();
-        while($row = $res->fetch(PDO::FETCH_ASSOC)) {
-            $objs[$row['id']]= array();
-            foreach($plist as $rid => $row_plist) {
-                $r_name = $row[$rid];
-                $objs[$row['id']][$rid ] = array('id'=>$rid,'name'=>$r_name,'class'=>$row_plist['class']);            
-            }
-        }
-        return $objs;
-    }
 }

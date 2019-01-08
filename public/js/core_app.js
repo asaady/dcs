@@ -6,11 +6,12 @@ function get_input_fieldid($curinp)
     }
     return '';
 }
-function set_input_fieldid($curinp, value)
+function set_input_fieldid($curinp, curvalue)
 {
     var curname = $curinp.attr('name');
+    var $curdiv = $curinp.parent('div');
     if ((curname.indexOf('name_') + 1) > 0) {
-        $('div.form-group').find('input#'+curname.substring(5)).val(value);
+        $curdiv.find('input#'+curname.substring(5)).val(curvalue);
     }
 }
 function actionlist(data)
@@ -60,17 +61,19 @@ function onGetMdData(data)
 
 function onGetData(data)
 {
-    $.each(data.items, function(key, val) {
+    $.each(data, function(key, val) {
         if (val.id) {    
             $("input#"+key).val(val.id);
             $("input#name_"+key).val(val.name);
+        } else {
+            $("input#"+key).val(val.name);
         }
     });    
 }
     
 function getprefix()
 {
-    var prefix = $("input[name='prefix']").val();    
+    var prefix = $("input[name='dcs_prefix']").val();    
     return "/"+prefix;
 }
 function onloadlist(data)
@@ -133,8 +136,8 @@ function loadset($elist,sdata,pset)
 }
 function onLoadValID(data)
 {
-    var action = $("input[name='action']").val();
-    var setid = $("input[name='setid']").val();
+    var action = $("input[name='dcs_action']").val();
+    var setid = $("input[name='dcs_setid']").val();
     var arr_type = ['id','cid','mdid','propid'];
     var pset;
     var sdata;
@@ -206,12 +209,12 @@ $('body').keyup(function(eventObject) {
 });
 $('input.form-control').keyup(function(eventObject) { 
     
-    var action = $("input[name='action']").val();
+    var action = $("input[name='dcs_action']").val();
     if (action === 'VIEW')
     {
         return;
     }
-    var itemid = $("input[name='itemid']").val();
+    var itemid = $("input[name='dcs_itemid']").val();
     var itype = $(this).attr("vt");
     var name = $(this).val();
     var it = $(this).attr("it");
@@ -236,13 +239,13 @@ $('input.form-control').keyup(function(eventObject) {
         if (arr_type.indexOf(itype)>=0) {
             $("#"+curid+"~.types_list").slideUp('fast'); 
             if (name.length>1) {
-                $("input[name='command']").val('find');
-                $("input[name='curid']").val(curid);
-                $("input[name='param_id']").val(it);
-                $("input[name='param_val']").val(name);
-                $("input[name='param_type']").val(itype);
+                $("input[name='dcs_command']").val('find');
+                $("input[name='dcs_curid']").val(curid);
+                $("input[name='dcs_param_id']").val(it);
+                $("input[name='dcs_param_val']").val(name);
+                $("input[name='dcs_param_type']").val(itype);
                 if (itype == 'propid') {    
-                    $("input[name='command']").val('prop_find');
+                    $("input[name='dcs_command']").val('prop_find');
                 }
                 $data = $('.ajax').serializeArray();
                 $.getJSON(
@@ -264,7 +267,7 @@ $('input#type').dblclick(function() {
 }); 
 $('input.form-control[it=bool]').dblclick(function(e) { 
     e.preventDefault();
-    action = $("input[name='action']").val();
+    action = $("input[name='dcs_action']").val();
     if ((action === 'EDIT')||(action === 'CREATE'))
     {    
         var curid = this.id;
@@ -279,10 +282,10 @@ function tr_dblclick($e)
         return;
     } 
     var dop = '';
-    var setid = $("input[name='setid']").val();
-    var docid = $("input[name='itemid']").val();
+    var setid = $("input[name='dcs_setid']").val();
+    var docid = $("input[name='dcs_itemid']").val();
     if (setid !== '') {
-        dop = '?docid='+docid+'&propid='+setid;
+        dop = '?dcs_docid='+docid+'&dcs_propid='+setid;
     } 
     location.href=getprefix()+'/'+itemid+dop;
 }
@@ -293,9 +296,9 @@ $('body').on('dblclick','#dcs-list tr',function ()
 $('body').on('dblclick','#modallist tr',function (e) 
 {
     e.preventDefault();
-    var itemid = $("input[name='itemid']").val(); 
-    $("input[name='curid']").val(this.id); 
-    $("input[name='command']").val('choice'); 
+    var itemid = $("input[name='dcs_itemid']").val(); 
+    $("input[name='dcs_curid']").val(this.id); 
+    $("input[name='dcs_command']").val('choice'); 
     $data = $('.ajax').serializeArray();
     $.ajax({
       url: getprefix()+'/ajax/'+itemid,
@@ -353,7 +356,7 @@ function submitModalForm(e)
     e.preventDefault();
     var $x = $('div#ivalue');
     var $ci = $x.find('input');
-    var itemid = $("input[name='itemid']").val();
+    var itemid = $("input[name='dcs_itemid']").val();
     var $pan = $('.tab-pane.fade.in.active');
     var $curcol = $pan.find('#tablehead th.info');
     var propid = $curcol.attr('id');
@@ -396,12 +399,12 @@ function submitModalForm(e)
             success: show_uploadfile
         });
     }   
-    $("input[name='propid']").val(propid);
-    $("input[name='curid']").val($currow.attr('id'));
-    $("input[name='command']").val('field_save');
-    $("input[name='param_id']").val(cid);
-    $("input[name='param_val']").val(cnm);
-    $("input[name='param_type']").val(typ);
+    $("input[name='dcs_propid']").val(propid);
+    $("input[name='dcs_curid']").val($currow.attr('id'));
+    $("input[name='dcs_command']").val('field_save');
+    $("input[name='dcs_param_id']").val(cid);
+    $("input[name='dcs_param_val']").val(cnm);
+    $("input[name='dcs_param_type']").val(typ);
     $data = $('.ajax').serializeArray();
     $.ajax({
       url: getprefix()+'/ajax/'+itemid,
@@ -413,7 +416,7 @@ function submitModalForm(e)
 }
 function show_ivalue($e, it)
 {
-    var action = $("input[name='action']").val();
+    var action = $("input[name='dcs_action']").val();
     var arr_type = ['id','cid','mdid','propid'];
     var bwidth = 0;
     var itype = 'text';
@@ -499,7 +502,7 @@ function show_ivalue($e, it)
 }
 $('body').on('dblclick','#entityhead input',function () 
 {
-    var action = $("input[name='action']").val();
+    var action = $("input[name='dcs_action']").val();
     var $etd = $(this);
     var it = $etd.attr('it');
     var vt = $etd.attr('vt');
@@ -517,9 +520,20 @@ $('body').on('dblclick','#entityhead input',function ()
     it = get_input_fieldid($etd);
     show_ivalue($etd, it);
 });
+$('body').on('dblclick','#dcs-items tr',function () 
+{
+    var $action = $("input[name='dcs_action']");
+    var mode = $("input[name='dcs_mode']").val();
+    if (($action.val() === 'VIEW') || (mode === 'CONFIG')) {    
+        if (mode === 'CONFIG') {    
+            $action.val('EDIT');
+        }
+        tr_dblclick($(this));
+    }
+});
 $('body').on('dblclick','#dcs-items td',function () 
 {
-    var action = $("input[name='action']").val();
+    var action = $("input[name='dcs_action']").val();
     if ($(this).parent().attr('st') === 'erased') {
         return;
     }
@@ -546,12 +560,12 @@ $('body').on('click','button.form-value#list', function(e)
     var $pan = $('.tab-pane.fade.in.active');
     var $tr = $pan.find('tr.info'); 
     var $th = $pan.find('th.info'); 
-    var itemid = $("input[name='itemid']").val(); 
-    $("input[name='curid']").val($tr.attr('id')); 
-    $("input[name='param_id']").val($th.attr('id')); 
-    $("input[name='param_type']").val($('div#ivalue input.form-control').attr('vt')); 
-    $("input[name='param_val']").val($('div#ivalue input.form-control').attr('ov')); 
-    $("input[name='command']").val('list'); 
+    var itemid = $("input[name='dcs_itemid']").val(); 
+    $("input[name='dcs_curid']").val($tr.attr('id')); 
+    $("input[name='dcs_param_id']").val($th.attr('id')); 
+    $("input[name='dcs_param_type']").val($('div#ivalue input.form-control').attr('vt')); 
+    $("input[name='dcs_param_val']").val($('div#ivalue input.form-control').attr('ov')); 
+    $("input[name='dcs_command']").val('list'); 
     $data = $('.ajax').serializeArray();
     $.ajax({
       url: getprefix()+'/ajax/'+itemid,
@@ -565,7 +579,7 @@ $('body').on('click','button.form-value#list', function(e)
 $('body').on('click','button.form-value#delete_ivalue', function(e)
 {
     e.preventDefault();
-    var itemid = $("input[name='itemid']").val();
+    var itemid = $("input[name='dcs_itemid']").val();
     var $x = $('div#ivalue');
     var $ci = $x.find('input');
     var $curcol = $('th.info');
@@ -576,12 +590,12 @@ $('body').on('click','button.form-value#delete_ivalue', function(e)
     $etd.html('');
     $etd.attr('it','');
     $x.hide();
-    $("input[name='propid']").val(propid); 
-    $("input[name='curid]").val($currow.attr('id')); 
-    $("input[name='param_id']").val(''); 
-    $("input[name='param_val']").val(''); 
-    $("input[name='param_type']").val(typ); 
-    $("input[name='command']").val('field_save'); 
+    $("input[name='dcs_propid']").val(propid); 
+    $("input[name='dcs_curid]").val($currow.attr('id')); 
+    $("input[name='dcs_param_id']").val(''); 
+    $("input[name='dcs_param_val']").val(''); 
+    $("input[name='dcs_param_type']").val(typ); 
+    $("input[name='dcs_command']").val('field_save'); 
     $data = $('.ajax').serializeArray();
     $.ajax({
       url: getprefix()+'/ajax/'+itemid,
@@ -604,44 +618,27 @@ $(':input.form-control').click(function () {
 
 $('body').on('click', 'ul.types_list li', function(){
     
-    var itemid = $("input[name='itemid']").val();
+    var itemid = $("input[name='dcs_itemid']").val();
     var tx = $(this).html(); 
     var lid = this.id; 
     var $curdiv = $(this).parent().parent();
     var $curinp = $curdiv.find("input[type='text']");
-    var curname = $curinp.attr('name');
     var curtype = $curinp.attr('vt');
-    var propid = '';
-    var func;
     set_input_fieldid($curinp,lid);
     $curinp.val(tx); 
     $(".types_list").slideUp('fast'); 
-    if ((curname == 'name_propid')||(curname == 'name_valmdid')) {
-        $("input[name='propid']").val(''); 
-        $("input[name='param_id']").val(lid); 
-        $("input[name='param_type']").val(curname); 
-        $("input[name='param_val']").val(tx); 
-        $("input[name='command']").val('get_mdname'); 
-        func = onGetMdData;
-    } else {
-        if ((curtype == 'id')||(curtype == 'cid')) {
-            $("input[name='propid']").val(propid); 
-            $("input[name='param_id']").val(lid); 
-            $("input[name='param_type']").val(curtype); 
-            $("input[name='param_val']").val(''); 
-            $("input[name='command']").val('after_choice'); 
-            func = onGetData;
-        } else {
-            return;
-        }    
-    }    
+    $("input[name='dcs_propid']").val(''); 
+    $("input[name='dcs_param_id']").val(lid); 
+    $("input[name='dcs_param_val']").val(tx); 
+    $("input[name='dcs_param_type']").val(curtype); 
+    $("input[name='dcs_command']").val('after_choice'); 
     $data = $('.ajax').serializeArray();
     $.ajax({
       url: getprefix()+'/ajax/'+itemid,
       type: 'get',
       dataType: 'json',
       data: $data,
-        success: func
+        success: onGetData
     });    
     
 });
@@ -669,11 +666,47 @@ $("#dcsTab a").click(function(e){
   e.preventDefault();
   $(this).tab('show');
 });
-
+$('a[data-toggle="tab"]').on('shown.bs.tab', function(e){
+    var $x = $('div.ivalue-block');
+    $x.find('form').remove();
+    $x.find('.form-value').remove();
+    $x.hide();
+    var $action = $("input[name='dcs_action']"); 
+    var activeid = $(e.target).attr('href').substring(1);
+    var itemid = $("input[name='dcs_itemid']").val();    
+    s_action = $action.val();
+    if (activeid != 'entityhead') {
+        if (s_action.indexOf('SET_')==-1) {
+            s_action = 'SET_'+s_action; 
+        }
+    } else {
+        activeid = '';
+        if (s_action.indexOf('SET_')+1) {
+            s_action = s_action.substring(4); 
+        }
+    } 
+    $action.val(s_action); 
+    $("input[name='dcs_setid']").val(activeid); 
+    $("input[name='dcs_command']").val('load'); 
+    var $data = $('.ajax').serializeArray();
+    $.ajax(
+    {
+        url: getprefix()+'/ajax/'+itemid,
+        type: 'get',
+        dataType: 'json',
+        data: $data,
+        error: function(xhr, error){
+                console.debug(xhr); console.debug(error);
+        },                
+        success: function(result) {
+            onLoadValID(result);
+        }
+    });      
+});
 $('body').on('click','a#create', function () 
 {
-var callback;
-    var itemid = $("input[name='itemid']").val();    
+    var callback;
+    var itemid = $("input[name='dcs_itemid']").val();    
     if (itemid === '') {
         return;
     }    
@@ -688,12 +721,12 @@ var callback;
                };
     if (href) {
         curid = href.substring(1);
-        $("input[name='curid']").val(curid);    
+        $("input[name='dcs_curid']").val(curid);    
         callback = function(result) {
             onLoadValID(result);
         };
     }    
-    $("input[name='command']").val('create'); 
+    $("input[name='dcs_command']").val('create'); 
     $data = $('.ajax').serializeArray();
     $.ajax(
     {
@@ -717,22 +750,22 @@ $('body').on('click', '#view', function () {
 });
 function erase_success (result)
 {
-    var itemid = $("input[name='itemid']").val(); 
-    var propid = $("input[name='propid']").val();    
+    var itemid = $("input[name='dcs_itemid']").val(); 
+    var propid = $("input[name='dcs_propid']").val();    
     $('#dcsModal').modal('hide');
     dop='';
     if (propid !== '')
     {
-        dop ='?propid='+propid; 
+        dop ='?dcs_propid='+propid; 
     }   
     location.href=getprefix()+'/'+itemid+dop;
 };
 function erase() {
     var $data;
-    var itemid = $("input[name='itemid']").val(); 
-    var $cid = $("input[name='curid']");    
+    var itemid = $("input[name='dcs_itemid']").val(); 
+    var $cid = $("input[name='dcs_curid']");    
     var curid = $cid.val();    
-    $("input[name='command']").val('delete'); 
+    $("input[name='dcs_command']").val('delete'); 
     $cid.val($('tr.info').attr('id')); 
     $data = $('.ajax').serializeArray();
     $cid.val(curid); 
@@ -778,6 +811,14 @@ function before_delete_success(result)
     }    
     $('#dcsModal').modal('show');
 }   
+function delete_error(result) 
+{
+    $(".modal-title").text('Действие не выполнено.');
+    $('body').one('click', '#dcsModalOK', function () {
+        $('#dcsModal').modal('hide');
+    });
+    $('#dcsModal').modal('show');
+}   
 $('#dcsModal').on('shown.bs.modal', function () {
     $(this).find('.modal-dialog').css({width:'70%',
                                height:'auto', 
@@ -785,11 +826,11 @@ $('#dcsModal').on('shown.bs.modal', function () {
 });
 $('body').on('click', '#delete', function () 
 {
-    var itemid = $("input[name='itemid']").val(); 
-    var $cid = $("input[name='curid']");    
+    var itemid = $("input[name='dcs_itemid']").val(); 
+    var $cid = $("input[name='dcs_curid']");    
     var curid = $cid.val();
     $cid.val($('tr.info').attr('id')); 
-    $("input[name='command']").val('before_delete'); 
+    $("input[name='dcs_command']").val('before_delete'); 
     $data = $('.ajax').serializeArray();
     $cid.val(curid); 
     $.ajax({
@@ -797,23 +838,24 @@ $('body').on('click', '#delete', function ()
       type: 'get',
       dataType: 'json',
       data: $data,
-        success: before_delete_success
+        success: before_delete_success,
+        error: delete_error
     });    
 });
 $('body').on('click', '#filter', function (e) 
 {
-    var itemid = $("input[name='itemid']").val(); 
+    var itemid = $("input[name='dcs_itemid']").val(); 
     var curid = $('tr.info').attr('id');
     var curcol = $('th.info').attr('id');
     e.preventDefault();
     var $data;
     var $el_cur  = $("tr#"+curid).find("td#"+curcol);
-    var $el_fval = $("input[name='param_val']");
+    var $el_fval = $("input[name='dcs_param_val']");
     var filter_val = $el_fval.val();
     var curval = '';
     var fval  = $el_cur.html();
     var fid   = $el_cur.attr("it");
-    $("input[name='param_id']").val(curcol); 
+    $("input[name='dcs_param_id']").val(curcol); 
     if (fid !== '') {
         $el_fval.val(fid); 
         curval = fid;
@@ -833,7 +875,7 @@ $('body').on('click', '#filter', function (e)
         }    
     }    
     curval = $el_fval.val();
-    $("input[name='command']").val('load'); 
+    $("input[name='dcs_command']").val('load'); 
     $data = $('.ajax').serializeArray();
     $.ajax({
       url: getprefix()+'/ajax/'+itemid,
@@ -894,7 +936,7 @@ function show_history(result)
 
 $('body').on('click', '#history', function (e)
 {
-    var itemid = $("input[name='itemid']").val();
+    var itemid = $("input[name='dcs_itemid']").val();
     var $curinp = $(":input.form-control[st='info']");
     if (itemid != '') 
     {
@@ -905,8 +947,8 @@ $('body').on('click', '#history', function (e)
             {  
                 tcurid = tcurid.replace('name_', '');
             }
-            $("input[name='propid']").val(tcurid);
-            $("input[name='command']").val('history'); 
+            $("input[name='dcs_propid']").val(tcurid);
+            $("input[name='dcs_command']").val('history'); 
             $data = $('.ajax').serializeArray();
             $.ajax({
               url: getprefix()+'/ajax/'+itemid,
@@ -915,14 +957,15 @@ $('body').on('click', '#history', function (e)
               data: $data,
                 success: show_history
             });    
+            $("input[name='dcs_propid']").val('');
         }
     }    
 });
 
 $('body').on('click', '#submit', function (e)
 {
-    var itemid = $("input[name='itemid']").val(); 
-    var prefix = $("input[name='prefix']").val();  
+    var itemid = $("input[name='dcs_itemid']").val(); 
+    var prefix = $("input[name='dcs_prefix']").val();  
     var act = $("input[name='act']").val();  
     var $data;
     var curl = '/';
@@ -945,13 +988,13 @@ $('body').on('click', '#submit', function (e)
 
 $('body').on('click', '#print', function (e) 
 {
-    var itemid = $("input[name='itemid']").val();
-    var setid = $("input[name='setid']").val();
+    var itemid = $("input[name='dcs_itemid']").val();
+    var setid = $("input[name='dcs_setid']").val();
     var href = '';
     e.preventDefault();
     var dop = '';
     if (setid !== '') {
-        dop = '?propid='+setid;
+        dop = '?dcs_propid='+setid;
     }
     href = getprefix()+'/'+itemid+'/print'+dop;
     var otherWindow = window.open(href,"_blank");
@@ -960,23 +1003,24 @@ $('body').on('click', '#print', function (e)
 
 function before_save() 
 {
-    var itemid = $("input[name='itemid']").val(); 
+    var itemid = $("input[name='dcs_itemid']").val(); 
     var $data;
-    $("input[name='command']").val('before_save'); 
+    $("input[name='dcs_command']").val('before_save'); 
     $data = $('.ajax').serializeArray();
     $.ajax({
       url: getprefix()+'/ajax/'+itemid,
       type: 'get',
       dataType: 'json',
       data: $data,
-        success: before_save_success
+        success: before_save_success,
+        error: save_error
     });    
 };
 function save() 
 {
-    var itemid = $("input[name='itemid']").val(); 
+    var itemid = $("input[name='dcs_itemid']").val(); 
     var $data;
-    $("input[name='command']").val('save'); 
+    $("input[name='dcs_command']").val('save'); 
     $data = $('.ajax').serializeArray();
     $.ajax({
       url: getprefix()+'/ajax/'+itemid,
@@ -984,14 +1028,22 @@ function save()
       dataType: 'json',
       data: $data,
         success: save_success,
-        error: function(data) {console.log(data);}
-    });
+        error: save_error
+      });
 };
 function save_success (result)
 {
     $('#dcsModal').modal('hide');
     
     location.href=getprefix()+'/'+result['id'];
+};
+function save_error (result)
+{
+    $(".modal-title").text('Object is not saved : Объект не записан');
+    $('body').one('click', '#dcsModalOK', function () {
+            $('#dcsModal').modal('hide');
+    });
+    $('#dcsModal').modal('show');
 };
 function before_save_success(result) 
 {
@@ -1000,10 +1052,9 @@ function before_save_success(result)
     var len=0;
     $mh.empty();
     $mt.empty();
-    shtml = '';
-    shtml = "<tr><th>Реквизит</th><th>Значение было</th><th>Новое значение</th></tr>";
-    $mh.append(shtml)
     if (Object.keys(result).length) {
+        shtml = "<tr><th>Реквизит</th><th>Значение было</th><th>Новое значение</th></tr>";
+        $mh.append(shtml)
         shtml = '';
         $.each(result, function(key, val) {
             if (key != 'handlername') {
@@ -1025,7 +1076,7 @@ function before_save_success(result)
     $('#dcsModal').modal('show');
 };  
 $('body').on('click','#save',function(e) {
-    var action = $("input[name='action']").val();  
+    var action = $("input[name='dcs_action']").val();  
     if (action==='EDIT') {
         before_save();  
     } else {
@@ -1034,8 +1085,8 @@ $('body').on('click','#save',function(e) {
 });
 function logout()
 {
-    $("input[name='command']").val('logout');
-    $("input[name='prefix']").val('AUTH'); 
+    $("input[name='dcs_command']").val('logout');
+    $("input[name='dcs_prefix']").val('AUTH'); 
     var data = $('.ajax').serializeArray();
     $.ajax(
     {
@@ -1054,7 +1105,7 @@ function saymsg(msg)
 };
 function activate_pickadate()
 {
-    var action = $("input[name='action']").val();
+    var action = $("input[name='dcs_action']").val();
     if ((action === 'EDIT')||
         (action === 'CREATE')) {
         $('.datepicker').datepicker();
@@ -1067,10 +1118,10 @@ function activate_pickadate()
 };
 $(document).ready(function() 
 { 
-    var itemid = $("input[name='itemid']").val(); 
-    var action = $("input[name='action']").val(); 
-    var prefix = $("input[name='prefix']").val();
-    var command = $("input[name='command']").val();
+    var itemid = $("input[name='dcs_itemid']").val(); 
+    var action = $("input[name='dcs_action']").val(); 
+    var prefix = $("input[name='dcs_prefix']").val();
+    var command = $("input[name='dcs_command']").val();
 //    activate_pickadate();
     if (command !== '') {
         var $data = $('.ajax').serializeArray();

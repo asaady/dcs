@@ -29,6 +29,8 @@ define("DCS_PROPS_NAME_ID",1);
 define("DCS_PROPS_ACTIVITY_ID",7);
 define("DCS_PROPS_DATE_ID",8);
 define("DCS_PROPS_NUMBER_ID",57);
+define("DCS_PROPS_TEMPL_ID",'8422bc3b-5483-4c96-a5a2-f69b4b47c2c3');
+define("DCS_PROPS_TEMPL_NAME",'PropsTemplate');
 define("DCS_CS_PROPS_ID",29);
 define("IT_IS_UUID","^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$");
 define("DCS_UPLOAD_DIR","/upload");

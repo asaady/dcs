@@ -7,4 +7,5 @@ interface I_Item
     public function update_properties($context,$data,$n=0);     
     public function update_dependent_properties($context,$data);
     public function before_save($context,$data);
+    public function getArrayNew($newobj);
 }

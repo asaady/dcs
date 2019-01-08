@@ -4,10 +4,10 @@ namespace Dcs\Vendor\Core\Models;
 use PDO;
 
 trait T_Mdproperty {
-    public function loadProperties() 
-    {
-        return $this->getplist();
-    }
+//    public function loadProperties() 
+//    {
+//        return $this->getplist();
+//    }
     public function get_tt_sql_data() 
     {
         $artemptable = array();

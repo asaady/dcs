@@ -25,6 +25,7 @@ class Route {
             $data = substr($url, $pos);
         }
         $routes = explode('/', $routes);
+
         $this->context = new DcsContext;
         $this->context->setcontext($routes);
         if (!User::isAuthorized()) {
@@ -101,6 +102,7 @@ class Route {
             }
         }   
         $action = $this->action_name;
+
         if(!method_exists($controller, $action)) {
             $this->error_route('','controller '.$controllername.': action '.$action.' not exist');
             return;

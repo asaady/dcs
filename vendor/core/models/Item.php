@@ -6,26 +6,36 @@ use PDO;
 use DateTime;
 use Dcs\Vendor\Core\Models\DcsException;
 
-class Item extends Entity implements I_Sheet, I_Property 
+class Item extends Sheet implements I_Sheet
 {
     use T_Sheet;
     use T_Entity;
     use T_Item;
-    use T_Property;
-    use T_EProperty;
+    
+    public function getprop_classname()
+    {
+        return 'EProperty';
+    }
+    public function getplist($context)
+    {
+        $sql = $this->txtsql_properties("mdid");
+        $properties = array();
+        $params = array('mdid'=> $this->mdid);
+        $res = DataManager::dm_query($sql,$params);
+        while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
+            $properties[] = $row;
+        }  
+        $this->plist = $properties;
+        return $properties;
+    }        
     public function add_navlist(&$navlist) 
     {
         if ($this->head) {
             $phead = $this->head;
             $phead->add_navlist($navlist); 
-            $navlist[] = array('id'=>$this->head->getdocid()."?propid=".$this->head->getpropid(),'name'=>sprintf("%s",$this->head));
+            $navlist[] = array('id'=>$this->head->getdocid()."?dcs_setid=".$this->head->getpropid(),'name'=>sprintf("%s",$this->head));
         }
     }
-   public function setnamesynonym()
-    {
-        $this->name = $this->gettoString();
-        $this->synonym = $this->name;
-    }        
     public function getaccessright_id()
     {
         return $this->get_head()->get_head()->get_mdid();
@@ -49,61 +59,63 @@ class Item extends Entity implements I_Sheet, I_Property
     {
         return new Sets($this->get_set_by_item());
     }
-    public function item()
-    {
-        return NULL;
-    }        
     public function item_classname()
     {
         return NULL;
     }        
-    public function gettoString() 
-    {
-        $artoStr = array();
-        foreach($this->properties as $prop) {
-            if ($prop['ranktostring'] > 0) {
-              $artoStr[$prop['id']] = $prop['ranktostring'];
-            }
-        }
-        if (!count($artoStr)) {
-            foreach($this->properties as $prop) {
-                if ($prop['rank'] > 0) {
-                  $artoStr[$prop['id']] = $prop['rank'];
-                }  
-            }
-            if (count($artoStr)) {
-              asort($artoStr);
-              array_splice($artoStr,1);
-            }  
-        } else {
-            asort($artoStr);
-        }
-        if (count($artoStr)) {
-            $res = '';
-            foreach($artoStr as $prop => $rank) {
-                $name = $this->data[$prop]['name'];
-                if ($this->properties[$prop]['name_type'] == 'date') {
-                    $name = substr($name,0,10);
-                }
-                $res .= ' '.$name;
-            }
-            if ($res != '') {
-                $res = substr($res, 1);
-            }    
-            return $res;
-        } else {
-            return $this->name;
-        }
-    }
-    public function createItem($name,$prefix='')
+//    public function getNameFromData($context,$data='') 
+//    {
+//        if (!count($this->data)) {
+//            $this->load_data($context);
+//        }
+//        $artoStr = array();
+//        foreach($this->plist as $prop) {
+//            if ($prop['ranktostring'] > 0) {
+//              $artoStr[$prop['id']] = $prop['ranktostring'];
+//            }
+//        }
+//        if (!count($artoStr)) {
+//            foreach($this->plist as $prop) {
+//                if ($prop['rank'] > 0) {
+//                  $artoStr[$prop['id']] = $prop['rank'];
+//                }  
+//            }
+//            if (count($artoStr)) {
+//              asort($artoStr);
+//              array_splice($artoStr,1);
+//            }  
+//        } else {
+//            asort($artoStr);
+//        }
+//        if (count($artoStr)) {
+//            $res = '';
+//            foreach($artoStr as $prop => $rank) {
+//                $pkey = array_search($prop, array_column($this->plist,'id'));
+//                $name = $this->data[$prop]['name'];
+//                if ($this->plist[$pkey]['name_type'] == 'date') {
+//                    $name = substr($name,0,10);
+//                }
+//                $res .= ' '.$name;
+//            }
+//            if ($res != '') {
+//                $res = substr($res, 1);
+//            }    
+//            return $res;
+//        } else {
+//            return $this->name;
+//        }
+//    }
+//    public function createItem($name,$prefix='')
+    public function create_object($name,$synonym='') 
     {
         $arSetItemProp = self::getMDSetItem($this->mdentity->getid());
         $mdid = $arSetItemProp['valmdid'];
         $objs = array();
         $objs['PSET'] = $this->getProperties(true,'toset');
-        $sql = "INSERT INTO \"ETable\" (mdid, name) VALUES (:mdid, :name) RETURNING \"id\"";
+        $sql = "INSERT INTO \"ETable\" (id, mdid, name) VALUES (:id, :mdid, :name) RETURNING \"id\"";
         $params = array();
-        $params['mdid']=$this->head->getid;
+        $params['id']=$this->id;
+        $params['mdid']=$this->mdid;
         $params['name']= str_replace('Set','Item', $name);
         $res = DataManager::dm_query($sql,$params); 
         if ($res)

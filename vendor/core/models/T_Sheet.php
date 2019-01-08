@@ -17,9 +17,23 @@ trait T_Sheet {
           'synonym'=>$this->synonym,
           'version'=>$this->version
           );
-        $this->prop_to_Data($context, $objs);
-        return $objs;
+        $objs['PLIST'] = $this->getplist($context);
+        $objs['SETS'] = $this->getsets($context);
+        $objs['PSET'] = $this->getItemsProp($context);
+       return $objs;
     }
+    public function getsets($context)
+    {
+        return array();
+    }        
+    public function getcontext()
+    {
+        return array(
+        'ITEMID' => '',
+        'ACTION' => 'VIEW',
+        'PREFIX' => 'ENTERPRISE'
+        );
+    }            
     public function setnamesynonym()
     {
     }        
@@ -29,17 +43,17 @@ trait T_Sheet {
     }
     function getnewid()
     {
-	$res = DataManager::dm_query("BEGIN");
+	$res = DataManager::dm_beginTransaction();
         $headid = $this->getid();
         $sql = "INSERT INTO \"NewObjects\" (headid,classname) VALUES (:headid,:classname) RETURNING \"id\"";
         $res=DataManager::dm_query($sql,array('headid'=>$headid,'classname'=>$this->item_classname()));
         if(!$res) {
-            $res = DataManager::dm_query("ROLLBACK");
+            $res = DataManager::dm_rollback();
             throw new DcsException("Class ".get_called_class().
                     " getnewid: new row insert unable",DCS_ERROR_SQL);
         }    
         $row = $res->fetch(PDO::FETCH_ASSOC);
-	$res = DataManager::dm_query("COMMIT");
+	$res = DataManager::dm_commit();
         return $row['id'];
     }
     function create($context) 
@@ -65,17 +79,17 @@ trait T_Sheet {
         if ($this->head) {
             $phead = $this->head;
             $phead->add_navlist($navlist); 
-            $navlist[] = array('id'=>$this->head->getid(),'name'=>sprintf("%s",$this->head));
+            $strval = $phead->getNameFromData($this->getcontext())['synonym'];
+            $navlist[] = array('id'=>$this->head->getid(),'name'=>sprintf("%s",$strval));
         }
     }
     public function get_navlist($context)
     {
         $navlist = array();
-        $strkey = 'new';
         $strval = 'Новый';
-        if ($this->id) {
-            $strkey = $this->id;
-            $strval = $this->getNameFromData($this->data);
+        $strkey = $this->id;
+        if (!$this->isnew) {
+            $strval = $this->getNameFromData($context)['synonym'];
         }    
         $this->add_navlist($navlist);
         $navlist[] = array('id' => $strkey,'name' => sprintf("%s",$strval));
@@ -93,46 +107,6 @@ trait T_Sheet {
     // filter - function returning bool 
     //          or string 'toset' / 'tostring'
     //
-    public function load_data($context)
-    {
-        $artemptable = $this->get_tt_sql_data();
-        $sql = "select * from tt_out";
-        $sth = DataManager::dm_query($sql);        
-        $arr_e = array();
-        while($row = $sth->fetch(PDO::FETCH_ASSOC)) {
-            $this->data['id'] = array('id'=>'','name'=>$row['id']);
-            foreach($this->properties as $prow) {
-                $rowname = $this->rowname($prow);
-                if (array_key_exists('id_'.$rowname, $row)) {
-                    $this->data[$prow['id']] = array(
-                        'id'=>$row["id_$rowname"],
-                        'name'=>$row["name_$rowname"]);
-                    if ($prow['name_type'] === 'id') {
-                        if ($prow['valmdtypename'] !== 'Sets') {    
-                            if (($row["id_$rowname"])&&
-                                ($row["id_$rowname"] != DCS_EMPTY_ENTITY)) {
-                                if (!in_array($row["id_$rowname"],$arr_e)){
-                                    $arr_e[] = $row["id_$rowname"];
-                                }
-                            }    
-                        }    
-                    }
-                } elseif (array_key_exists($rowname, $row)) {
-                    $this->data[$prow['id']] = array('id'=>'','name'=>$row[$rowname]);
-                } else {
-                    $this->data[$prow['id']] = array('id'=>'','name'=>'');
-                }
-            }    
-        }
-        if (count($arr_e)) {
-            $this->fill_entname($this->data,$arr_e);
-        }
-        $this->version = time();
-        DataManager::droptemptable($artemptable);
-        $this->head = $this->get_head();
-        $this->setnamesynonym();
-        $this->check_right($context);
-    }            
     public function fill_entname(&$data,$arr_e) {
         $arr_entities = $this->getAllEntitiesToStr($arr_e);
         foreach($arr_entities as $rid=>$prow) {
@@ -194,7 +168,7 @@ trait T_Sheet {
     }
     public function getDetails($id) 
     {
-        $sql = self::txtsql_forDetails();
+        $sql = $this->txtsql_forDetails();
         $sth = DataManager::dm_query($sql,array('id'=>$id));   
         $res = $sth->fetch(PDO::FETCH_ASSOC);
         if (!$res) {
@@ -203,15 +177,7 @@ trait T_Sheet {
                 throw new DcsException("Class ".get_called_class().
                    " getDetails: id:".$id.' is wrong',DCS_ERROR_WRONG_PARAMETER);
             } else {
-                $res = array('id' => $id, 
-                             'name' => '_new_',
-                             'synonym' => 'Новый',
-                             'mdid' => $newobj['headid'],
-                             'mdname' => $newobj['classname'],
-                             'mdsynonym' => '',
-                             'mditem' => '',
-                             'mdtypename' => '',
-                             'mdtypedescription' => '');
+                $res = $this->getArrayNew($newobj);
             }
         }
         return $res;
@@ -223,10 +189,12 @@ trait T_Sheet {
     }
     public function update($context,$data)     
     {
-        $name = $this->getNameFromData($data);
-        if (!$this->create_object($this->id,$this->mdid,$name)) {
-            throw new DcsException("Class ".get_called_class().
-                " save_new: unable to save new object",DCS_ERROR_SQL);
+        if ($this->isnew) {
+            $arr_name = $this->getNameFromData($context,$data);
+            if (!$this->create_object($arr_name['name'],$arr_name['synonym'])) {
+                throw new DcsException("Class ".get_called_class().
+                    " save_new: unable to save new object",DCS_ERROR_SQL);
+            }
         }
         $res = $this->update_properties($context,$data);
         if ($res['status'] == 'OK')
@@ -244,50 +212,44 @@ trait T_Sheet {
         }
         return $this->head;
     }
-    public function prop_to_Data(&$context,&$objs)
-    {        
-        $plist = array();
-        $sets = array();
-        $pset = array();
-        $ldata = array();
-        $propid = '';
-        $classname = $this->get_classname();
-        $prefix = $context['PREFIX'];
-        if ($prefix == 'CONFIG') {
-            if (strpos($classname,'Property') > 0) {
-                $plist = $this->getProperties(false);
-            } else {
-                $pset = $this->getProperties(true,'toset');
-            }
-        } else {
-            if (strpos($classname,'Set') > 0) {
-                $pset = $this->getProperties(true,'toset');
-            } else {
-                $plist = $this->getProperties(false);
-            }
-        }
-      
-        $objs['PLIST'] = $plist;
-        $objs['PSET'] = $pset;
-        $objs['SETS'] = $sets;
-    } 
-    public function getItemData($context) 
-    {
-    	$objs = array();
-        $this->load_data($context);
-        $this->prop_to_Data($context, $objs);
-        if ($this->data) {
-            $objs['LDATA'] = array();
-            $objs['LDATA'][$this->id] = $this->data;
-        }    
-        $objs['SDATA'] = $this->getItems($context);
-	return $objs;
-    }
+//    public function prop_to_Data(&$context,&$objs)
+//    {        
+//        $plist = array();
+//        $sets = array();
+//        $pset = array();
+//        $ldata = array();
+//        $propid = '';
+//        $classname = $this->get_classname();
+//        $prefix = $context['PREFIX'];
+//        if ($prefix == 'CONFIG') {
+//            if (strpos($classname,'Property') > 0) {
+//                $plist = $this->getProperties(false);
+//            } else {
+//                $pset = $this->getProperties(true,'toset');
+//            }
+//        } else {
+//             if (strpos($classname,'Set') > 0) {
+//                $pset = $this->getProperties(true,'toset');
+//            } else {
+//                $plist = $this->getProperties(false);
+//            }
+//        }
+//      
+//        $objs['PLIST'] = $plist;
+//        $objs['PSET'] = $pset;
+//        $objs['SETS'] = $sets;
+//    } 
     public function getItemsByFilter($context) 
     {
         $prefix = $context['PREFIX'];
         $action = $context['ACTION'];
-    	$objs = $this->getItemData($context);
+    	$objs = array();
+        $objs['PLIST'] = $this->getplist($context);
+        $objs['LDATA'] = array();
+        $objs['LDATA'][$this->id] = $this->load_data($context);
+        $objs['PSET'] = $this->getItemsProp($context);
+        $objs['SDATA'] = $this->getItems($context);
+        $objs['SETS'] = $this->getsets($context);
         $objs['actionlist'] = DataManager::getActionsbyItem($context['CLASSNAME'],$prefix,$action);
         $objs['navlist'] = $this->get_navlist($context);
 	return $objs;
@@ -343,4 +305,125 @@ trait T_Sheet {
         }
         $context['ACTION'] = $this->setcontext_action($res, $context['PREFIX']);
     }
-}
+    public function property($pid)
+    {
+        $prop_classname = "\\Dcs\\Vendor\\Core\\Models\\".$this->getprop_classname();
+        return new $prop_classname($pid,$this->head);
+    }        
+//    public function getplist() 
+//    {
+//        return array(
+//            'id'=>array('id'=>'id','name'=>'id','synonym'=>'ID','type'=>'str'),
+//            'name'=>array('id'=>'name','name'=>'name','synonym'=>'NAME','type'=>'str'),
+//            'synonym'=>array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM','type'=>'str'),
+//            'propid'=>array('id'=>'propid','name'=>'propid','synonym'=>'PROPID','type'=>'str'),
+//            'rank'=>array('id'=>'rank','name'=>'rank','synonym'=>'RANK','type'=>'int'),
+//            'ranktostring'=>array('id'=>'ranktostring','name'=>'ranktostring','synonym'=>'RANKTOSTRING','type'=>'int'),
+//            'ranktoset'=>array('id'=>'ranktoset','name'=>'ranktoset','synonym'=>'RANKTOSET','type'=>'int'),
+//            'type'=>array('id'=>'type','name'=>'type','synonym'=>'TYPE','type'=>'str'),
+//            'name_type'=>array('id'=>'name_type','name'=>'name_type','synonym'=>'NAME_TYPE','type'=>'str'),
+//            'class'=>array('id'=>'class','name'=>'class','synonym'=>'CLASS','type'=>'str'),
+//            'valmdid'=>array('id'=>'valmdid','name'=>'valmdid','synonym'=>'VALMDID','type'=>'str'),
+//            'valmdtypename'=>array('id'=>'valmdtypename','name'=>'valmdtypename','synonym'=>'VALMDTYPENAME','type'=>'str'),
+//            'field'=>array('id'=>'field','name'=>'field','synonym'=>'FIELD','type'=>'int')
+//            );        
+//    }
+    public function getProperties($byid = FALSE, $filter = '') 
+    {
+        
+        $objs = array();
+        if (is_callable($filter)) {
+            $f = $filter;
+        } else {
+            if (strtolower($filter) == 'toset') {
+                $f = function($item) {
+                    return $item['ranktoset'] > 0;
+                };
+            } elseif (strtolower($filter) == 'tostring') {
+                $f = function($item) {
+                    return $item['ranktostring'] > 0;
+                };
+            } elseif (strtolower($filter) == 'sets') {
+                $f = function($item) {
+                    return $item['valmdtypename'] === 'Sets';
+                };
+            } else {
+                $f = NULL;
+            }
+        }
+        $key = -1;   
+        foreach($this->loadProperties() as $prop) 
+        {
+            $rid = $prop['id'];
+            if (($rid !== 'id')&&($f !== NULL)&&(!$f($prop))) {
+                continue;
+            }
+            if ($byid) {    
+                $key = $rid;
+            } else {
+                $key++;
+            }    
+            $objs[$key] = array();
+            foreach ($this->getitemplist() as $prow) {    
+                if (array_key_exists($prow,$prop)) {
+                    $objs[$key][$prow] = $prop[$prow]; 
+                } else {
+                    continue;
+                }    
+            }
+            $objs[$key]['class'] = 'active';
+            if ($key === 'id') {
+                $objs[$key]['class'] = 'hidden';
+            } elseif ($prop['name'] === 'activity') {
+                $objs[$key]['class'] = 'hidden';
+            }
+        }
+        return $objs;
+    }
+    public function after_choice($context,$data)
+    {
+        if ($data['dcs_param_type']['name'] == 'cid') {
+            $modelname = "\\Dcs\\Vendor\\Core\\Models\\CollectionItem";
+            $dep_prop = 'name';
+        } elseif ($data['dcs_param_type']['name'] == 'id') {
+            $modelname = "\\Dcs\\Vendor\\Core\\Models\\Entity";
+            $dep_prop = 'propid';
+        } else {
+            return array('msg'=>'OK');
+        }
+        try {
+            $ent = new $modelname($data['dcs_param_id']['id']);
+        } catch (Exception $ex) {
+            throw new DcsException("Class ".get_called_class().
+                " constructor: id is not valid",DCS_ERROR_WRONG_PARAMETER);
+        }
+        $plist = $this->getplist($context);
+        $c_plist = $ent->getplist($context);
+        $c_ldata = $ent->load_data($context);
+        $objs = array();
+        foreach ($c_plist as $cprop) {
+            $valprop = $cprop[$dep_prop];
+            $arr_plist = array_filter($plist, 
+                            function($item) use ($valprop,$dep_prop) {
+                                return $item[$dep_prop] == $valprop;
+                            });
+            foreach ($arr_plist as $prop) {
+                if (array_key_exists('isenumber', $prop)) {
+                    if ($prop['isenumber'] === true) {
+                        continue;
+                    }
+                }
+                if (array_key_exists('isedate', $prop)) {
+                    if ($prop['isedate'] === true) {
+                        continue;
+                    }
+                }
+                $objs[$prop['id']] = array(
+                                    'id' => $c_ldata[$cprop['id']]['id'],
+                                    'name' => $c_ldata[$cprop['id']]['name']
+                );
+            }        
+        }
+        return $objs;
+    }        
+}    

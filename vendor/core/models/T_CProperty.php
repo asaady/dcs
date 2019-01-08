@@ -23,25 +23,6 @@ trait T_CProperty
 //        }
 //        return $objs;
 //    }
-    public function txtsql_getproperties() 
-    {
-        $sql = str_replace('mp.id = :id','mp.mdid = :mdid',$this->txtsql_getproperty())." ORDER BY rank";                
-        return $sql;
-    }
-    public function txtsql_getproperty() 
-    {
-        $sql = "SELECT mp.id, mp.name, mp.synonym, mp.type as name_type, mp.length, mp.prec,"
-                . " mp.mdid, mp.rank, mp.ranktoset, mp.ranktostring, mp.valmdid,"
-                . " valmd.name AS name_valmdid,valmd.synonym AS valmdsynonym,"
-                . " mi.name as valmdtypename, valmd.mditem as valmditem, 1 as field"
-                . " FROM \"CProperties\" AS mp"
-                . " LEFT JOIN \"MDTable\" as valmd"
-                . " INNER JOIN \"CTable\" as mi"
-                . " ON valmd.mditem=mi.id"
-                . " ON mp.valmdid = valmd.id"
-                . " WHERE mp.id = :id";
-        return $sql;
-    }
     public function getplist()
     {
         $properties = array(

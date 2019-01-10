@@ -102,7 +102,6 @@ class Route {
             }
         }   
         $action = $this->action_name;
-
         if(!method_exists($controller, $action)) {
             $this->error_route('','controller '.$controllername.': action '.$action.' not exist');
             return;

@@ -96,14 +96,46 @@ class Controller_Ajax extends Controller
     }
     function action_field_save($context)
     {
-        $data=array();
-        $data[$context['DATA']['propid']['id']]=array('name'=>$context['DATA']['param_val']['name'],'id'=>$context['DATA']['param_id']['id']);
-        $ent = new Entity($idm->getitemid());
-        $ent->update($data);
+        $data = array();
+        $propid = $context['DATA']['dcs_propid']['id'];
+        $valid = $context['DATA']['dcs_param_id']['id'];
+        $valname = $context['DATA']['dcs_param_val']['name'];
+        $data[$propid] = array('name'=>$valname,'id'=>$valid);
+        $id = $context['ITEMID'];
+        $res = array();
+        if ($context['ACTION'] == 'SET_EDIT') {
+            $modelname = "\\Dcs\\Vendor\\Core\\Models\\Item";
+            $id = $context['DATA']['dcs_curid']['id'];
+        } elseif ($context['ACTION'] == 'EDIT') {
+            $modelname = "\\Dcs\\Vendor\\Core\\Models\\".$context['CLASSNAME'];
+        } else {
+            echo json_encode(array());
+            return;
+        }
+        $res['id'] = $id;
+        $ent = new $modelname($id);
+        $res = $ent->update($context,$data);
+        echo json_encode($res);
+        
     }
     function action_choice($context)
     {
-        echo json_encode(array('msg'=>'OK'));
+        $id = $context['DATA']['dcs_curid']['id'];
+        $type = $context['DATA']['dcs_param_type']['name'];
+        if ($type == 'id') {
+            $modelname = "\\Dcs\\Vendor\\Core\\Models\\Entity";
+        } elseif ($type == 'cid') {
+            $modelname = "\\Dcs\\Vendor\\Core\\Models\\CollectionItem";
+        } elseif ($type == 'mdid') {
+            $modelname = "\\Dcs\\Vendor\\Core\\Models\\Mdentity";
+        } else {
+            echo json_encode(array('id'=>$context['DATA']['dcs_param_val']['id'],
+                'name'=>$context['DATA']['dcs_curid']['id']));
+            return;
+        }
+        $ent = new $modelname($id);
+        echo json_encode(array('id'=>$id,
+                'name'=>$ent->getNameFromData($context)['synonym']));
     }
     function action_after_choice($context)
     {
@@ -112,7 +144,7 @@ class Controller_Ajax extends Controller
     function action_list($context)
     {
         $context['DATA'] = array();
-        echo json_encode($this->model->getItemData($context));
+        echo json_encode($this->model->getItemsByFilter($context));
     }
     function action_print($context)
     {

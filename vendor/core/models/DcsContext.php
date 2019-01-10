@@ -125,6 +125,9 @@ class DcsContext
                 $setid = $this->context['DATA']['dcs_setid']['name'];
                 if ($setid !== '') {
                     $this->setattr('SETID', $setid);
+                    if (strpos($this->context['ACTION'],'SET_') === false) {
+                        $this->setattr('ACTION', 'SET_'.$this->context['ACTION']);
+                    }
                 }
             }
             if (isset($this->context['DATA']['dcs_propid'])) {

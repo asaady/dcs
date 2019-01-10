@@ -217,6 +217,11 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
     }
     public function getItems($context) 
     {
+        if (!count($this->properties)) {
+            $properties = $this->getProperties(TRUE);
+        } else {
+            $properties = $this->properties;
+        }
         $objs = array();
         $action = $context['ACTION'];
         $limit = $context['LIMIT'];
@@ -234,10 +239,10 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
         $ent_filter = array();
         if (count($filter) > 0) {
             $propid = $filter['dcs_param_id']['id']; //это уид реквизита отбора для выборки
-            $docid = (array_key_exists('docid', $filter) ? $filter['docid']['id'] : '');  
-            $curid = (array_key_exists('curid', $filter) ? $filter['curid']['id'] : '');  
+            $docid = (array_key_exists('dcs_docid', $filter) ? $filter['dcs_docid']['id'] : '');  
+            $curid = (array_key_exists('dcs_curid', $filter) ? $filter['dcs_curid']['id'] : '');  
             if ($propid != '') {
-                $ent_filter[$propid] = new Filter($this->properties[$propid],$filter['dcs_param_val']['id']);
+                $ent_filter[$propid] = new Filter($properties[$propid],$filter['dcs_param_val']['id']);
             }
         }    
         if (!User::isAdmin())
@@ -288,7 +293,7 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
         $artemptable[] = $tt_et;
         $plist = $this->getProperties(TRUE,'toset');
         $params = array();
-        $sql = $this->sqltext_entitylist($this->properties,$ent_filter,$arr_prop,$access_prop,$action,$params);
+        $sql = $this->sqltext_entitylist($properties,$ent_filter,$arr_prop,$access_prop,$action,$params);
         if ($sql=='')
         {
             return $objs;
@@ -296,7 +301,7 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
 	$res = DataManager::dm_query($sql,$params);
         $arr_e = array();
         $arr_name = array();
-        $arr_id = array_filter($this->properties, function ($prow) { return $prow['name_type'] == 'id'; });
+        $arr_id = array_filter($properties, function ($prow) { return $prow['name_type'] == 'id'; });
         while($row = $res->fetch(PDO::FETCH_ASSOC)) {
             $objs[$row['id']] = array('id'=>$row['id'],'name'=>'','class' => 'active');
             $arr_name[$row['id']] = array();

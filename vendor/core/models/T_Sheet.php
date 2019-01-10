@@ -197,13 +197,15 @@ trait T_Sheet {
             }
         }
         $res = $this->update_properties($context,$data);
-        if ($res['status'] == 'OK')
-        {
-            $res1 = $this->update_dependent_properties($context,$res['objs']);
-            if (is_array($res1['objs'])) {
-                $res['objs'] += $res1['objs'];
-            }
-        }    
+        if ($context['ACTION'] == 'SET_EDIT') {
+            if ($res['status'] == 'OK')
+            {
+                $res1 = $this->update_dependent_properties($context,$res['objs']);
+                if (is_array($res1['objs'])) {
+                    $res['objs'] += $res1['objs'];
+                }
+            }    
+        }
         return $res;
     }
     public function get_head() {
@@ -250,7 +252,11 @@ trait T_Sheet {
         $objs['PSET'] = $this->getItemsProp($context);
         $objs['SDATA'] = $this->getItems($context);
         $objs['SETS'] = $this->getsets($context);
-        $objs['actionlist'] = DataManager::getActionsbyItem($context['CLASSNAME'],$prefix,$action);
+        $classname = $context['CLASSNAME'];
+        if ($action == 'SET_EDIT') {
+            $classname = 'Sets';
+        }
+        $objs['actionlist'] = DataManager::getActionsbyItem($classname,$prefix,$action);
         $objs['navlist'] = $this->get_navlist($context);
 	return $objs;
     }
@@ -408,20 +414,15 @@ trait T_Sheet {
                                 return $item[$dep_prop] == $valprop;
                             });
             foreach ($arr_plist as $prop) {
-                if (array_key_exists('isenumber', $prop)) {
-                    if ($prop['isenumber'] === true) {
+                if (array_key_exists('isdepend', $prop)) {
+                    if ($prop['isdepend'] !== true) {
                         continue;
                     }
+                    $objs[$prop['id']] = array(
+                                        'id' => $c_ldata[$cprop['id']]['id'],
+                                        'name' => $c_ldata[$cprop['id']]['name']
+                    );
                 }
-                if (array_key_exists('isedate', $prop)) {
-                    if ($prop['isedate'] === true) {
-                        continue;
-                    }
-                }
-                $objs[$prop['id']] = array(
-                                    'id' => $c_ldata[$cprop['id']]['id'],
-                                    'name' => $c_ldata[$cprop['id']]['name']
-                );
             }        
         }
         return $objs;

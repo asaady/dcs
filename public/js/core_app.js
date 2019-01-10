@@ -46,9 +46,9 @@ function navlist(data)
 
 function onchoice(data)
 {
-    var curinp = $("div#ivalue input.form-control");
-    curinp.val(data['name']); 
-    curinp.attr('it',data['id']); 
+    var $curinp = $("div#ivalue input.form-control");
+    $curinp.val(data['name']); 
+    $curinp.attr('it',data['id']); 
 }
 function onGetMdData(data)
 {
@@ -548,7 +548,7 @@ $('body').on('dblclick','#dcs-items td',function ()
         if (dname === '') {
             return;
         }    
-    } else if (action !== 'EDIT') {
+    } else if (action !== 'SET_EDIT') {
         return;
     }
     show_ivalue($etd, it);

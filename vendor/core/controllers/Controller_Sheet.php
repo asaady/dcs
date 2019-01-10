@@ -32,11 +32,19 @@ class Controller_Sheet extends Controller
         $this->view->setcontext($context);
         $this->view->generate($data);
     }
+    function action_set_view($context)
+    {
+        $this->action_index($context);
+    }
     function action_view($context)
     {
         $this->action_index($context);
     }
     function action_edit($context)
+    {
+        $this->action_index($context);
+    }
+    function action_set_edit($context)
     {
         $this->action_index($context);
     }

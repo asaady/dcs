@@ -14,11 +14,11 @@ trait T_Item
     {
         return NULL;
     }
-    public function getItemsProp($context) 
+    public function getItemsProp() 
     {
         return array();
     }        
-    public function getItems($context) 
+    public function getItems($filter = array()) 
     {
         return array();
     }
@@ -26,14 +26,14 @@ trait T_Item
     {
         return array();
     }        
-    public function getNameFromData($context, $data='')
+    public function getNameFromData($data='')
     {
         if (!count($this->plist)) {
-            $this->plist = $this->getplist($context);
+            $this->plist = $this->getplist();
         }
         if (!$data) {
             if (!count($this->data)) {
-                $this->load_data($context);
+                $this->load_data();
             }
             $data = $this->data;
         }
@@ -79,68 +79,10 @@ trait T_Item
         return array('name' => $res,
                      'synonym' => $res);
     }
-    public function before_save($context,$data) 
-    {
-        $sql = '';
-        $objs = array();
-        if (!count($this->plist)) {
-            $this->getplist($context);
-        }
-        if (!count($this->data)) {
-            $this->load_data($context);
-        }
-        foreach ($this->plist as $prop)
-        {    
-            $propid = $prop['id'];
-            if ($propid == 'id') {
-                continue;
-            }    
-            if (!array_key_exists($propid, $data)) {        
-                continue;
-            }
-            $nval = $data[$propid]['name'];
-            $nvalid = $data[$propid]['id'];
-            $pvalid = '';
-            $pval = '';
-            if (array_key_exists($propid, $this->data)) {        
-                $pval = $this->data[$propid]['name'];
-                $pvalid = $this->data[$propid]['id'];
-            }
-            if ($prop['name_type'] == 'id') {
-                if ($pvalid == $nvalid) {
-                    continue;
-                }    
-                if (($pvalid == DCS_EMPTY_ENTITY)&&($nvalid=='')) {
-                    continue;
-                }
-            } elseif ($prop['name_type'] == 'date') {
-                if (substr($pval,0,19) == substr($nval,0,19)) 
-                {
-                    continue;
-                }    
-            } 
-            elseif ($prop['name_type']=='bool') 
-            {
-                if ((bool)$pval==(bool)$nval) 
-                {
-                    continue;
-                }   
-            } 
-            else 
-            {
-                if ($pval==$nval) 
-                {
-                    continue;
-                }    
-            }
-            $objs[]=array('id'=>$propid, 'name'=>$prop['name'],'pvalid'=>$pvalid, 'pval'=>$pval, 'nvalid'=>$nvalid, 'nval'=>$nval);
-        }       
-	return $objs;
-    }
-    public function load_data($context,$data='')
+    public function load_data($data='')
     {
         if (!count($this->plist)) {
-            $this->getplist($context);
+            $this->getplist();
         }
         if (!$data) {
             foreach($this->plist as $prow) {
@@ -196,10 +138,10 @@ trait T_Item
         $this->version = time();
         $this->head = $this->get_head();
         $this->setnamesynonym();
-        $this->check_right($context);
+        $this->check_right();
         return $this->data;
     }            
-    public function update_dependent_properties($context,$data)
+    public function update_dependent_properties($data)
     {
         $res = array('status'=>'', 'id'=>$this->id, 'objs'=>array());
         $ar_propid = array_column($this->plist, 'propid','id');
@@ -257,9 +199,9 @@ trait T_Item
                     }    
                     
                     //попробуем найти объекты зависимого реквизита  - в надежде установить единственное значение
-                    $filter = $context;
-                    $filter['DATA']['dcs_itemid'] =  array('id' => $dep_prop['valmdid'],'name' => '');
-                    $filter['DATA']['dcs_curid'] = array('id'=>$this->id,'name'=>'');
+                    $context = DcsContext::getcontext();
+                    $context->getattr('DATA')['dcs_itemid'] =  array('id' => $dep_prop['valmdid'],'name' => '');
+                    $context->getattr('DATA')['dcs_curid'] = array('id'=>$this->id,'name'=>'');
                     if ($this->mdtypename == 'Items') {
                         //это строка тч - в фильтр передадим объект владелец ТЧ
                         $ar_obj = DataManager::get_obj_by_item($this->id);
@@ -280,13 +222,13 @@ trait T_Item
             }
         }    
         if (count($res) > 0) {
-            $res = $this->update_properties($context,$res,1);
+            $res = $this->update_properties($res,1);
         }
         return $res;
     }        
-    public function update_properties($context,$data,$n=0)     
+    public function update_properties($data,$n=0)     
     {
-        $objs = $this->before_save($context,$data);
+        $objs = $this->before_save($data);
         $id = $this->id;
         $vals = array();
         //первый проход дополним значениями зависимых реквизитов
@@ -341,7 +283,7 @@ trait T_Item
                 $vals[$propid]=array('id'=>'','name'=>$propval['nval']);
             }    
 	}
-        $objs = $this->before_save($context,$vals);
+        $objs = $this->before_save($vals);
 	DataManager::dm_beginTransaction();
         $upd = array();
         $cnt = 0;

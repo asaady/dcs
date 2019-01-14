@@ -721,7 +721,9 @@ class DataManager {
         return $res;
     }
 
-    public static function get_md_access_text($action = '') {
+    public static function get_md_access_text() {
+        $context = DcsContext::getcontext();
+        $action = $context->getattr('ACTION');
         if (($action == 'EDIT') || ($action == 'SET_EDIT') || ($action == 'CREATE')) {
             $dop = self::get_access_text('md', 'write');
         } else {

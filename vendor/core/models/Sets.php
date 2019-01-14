@@ -19,7 +19,7 @@ class Sets extends Entity implements I_Sheet
         $this->name = $this->mdname;
         $this->synonym = $this->mdsynonym;
     }        
-    public function getaccessright_id($context)
+    public function getaccessright_id()
     {
         return $this->get_head()->get_mdid();
     }        
@@ -118,7 +118,7 @@ class Sets extends Entity implements I_Sheet
         }
         return $properties;
     }        
-    function getItems($context)
+    function getItems($filter=array())
     {
 	$objs = array();
 	$pset = $this->getProperties(true,'toset');

@@ -136,8 +136,11 @@ function loadset($elist,sdata,pset)
 }
 function onLoadValID(data)
 {
+    if ('redirect' in data) {    
+        location.href = data['redirect'];        
+    }           
     var action = $("input[name='dcs_action']").val();
-    var setid = $("input[name='dcs_setid']").val();
+    var propid = $("input[name='dcs_propid']").val();
     var arr_type = ['id','cid','mdid','propid'];
     var pset;
     var sdata;
@@ -149,9 +152,14 @@ function onLoadValID(data)
                 if (cid in val) {    
                     var did = val[cid]['id'];
                     var dname = val[cid]['name'];
-                    if (pval.type=='text') {
+                    if (pval.name_type=='text') {
                         $("textarea.form-control[id="+cid+"]").val(dname);
                     } else {    
+                        if ('valmdtypename' in pval) {
+                            if (pval.valmdtypename == 'Sets') {
+                                $("div.tab-pane[id="+cid+"]").attr('it',did);
+                            }
+                        }
                         if (did !== '') {    
                             $("input.form-control[id=name_"+cid+"]").val(dname);
                             dname = did;
@@ -161,9 +169,9 @@ function onLoadValID(data)
                 }    
                 if (action === 'VIEW') {
                     $("input.form-control[id="+cid+"]").attr('readonly', 'readonly');
-                    if (arr_type.indexOf(pval.type) >= 0) {    
+                    if (arr_type.indexOf(pval.name_type) >= 0) {    
                         $("input.form-control[id=name_"+cid+"]").attr('readonly', 'readonly');
-                    } else if (pval.type == 'text') {    
+                    } else if (pval.name_type == 'text') {    
                         $("textarea.form-control[id="+cid+"]").attr('readonly', 'readonly');
                     }    
                 }    
@@ -171,13 +179,14 @@ function onLoadValID(data)
         });
     }
     if ('SDATA' in data) {   
-        sdata = data.SDATA;
-        if (setid === '') {
+        if (propid === '') {
             $elist = $("tbody.entitylist");
+            sdata = data.SDATA;
             pset = data.PSET;
         } else {
-            $elist = $("tbody.entitylist",$("div#"+setid));
-            pset = data.SETS[setid];
+            $elist = $("tbody.entitylist",$("div#"+propid));
+            sdata = data.SDATA[propid];
+            pset = data.SETS[propid];
         }    
         loadset($elist,sdata,pset);
     }    
@@ -354,10 +363,11 @@ function setvals(data)
 function submitModalForm(e)
 {
     e.preventDefault();
+    var setid = $("input[name='dcs_propid']").val();
     var $x = $('div#ivalue');
     var $ci = $x.find('input');
     var itemid = $("input[name='dcs_itemid']").val();
-    var $pan = $('.tab-pane.fade.in.active');
+    var $pan = $('div#'+setid).find('table');
     var $curcol = $pan.find('#tablehead th.info');
     var propid = $curcol.attr('id');
     var $currow = $pan.find('#dcs-items tr.info');
@@ -399,9 +409,9 @@ function submitModalForm(e)
             success: show_uploadfile
         });
     }   
-    $("input[name='dcs_propid']").val(propid);
     $("input[name='dcs_curid']").val($currow.attr('id'));
     $("input[name='dcs_command']").val('field_save');
+    $("input[name='dcs_param_propid']").val(propid);
     $("input[name='dcs_param_id']").val(cid);
     $("input[name='dcs_param_val']").val(cnm);
     $("input[name='dcs_param_type']").val(typ);
@@ -518,7 +528,9 @@ $('body').on('dblclick','#entityhead input',function ()
         return;
     }
     it = get_input_fieldid($etd);
-    show_ivalue($etd, it);
+    if (it) {
+        show_ivalue($etd, it);
+    }    
 });
 $('body').on('dblclick','#dcs-items tr',function () 
 {
@@ -548,7 +560,7 @@ $('body').on('dblclick','#dcs-items td',function ()
         if (dname === '') {
             return;
         }    
-    } else if (action !== 'SET_EDIT') {
+    } else if (action !== 'EDIT') {
         return;
     }
     show_ivalue($etd, it);
@@ -562,9 +574,10 @@ $('body').on('click','button.form-value#list', function(e)
     var $th = $pan.find('th.info'); 
     var itemid = $("input[name='dcs_itemid']").val(); 
     $("input[name='dcs_curid']").val($tr.attr('id')); 
-    $("input[name='dcs_param_id']").val($th.attr('id')); 
+    $("input[name='dcs_param_propid']").val($th.attr('id')); 
+    $("input[name='dcs_param_id']").val($('div#ivalue input.form-control').attr('ov')); 
     $("input[name='dcs_param_type']").val($('div#ivalue input.form-control').attr('vt')); 
-    $("input[name='dcs_param_val']").val($('div#ivalue input.form-control').attr('ov')); 
+    $("input[name='dcs_param_val']").val($('div#ivalue').find('input').val()); 
     $("input[name='dcs_command']").val('list'); 
     $data = $('.ajax').serializeArray();
     $.ajax({
@@ -590,8 +603,8 @@ $('body').on('click','button.form-value#delete_ivalue', function(e)
     $etd.html('');
     $etd.attr('it','');
     $x.hide();
-    $("input[name='dcs_propid']").val(propid); 
     $("input[name='dcs_curid]").val($currow.attr('id')); 
+    $("input[name='dcs_param_propid']").val(propid); 
     $("input[name='dcs_param_id']").val(''); 
     $("input[name='dcs_param_val']").val(''); 
     $("input[name='dcs_param_type']").val(typ); 
@@ -627,7 +640,7 @@ $('body').on('click', 'ul.types_list li', function(){
     set_input_fieldid($curinp,lid);
     $curinp.val(tx); 
     $(".types_list").slideUp('fast'); 
-    $("input[name='dcs_propid']").val(''); 
+    $("input[name='dcs_param_propid']").val(''); 
     $("input[name='dcs_param_id']").val(lid); 
     $("input[name='dcs_param_val']").val(tx); 
     $("input[name='dcs_param_type']").val(curtype); 
@@ -671,22 +684,16 @@ $('a[data-toggle="tab"]').on('shown.bs.tab', function(e){
     $x.find('form').remove();
     $x.find('.form-value').remove();
     $x.hide();
-    var $action = $("input[name='dcs_action']"); 
     var activeid = $(e.target).attr('href').substring(1);
     var itemid = $("input[name='dcs_itemid']").val();    
-    s_action = $action.val();
+    var s_param_id = '';
     if (activeid != 'entityhead') {
-        if (s_action.indexOf('SET_')==-1) {
-            s_action = 'SET_'+s_action; 
-        }
+        s_param_id = $("div.tab-pane[id="+activeid+"]").attr('it'); 
     } else {
         activeid = '';
-        if (s_action.indexOf('SET_')+1) {
-            s_action = s_action.substring(4); 
-        }
     } 
-    $action.val(s_action); 
-    $("input[name='dcs_setid']").val(activeid); 
+    $("input[name='dcs_propid']").val(activeid); 
+    $("input[name='dcs_setid']").val(s_param_id); 
     $("input[name='dcs_command']").val('load'); 
     var $data = $('.ajax').serializeArray();
     $.ajax(
@@ -705,28 +712,15 @@ $('a[data-toggle="tab"]').on('shown.bs.tab', function(e){
 });
 $('body').on('click','a#create', function () 
 {
-    var callback;
     var itemid = $("input[name='dcs_itemid']").val();    
     if (itemid === '') {
         return;
     }    
-    var curid = null;
-    var href = null;
-    var $e = $("ul#dcsTab").find("li.active a");
-    if ($e !== undefined && $e !== null) {
-        href = $e.attr('href');
-    }
-    callback = function(result) {
-                    location.href=result['redirect'];        
-               };
-    if (href) {
-        curid = href.substring(1);
-        $("input[name='dcs_curid']").val(curid);    
-        callback = function(result) {
-            onLoadValID(result);
-        };
-    }    
     $("input[name='dcs_command']").val('create'); 
+    $("input[name='dcs_param_id']").val('');    
+    $("input[name='dcs_param_type']").val('');    
+    $("input[name='dcs_param_val']").val('');    
+    $("input[name='dcs_curid']").val('');    
     $data = $('.ajax').serializeArray();
     $.ajax(
     {
@@ -737,7 +731,7 @@ $('body').on('click','a#create', function ()
         error: function(xhr, error){
             console.debug(xhr); console.debug(error);
         },                
-        success: callback
+        success: onLoadValID
     });
 });
 $('body').on('click', '#edit', function () {

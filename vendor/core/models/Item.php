@@ -12,11 +12,81 @@ class Item extends Sheet implements I_Sheet
     use T_Entity;
     use T_Item;
     
+    protected $setid;
+    
+    public function __construct($id,$hd='')
+    {
+        if ($id === '') {
+            throw new DcsException("Class ".get_called_class().
+                    " constructor: id is empty",DCS_ERROR_WRONG_PARAMETER);
+        }
+        $this->id = $id;
+        $this->isnew = false;
+        $arData = $this->getDetails($id);
+        if (!$arData) {
+            throw new DcsException("Class ".get_called_class().
+                " constructor: id is wrong",DCS_ERROR_WRONG_PARAMETER);
+        }
+        $this->setid = $arData['setid'];
+        $this->name = $arData['name']; 
+        $this->mdid = $arData['mdid'];
+        if ($this->name === '_new_') {
+            $this->isnew = true;
+        }    
+        $this->synonym = $arData['synonym']; 
+        $this->mdname = $arData['mdname'];
+        $this->mdsynonym = $arData['mdsynonym'];
+        $this->mditem = $arData['mditem'];
+        $this->mdtypename = $arData['mdtypename'];
+//        if ($this->head) {
+//
+//            $this->mdname = $this->head->getname();
+//            $this->mdsynonym = $this->head->getsynonym();
+//            $this->mditem = $this->head->getmditem();
+//            $this->mdtypename = $this->head->getmdtypename();
+//        }    
+        if ($hd) {
+//            if ($hd->getid() !== $this->mdid) {
+//                throw new DcsException("Class ".get_called_class().
+//                " constructor: head is wrong",DCS_ERROR_WRONG_PARAMETER);
+//            }
+            $this->set_head($hd);
+        } else {    
+            $this->head = $this->get_head();
+        }
+        if ($this->isnew) {
+            foreach ($this->head->getplist() as $prop) {
+                if ($prop['valmdtypename'] == 'Item') {
+                    $this->mdid = $prop['valmdid'];
+                    $this->mdname = $prop['name_valmdid'];
+                    break;
+                }
+            }
+        }
+        $this->plist = array();
+        $this->data = array();
+        $this->version = time();
+        
+    }
+    public function txtsql_forDetails() 
+    {
+        return "select et.id, it.rank as name, '' as synonym, it.parentid as setid,
+                    et.mdid , md.name as mdname, md.synonym as mdsynonym, 
+                    md.mditem, tp.name as mdtypename, tp.synonym as mdtypedescription 
+                    FROM \"ETable\" as et
+                        INNER JOIN \"MDTable\" as md
+                            INNER JOIN \"CTable\" as tp
+                            ON md.mditem = tp.id
+                        ON et.mdid = md.id 
+                    	INNER JOIN \"SetDepList\" as it 
+                        ON et.id = it.childid
+                    WHERE et.id = :id";  
+    }
     public function getprop_classname()
     {
         return 'EProperty';
     }
-    public function getplist($context)
+    public function getplist()
     {
         $sql = $this->txtsql_properties("mdid");
         $properties = array();
@@ -27,6 +97,19 @@ class Item extends Sheet implements I_Sheet
         }  
         $this->plist = $properties;
         return $properties;
+    }        
+    public function getArrayNew($newobj)
+    {
+        return array('id' => $newobj['id'], 
+                    'name' => '_new_',
+                    'synonym' => 'Новый',
+                    'setid' => $newobj['headid'],
+                    'mdid' => '',
+                    'mdname' => $newobj['classname'],
+                    'mdsynonym' => '',
+                    'mditem' => '',
+                    'mdtypename' => '',
+                    'mdtypedescription' => '');
     }        
     public function add_navlist(&$navlist) 
     {
@@ -57,6 +140,9 @@ class Item extends Sheet implements I_Sheet
     }
     function head() 
     {
+        if ($this->setid) {
+            return new Sets($this->setid);
+        }    
         return new Sets($this->get_set_by_item());
     }
     public function item_classname()

@@ -43,7 +43,7 @@ class Mdcollection extends Sheet implements I_Sheet, I_Set, I_Property
     function create_property($data) 
     {
     }
-    function before_save($data) 
+    function before_save() 
     {
     }
     public function create_object($name,$synonym='')

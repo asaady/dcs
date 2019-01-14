@@ -3,6 +3,7 @@ namespace Dcs\Vendor\Core\Controllers;
 
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 
+use Dcs\Vendor\Core\Models\DcsContext;
 use Dcs\Vendor\Core\Models\DataManager;
 use Dcs\Vendor\Core\Models\EntitySet;
 use Dcs\Vendor\Core\Models\CollectionSet;
@@ -17,37 +18,37 @@ use Dcs\Vendor\Core\Models\Common_data;
 
 class Controller_Ajax extends Controller
 {
-    function __construct($context)
+    function __construct()
     {
-        if ($context['COMMAND'] == 'FIND') {
-            $id = $context['DATA']['dcs_param_id']['id'];
-            $get_model = function($modelname) use ($id) { return new $modelname($id); };
-        } elseif ($context['COMMAND'] == 'FIELD_SAVE') {
-            $id = $context['DATA']['dcs_curid']['id'];
-            $get_model = function($modelname) use ($id) { return new $modelname($id); };
-        } elseif ($context['COMMAND'] == 'LIST') {
-            $id = $context['DATA']['dcs_param_val']['id'];
-            $get_model = function($modelname) use ($id) { 
-                $ent = new $modelname($id); 
-                return $ent->get_head();
-            };
-        } else {
-            $id = $context['ITEMID'];
-            $get_model = function($modelname) use ($id) { return new $modelname($id); };
+        $context = DcsContext::getcontext();
+        $id = $context->getattr('ITEMID');
+        if (($context->getattr('COMMAND') == 'FIND')||
+            ($context->getattr('COMMAND') == 'LIST')) {
+            $id = $context->data_getattr('dcs_param_id')['id'];
+        } elseif ($context->getattr('COMMAND') == 'FIELD_SAVE') {
+            $id = $context->data_getattr('dcs_curid')['id'];
+        } elseif ($context->getattr('COMMAND') == 'CREATE') {
+            if ($context->data_getattr('dcs_setid')['id']) {
+                $id = $context->data_getattr('dcs_param_id')['id'];
+            }    
         }
+        
         $validation = Common_data::check_uuid($id);
         if (!$validation) {
             throw new DcsException("Class ".get_called_class().
                     " constructor: id is not valid",DCS_ERROR_WRONG_PARAMETER);
         }
-        $prefix = $context['PREFIX'];
+        $prefix = $context->getattr('PREFIX');
         $cont = Route::getContentByID($id,$prefix);
         if ($cont) {
             $modelname = "\\Dcs\\Vendor\\Core\\Models\\".$cont['classname'];
-            if ($context['COMMAND'] == 'FIND') {
+            if ($context->getattr('COMMAND') == 'FIND') {
                 if ($cont['classname'] == 'Mdcollection') {
                     $modelname = "\\Dcs\\Vendor\\Core\\Models\\CollectionSet";
                 }
+            } elseif (($context->getattr('COMMAND') == 'CREATE')&&
+                  ($context->data_getattr('dcs_setid')['id'])) {
+                $modelname = "\\Dcs\\Vendor\\Core\\Models\\Sets";
             }
         } else {
             $newobj = DataManager::getNewObjectById($id);
@@ -58,70 +59,75 @@ class Controller_Ajax extends Controller
                 $modelname = "\\Dcs\\Vendor\\Core\\Models\\".$newobj['classname'];
             }
         }
-        $this->model = $get_model($modelname);
+        $this->model = new $modelname($id);
    }
-    function action_view($context)
+    function action_view()
     {
-        echo json_encode($this->model->getItemsByFilter($context));
+        echo json_encode($this->model->getItemsByFilter());
     }
-    function action_load($context)
+    function action_load()
     {
-        $this->action_view($context);
+        $this->action_view();
     }
-    function action_create($context)
+    function action_create()
     {
-        echo json_encode($this->model->create($context));
+        echo json_encode($this->model->create());
     }
-    function action_find($context)
+    function action_find()
     {
-        echo json_encode($this->model->getItemsByName($context['DATA']['dcs_param_val']['name']));
+        $context = DcsContext::getcontext();
+        echo json_encode($this->model->getItemsByName($context->data_getattr('dcs_param_val')['name']));
     }
-    function action_before_save($context)
+    function action_before_save()
     {
-        echo json_encode($this->model->before_save($context,$context['DATA']));
+        echo json_encode($this->model->before_save());
     }
-    function action_before_delete($context)
+    function action_before_delete()
     {
-        $ent = $this->model->item($context['DATA']['dcs_curid']['id']);
-        echo json_encode($ent->before_delete($context,$context['DATA']));
+        $context = DcsContext::getcontext();
+        $ent = $this->model->item($context->data_getattr('dcs_curid')['id']);
+        echo json_encode($ent->before_delete());
     }
-    function action_delete($context)
+    function action_delete()
     {
-        $ent = $this->model->item($context['DATA']['dcs_curid']['id']);
-        echo json_encode($ent->delete($context,$context['DATA']));
+        $context = DcsContext::getcontext();
+        $ent = $this->model->item($context->data_getattr('dcs_curid')['id']);
+        echo json_encode($ent->delete());
     }
-    function action_save($context)
+    function action_save()
     {
-        echo json_encode($this->model->update($context,$context['DATA']));
+        $context = DcsContext::getcontext();
+        echo json_encode($this->model->update($context->getattr('DATA')));
     }
-    function action_field_save($context)
+    function action_field_save()
     {
         $data = array();
-        $propid = $context['DATA']['dcs_propid']['id'];
-        $valid = $context['DATA']['dcs_param_id']['id'];
-        $valname = $context['DATA']['dcs_param_val']['name'];
+        $context = DcsContext::getcontext();
+        $propid = $context->data_getattr('dcs_param_propid')['id'];
+        $valtype = $context->data_getattr('dcs_param_type')['name'];
+        $valid = $context->data_getattr('dcs_param_id')['id'];
+        $valname = $context->data_getattr('dcs_param_val')['name'];
+        $setid = $context->getattr('SETID');
         $data[$propid] = array('name'=>$valname,'id'=>$valid);
-        $id = $context['ITEMID'];
+        $id = $context->getattr('ITEMID');
         $res = array();
-        if ($context['ACTION'] == 'SET_EDIT') {
+        if ($setid) {
             $modelname = "\\Dcs\\Vendor\\Core\\Models\\Item";
-            $id = $context['DATA']['dcs_curid']['id'];
-        } elseif ($context['ACTION'] == 'EDIT') {
-            $modelname = "\\Dcs\\Vendor\\Core\\Models\\".$context['CLASSNAME'];
+            $id = $context->data_getattr('dcs_curid')['id'];
         } else {
-            echo json_encode(array());
-            return;
+            $modelname = "\\Dcs\\Vendor\\Core\\Models\\".$context->getattr('CLASSNAME');
         }
         $res['id'] = $id;
         $ent = new $modelname($id);
-        $res = $ent->update($context,$data);
+        $res = $ent->update($data);
         echo json_encode($res);
         
     }
-    function action_choice($context)
+    function action_choice()
     {
-        $id = $context['DATA']['dcs_curid']['id'];
-        $type = $context['DATA']['dcs_param_type']['name'];
+        $context = DcsContext::getcontext();
+        $id = $context->data_getattr('dcs_curid')['id'];
+        $type = $context->data_getattr('dcs_param_type')['name'];
         if ($type == 'id') {
             $modelname = "\\Dcs\\Vendor\\Core\\Models\\Entity";
         } elseif ($type == 'cid') {
@@ -129,30 +135,32 @@ class Controller_Ajax extends Controller
         } elseif ($type == 'mdid') {
             $modelname = "\\Dcs\\Vendor\\Core\\Models\\Mdentity";
         } else {
-            echo json_encode(array('id'=>$context['DATA']['dcs_param_val']['id'],
-                'name'=>$context['DATA']['dcs_curid']['id']));
+            echo json_encode(array('id'=>$context->data_getattr('dcs_param_val')['id'],
+                'name'=>$id));
             return;
         }
         $ent = new $modelname($id);
         echo json_encode(array('id'=>$id,
-                'name'=>$ent->getNameFromData($context)['synonym']));
+                'name'=>$ent->getNameFromData()['synonym']));
     }
-    function action_after_choice($context)
+    function action_after_choice()
     {
-        echo json_encode($this->model->after_choice($context,$context['DATA']));
+        echo json_encode($this->model->after_choice());
     }
-    function action_list($context)
+    function action_list()
     {
-        $context['DATA'] = array();
-        echo json_encode($this->model->getItemsByFilter($context));
+        //$filter = new Filter($propid,
+        //                         $context->data_getattr('dcs_param_val')['name']);
+        echo json_encode($this->model->getListItemsByFilter());
     }
-    function action_print($context)
+    function action_print()
     {
-        echo json_encode($this->model->getItemData($context));
+        echo json_encode($this->model->getItemData());
     }
-    function action_history($context)
+    function action_history()
     {
-        $mdprop = $this->model->property($context['DATA']['dcs_propid']['id'],$this->model->head());
-        echo json_encode($mdprop->get_history_data($context['ITEMID'],$context));
+        $context = DcsContext::getcontext();
+        $mdprop = $this->model->property($context->data_getattr('dcs_propid')['id'],$this->model->head());
+        echo json_encode($mdprop->get_history_data($context->getattr('ITEMID')));
     }
 }    

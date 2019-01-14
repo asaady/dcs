@@ -9,8 +9,7 @@ class Route {
     protected $action_name = '';
     protected $controller_name = '';
     protected $controller_file = '';
-    protected $controller_path = '';
-    protected $context;
+    protected $controller_path = "/vendor/core/controllers";
     
     function __construct()
     {
@@ -26,37 +25,36 @@ class Route {
         }
         $routes = explode('/', $routes);
 
-        $this->context = new DcsContext;
-        $this->context->setcontext($routes);
+        $context = DcsContext::getcontext();
+        $context->setcontext($routes);
         if (!User::isAuthorized()) {
-            if ($this->context->getattr('PREFIX') !== 'AUTH') { 
-                $this->context->setattr('PREFIX','AUTH');
-                $this->context->setattr('ACTION','VIEW');
+            if ($context->getattr('PREFIX') !== 'AUTH') { 
+                $context->setattr('PREFIX','AUTH');
+                $context->setattr('ACTION','VIEW');
             }
-        } elseif (($this->context->getattr('PREFIX') !== 'ERROR')&&
-                  ($this->context->getattr('MODE') === 'FORM')) {
-            $arSubSystems = $this->context->getsubsystems();
-            if (($this->context->getattr('ITEMID') == '')&&
+        } elseif (($context->getattr('PREFIX') !== 'ERROR')&&
+                  ($context->getattr('MODE') === 'FORM')) {
+            $arSubSystems = $context->getsubsystems();
+            if (($context->getattr('ITEMID') == '')&&
                 (count($arSubSystems))) {
                 $ritem = reset($arSubSystems);
-                $this->context->setattr('ITEMID',$ritem['id']);
+                $context->setattr('ITEMID',$ritem['id']);
             }
         }
-        if ($this->context->getattr('ITEMID')) {
-            $item = self::getContentByID($this->context->getattr('ITEMID'),
-                                         $this->context->getattr('PREFIX'));
+        if ($context->getattr('ITEMID')) {
+            $item = self::getContentByID($context->getattr('ITEMID'),
+                                         $context->getattr('PREFIX'));
             $classname =  $item['classname'];
             if (!$item) {
-                $newobj = DataManager::getNewObjectById($this->context->getattr('ITEMID'));
+                $newobj = DataManager::getNewObjectById($context->getattr('ITEMID'));
                 if (!$newobj) {
                     $this->seterrorcontext();
                 } else {
                     $classname = $newobj['classname'];
                 }
             }
-            $this->context->setattr('CLASSNAME',$classname);
+            $context->setattr('CLASSNAME',$classname);
         }
-        $this->controller_path = "/vendor/core/controllers";
     }
     public function error_route($ex='',$message = '')
     {
@@ -75,21 +73,21 @@ class Route {
         }
         $action = $this->get_action_error($ex_code);
         $this->seterrorcontext();
-        $context = $this->context->getcontext();
+        $context = DcsContext::getcontext();
         $controller = new Controller_Error($context);
         $controller->$action($context,$data);
     }        
 
     public function start()
     {
+        $context = DcsContext::getcontext();
         $this->controller_name = $this->setcontrollername();
         $controller_namespace = "\\Dcs".str_replace("/","\\",ucwords($this->controller_path,"/"))."\\";
         $controllername = $controller_namespace.$this->controller_name;
-        $this->action_name = 'action_'.strtolower($this->context->getattr('ACTION'));
-        if ($this->context->getattr('MODE') === 'AJAX') {
-            $this->action_name = 'action_'.strtolower($this->context->getattr('COMMAND'));
+        $this->action_name = 'action_'.strtolower($context->getattr('ACTION'));
+        if ($context->getattr('MODE') === 'AJAX') {
+            $this->action_name = 'action_'.strtolower($context->getattr('COMMAND'));
         }
-        $context = $this->context->getcontext();
         if (!class_exists($controllername)) {
             $this->error_route('','controller '.$controllername.': not exist');
             return;
@@ -115,7 +113,8 @@ class Route {
     }    
     function get_action_error($ex_code = '')
     {
-        if ($this->context->getattr('MODE') === 'AJAX') {
+        $context = DcsContext::getcontext();
+        if ($context->getattr('MODE') === 'AJAX') {
             return 'action_json';
         }
         if ($ex_code === DCS_DENY_ACCESS) {
@@ -125,8 +124,9 @@ class Route {
     }
     function seterrorcontext()
     {
-        $this->context->setattr('PREFIX','ERROR');
-        $this->context->setattr('COMMAND','');
+        $context = DcsContext::getcontext();
+        $context->setattr('PREFIX','ERROR');
+        $context->setattr('COMMAND','');
     }
     public static function getContentByID($itemid, $prefix='') 
     {
@@ -184,23 +184,24 @@ class Route {
     }
     public function setcontrollername()
     {
-        if ($this->context->getattr('PREFIX') == 'ERROR') {
+        $context = DcsContext::getcontext();
+        if ($context->getattr('PREFIX') == 'ERROR') {
             return 'Controller_Error';
         }
-        if ($this->context->getattr('MODE') == 'AJAX') {
+        if ($context->getattr('MODE') == 'AJAX') {
             return 'Controller_Ajax';
         }
-        if ($this->context->getattr('MODE') == 'DOWNLOAD') {
+        if ($context->getattr('MODE') == 'DOWNLOAD') {
             return 'Controller_Download';
         }
-        if ($this->context->getattr('PREFIX') == 'API') {
+        if ($context->getattr('PREFIX') == 'API') {
             return 'Controller_Api';
         }
-        if ($this->context->getattr('PREFIX') == 'AUTH') {
+        if ($context->getattr('PREFIX') == 'AUTH') {
             return 'Controller_Auth';
         }
-        if (($this->context->getattr('PREFIX') == 'CONFIG')||
-            ($this->context->getattr('PREFIX') == 'ENTERPRISE')) {
+        if (($context->getattr('PREFIX') == 'CONFIG')||
+            ($context->getattr('PREFIX') == 'ENTERPRISE')) {
             return 'Controller_Sheet';
         }
         return 'Controller_Error';

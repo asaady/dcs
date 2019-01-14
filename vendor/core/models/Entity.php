@@ -16,7 +16,7 @@ class Entity extends Sheet implements I_Sheet, I_Item
     protected $enumber;
     protected $num;
     
-    public function getplist($context)
+    public function getplist()
     {
         $sql = $this->txtsql_properties("mdid");
         $properties = array();
@@ -85,10 +85,14 @@ class Entity extends Sheet implements I_Sheet, I_Item
         }
 	return $res;
     }
-    public function getsets($context) 
+    public function getsetid($propid) 
+    {
+        
+    }        
+    public function getsets() 
     {
         if (!count($this->plist)) {
-            $this->plist = $this->getplist($context);
+            $this->plist = $this->getplist();
         }
         $psets = array_filter($this->plist,function($item){
                             return $item['valmdtypename'] === 'Sets';
@@ -97,10 +101,10 @@ class Entity extends Sheet implements I_Sheet, I_Item
             return array();
         }
         $propid = '';
-        if (isset($context['DATA']['dcs_propid'])) {
-            $propid = $context['DATA']['dcs_propid']['id'];
-        } elseif (isset($context['DATA']['dcs_setid'])) {
-            $propid = $context['DATA']['dcs_setid']['id'];
+        $context = DcsContext::getcontext();
+        $propid = $context->data_getattr('dcs_propid')['id'];
+        if ($propid == '') {
+            $propid = $context->data_getattr('dcs_setid')['id'];
         }   
         $setid = '';
         $sets = array();
@@ -122,9 +126,11 @@ class Entity extends Sheet implements I_Sheet, I_Item
                             });
             }
             if ($propid == $prop['id']) {
-                $context['SETID'] = $propid;
+                $context->setattr('SETID',$this->get_valid($propid));
+                $context->setattr('PROPID',$propid);
             } elseif (count($psets) == 1) { 
-                $context['SETID'] = $prop['id'];
+                $context->setattr('SETID',$this->get_valid($prop['id']));
+                $context->setattr('PROPID',$prop['id']);
                 break;
             }  
         }  
@@ -439,47 +445,44 @@ class Entity extends Sheet implements I_Sheet, I_Item
             }    
         }    
     }        
-    public function getItems($context) 
+    public function getItems($filter=array()) 
     {
-        if ($context['SETID'] === '') {
-            if ((!isset($context['DATA']['dcs_setid']))||(!isset($context['DATA']['dcs_propid']))) {
-                return array();
+        $context = DcsContext::getcontext();
+        $propid = $context->getattr('PROPID');
+        $setid = $context->getattr('SETID');
+        if ($setid === '') {
+            $setid = $context->data_getattr('dcs_setid')['id'];
+            if ($setid == '') {
+                if ($propid == '') {
+                    return array();
+                }
+                $setid = $this->get_valid($propid);
+                $context->setattr('SETID',$setid);
             }    
-            $propid = $context['DATA']['dcs_setid']['id'];
-            if ($propid == '') {
-                $propid = $context['DATA']['dcs_propid']['id'];
-            }    
-            if ($propid == '') {
-                return array();
-            }
-        } else {
-            $propid = $context['SETID'];
         }
-        $setid = $this->getattrid($propid);
         if ((!$setid)||($setid === DCS_EMPTY_ENTITY)) {
-            return array();
+            return array($propid => array());
         }    
-        $set = new Sets($setid);
-        return $set->getItems($context);
+        $set = new Sets($setid,$this);
+        return array($propid => $set->getItems($filter));
     }
-    public function get_navlist($context)
+    public function get_navlist()
     {
         $navlist = array();
         $strval = 'Новый';
         $strkey = $this->id;
         if (!$this->isnew) {
-            $strval = $this->getNameFromData($context)['synonym'];
+            $strval = $this->getNameFromData()['synonym'];
         }    
-        if ($context['PREFIX'] !== 'CONFIG') {
-            if (isset($context['DATA']['dcs_setid'])) {
-                $propid = $context['DATA']['dcs_setid']['id'];
-                if ($propid !== '') {
-                    $this->add_navlist($navlist);
-                    $navlist[] = array('id'=>$this->id,'name' => sprintf("%s",$strval));
-                    $strkey .= "?propid=".$propid;
-                    $strval = $this->properties[$propid]['synonym'];
-                }    
-            }
+        $context = DcsContext::getcontext();
+        if ($context->getattr('PREFIX') !== 'CONFIG') {
+            $propid = $context->data_getattr('dcs_propid')['id'];
+            if ($propid !== '') {
+                $this->add_navlist($navlist);
+                $navlist[] = array('id'=>$this->id,'name' => sprintf("%s",$strval));
+                $strkey .= "?propid=".$propid;
+                $strval = $this->properties[$propid]['synonym'];
+            }    
         }
         if (!count($navlist)) {    
             $this->add_navlist($navlist);
@@ -500,8 +503,11 @@ class Entity extends Sheet implements I_Sheet, I_Item
                 . "and it.dateupdate = slc.dateupdate "
                 . "inner join \"PropValue_id\" as pv on it.id=pv.id";
         $res = DataManager::dm_query($sql,array('id'=>$this->id, 'propid'=>$propid));
-        return $res->fetchAll(PDO::FETCH_ASSOC);
-    }
+        while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
+            return $row['value'];
+        }  
+        return '';
+   }
     function before_delete() 
     {
         $nval="удалить";

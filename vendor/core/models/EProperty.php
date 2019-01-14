@@ -48,19 +48,19 @@ class EProperty extends Sheet
 		  ON mp.propid = pr.id
 		WHERE mp.id = :id";
     }    
-    public function load_data($context,$data='')
+    public function load_data($data='')
     {
         $this->data['id'] = array('id'=>'','name'=>$this->id);
         $this->data['name'] = array('id'=>'','name'=>$this->name);
         $this->data['synonym'] = array('id'=>'','name'=>$this->synonym);
         if (!count($this->plist)) {
-            $this->getplist($context);
+            $this->getplist();
         }
         if (!$data) {
             $sql = $this->get_tt_sql_data();
             $sth = DataManager::dm_query($sql,array('id'=>$this->id));        
             while($row = $sth->fetch(PDO::FETCH_ASSOC)) {
-                foreach($this->getplist($context) as $prow) {
+                foreach($this->plist as $prow) {
                     if (array_key_exists($prow['id'], $row)) {
                         if (($prow['name_type'] == 'cid') || 
                             ($prow['name_type'] == 'id') || 
@@ -90,14 +90,14 @@ class EProperty extends Sheet
         }    
         $this->version = time();
         $this->head = $this->get_head();
-        $this->check_right($context);
+        $this->check_right();
         return $this->data;
     }            
     public static function txtsql_access()
     {
         return '';
     }        
-    public function getplist($context)
+    public function getplist()
     {
         $plist = array(
             '0'=>array('id'=>'id','name'=>'id','synonym'=>'ID',
@@ -192,7 +192,7 @@ class EProperty extends Sheet
                     'mdtypename' => '',
                     'mdtypedescription' => '');
     }        
-    public function getNameFromData($context,$data='')
+    public function getNameFromData($data='')
     {
         if (!$data) {
             return array('name' => $this->name, 'synonym' => $this->synonym);
@@ -201,15 +201,16 @@ class EProperty extends Sheet
                          'synonym' => $data['synonym']['name']);
         }    
     }        
-    function get_history_data($entityid,$context='')
+    function get_history_data($entityid)
     {
         if (!count($this->data)) {
-            $this->load_data($context);
+            $this->load_data();
         }
+        $context = DcsContext::getcontext();
         $propid = $this->id;
         $type = $this->data['type']['name'];
         $clsid='hidden';
-        if ($context['MODE'] == 'CONFIG') {
+        if ($context->getattr('MODE') == 'CONFIG') {
             $clsid='active';
         }    
         $plist = array(
@@ -268,7 +269,8 @@ class EProperty extends Sheet
         }
         if (count($arr_e))
         {
-            $arr_entities = EntitySet::getAllEntitiesToStr($arr_e);
+            $entset = new EntitySet($this->mdid);
+            $arr_entities = $entset->getAllEntitiesToStr($arr_e);
             foreach($ardata as $id=>$row) 
             {
                 if (array_key_exists($row['value']['id'], $arr_entities))
@@ -280,9 +282,9 @@ class EProperty extends Sheet
         
         return array('LDATA'=>$ardata,'PSET'=>$plist, 'name'=>$this->name,'synonym'=>$this->synonym);
     } 
-    function update($context,$data) {
+    function update($data) {
         $sql = '';
-        $objs = $this->before_save($context,$data);
+        $objs = $this->before_save();
         $params = array();
         foreach($objs as $row)
         {    

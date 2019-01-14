@@ -4,16 +4,17 @@ namespace Dcs\Vendor\Core\Controllers;
 use Dcs\Vendor\Core\Views\Auth_View;
 use Dcs\Vendor\Core\Models\User;
 use Dcs\Vendor\Core\Models\InputDataManager;
+use Dcs\Vendor\Core\Models\DcsContext;
 
 class Controller_Auth extends Controller
 {
 
-    function __construct($context)
+    function __construct()
     {
         $this->view = new Auth_View();
     }
 
-    function action_index($context)
+    function action_index()
     {       
         $data = array();
         if (User::isAuthorized())
@@ -26,28 +27,27 @@ class Controller_Auth extends Controller
         }    
         $data['version']=time();
         $data['navlist']=array();
-        $this->view->setcontext($context);
         $this->view->generate($data);
     }
-    function action_view($context)
+    function action_view()
     {       
-        $this->action_index($context);
+        $this->action_index();
     }
-    function action_login($context)
+    function action_login()
     {  
-        $data = $context['DATA'];
+        $context = DcsContext::getcontext();
+        $username = $context->data_getattr('username');
+        $password = $context->data_getattr('password');
+        $rememberme = $context->data_getattr('remember-me');
         setcookie("sid", "");
-        if (empty($data['username']['name'])) {
+        if (empty($username['name'])) {
             $arData = array('status'=>'ERROR', 'msg'=>"Введите имя пользователя");
-        } elseif (empty($data['password']['name'])) {
+        } elseif (empty($password['name'])) {
             $arData = array('status'=>'ERROR', 'msg'=>"Введите пароль");
         } else {
-            $remember = false;
-            if (array_key_exists('remember-me', $data)) {
-                $remember = (bool)$data['remember-me']['name'];
-            }
+            $remember = (bool)$remember['name'];
             $user = new User();
-            $auth_result = $user->authorize($data['username']['name'], $data['password']['name'], $remember);
+            $auth_result = $user->authorize($username['name'], $password['name'], $remember);
             if (!$auth_result) {
                 $arData = array('status'=>'ERROR', 'msg'=>"Invalid username or password");
             } else {
@@ -56,18 +56,18 @@ class Controller_Auth extends Controller
         }    
         echo json_encode($arData);
     }
-    function action_logout($context)
+    function action_logout()
     {       
         $user = new User();
         $user->logout();
         $arData = array('status'=>'OK', 'redirect'=>".");
         echo json_encode($arData);
     }
-    function action_register($context)
+    function action_register()
     {       
-        $this->action_index($context);
+        $this->action_index();
     }
-    function action_denyaccess($context)
+    function action_denyaccess()
     {
         echo json_encode(array('msg'=>'Deny access'));
     }

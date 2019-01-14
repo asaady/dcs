@@ -3,7 +3,7 @@
 namespace Dcs\Vendor\Core\Models;
 
 trait T_Mdentity {
-    public function getplist($context) 
+    public function getplist() 
     {
         return array(
             '0'=>array('id'=>'id','name'=>'id','synonym'=>'ID',
@@ -17,7 +17,7 @@ trait T_Mdentity {
                         'name_type'=>'str','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'active','field'=>1),
              );
     }
-    public function getNameFromData($context,$data='')
+    public function getNameFromData($data='')
     {
         if (!$data) {
             return array('name' => $this->name, 'synonym' => $this->synonym);
@@ -30,7 +30,7 @@ trait T_Mdentity {
     {
         return NULL;
     }
-    public function getItems($context) 
+    public function getItems($filter=array()) 
     {
         $objs = array();
         foreach ($this->get_items() as $row) {
@@ -47,11 +47,11 @@ trait T_Mdentity {
         $this->version = time();
         return $objs;
     }
-    public function getItemsProp($context) 
+    public function getItemsProp() 
     {
         return $this->getProperties(TRUE,'toset');
     }
-    public function load_data($context,$data='')
+    public function load_data($data='')
     {
         if (!$data) {
             return array(   'id' => array('id'=>$this->id,'name'=>$this->id),

@@ -16,9 +16,12 @@ class DcsContext
                             array('name' => "CURID", 'validate'=>TRUE),
                             array('name' => "ACTION", 'validate'=>FALSE),
                             array('name' => "PROPID", 'validate'=>TRUE),
+                            array('name' => "SETID", 'validate'=>TRUE),
                         );
     
-    function __construct() {
+    private static $_instance = null;
+    
+    private function __construct () {
         $this->context = array();
         $this->context['TITLE'] = DCS_COMPANY_SHORTNAME;
         $this->context['PREFIX'] = 'ENTERPRISE';
@@ -36,20 +39,19 @@ class DcsContext
         $this->context['MENU'] = array();
         $this->context['USERNAME'] = 'Anonymous';
         $this->context['DATA'] = array();
-    } 
-    
-    public function getcontext()
+    }
+
+    private function __clone () {}
+    private function __wakeup () {}
+
+    public static function getcontext()
     {
-        return $this->context;
-    }   
-    //
-    // $data = array 
-    // [0] - document_root
-    // [1] - prefix :[config,enterprise,auth,api,error] default = enterprise = empty
-    // [2] - mode  : [form, ajax, download] default = form = empty
-    // [3] - itemid
-    // [4] - curid
-    // [5] - action : [view, index, edit, create, print, etc...]
+        if (self::$_instance === null) { // если экземпляр данного класса  не создан
+            self::$_instance = new self;  // создаем экземпляр данного класса
+        }
+        return self::$_instance; // возвращаем экземпляр данного класса
+    }
+    
     protected function setitems($data, &$curval, &$validation, &$indx,&$indd)
     {
         if ($validation == $this->valindx[$indx]['validate']) {
@@ -125,13 +127,10 @@ class DcsContext
                 $setid = $this->context['DATA']['dcs_setid']['name'];
                 if ($setid !== '') {
                     $this->setattr('SETID', $setid);
-                    if (strpos($this->context['ACTION'],'SET_') === false) {
-                        $this->setattr('ACTION', 'SET_'.$this->context['ACTION']);
-                    }
                 }
-            }
+            } 
             if (isset($this->context['DATA']['dcs_propid'])) {
-                //setid from get-parameters is valid
+                //propid from get-parameters is valid
                 $propid = $this->context['DATA']['dcs_propid']['name'];
                 if ($propid !== '') {
                     $this->setattr('PROPID', $propid);
@@ -185,6 +184,22 @@ class DcsContext
             return FALSE;
         }
         return TRUE;
+    }        
+    public function data_setattr($attrname, $attrval)
+    {
+        if (array_key_exists($attrname, $this->context['DATA'])) {
+            $this->context['DATA'][$attrname] = $attrval;
+        } else {
+            return FALSE;
+        }
+        return TRUE;
+    }        
+    public function data_getattr($attrname)
+    {
+        if (array_key_exists($attrname, $this->context['DATA'])) {
+            return $this->context['DATA'][$attrname];
+        }
+        return array('id'=>'','name'=>'');
     }        
     public function getattr($attrname)
     {

@@ -46,15 +46,15 @@ trait T_View {
     }
     public function item_view($data)
     {
-        return $this->template->get_body_content($this->context, $data);
+        return $this->template->get_body_content($data);
     }        
     public function body_script_view()
     {
-        return $this->template->get_body_script($this->context);
+        return $this->template->get_body_script();
     }   
     public function body_header_view($data)
     {
-        return $this->template->get_body_header($this->context, $data);
+        return $this->template->get_body_header($data);
     }
     public function body_footer_view()
     {
@@ -78,11 +78,11 @@ trait T_View {
     }
     public function body_context_view($data)
     {        
-        return $this->template->get_body_context($this->context, $data);
+        return $this->template->get_body_context($data);
     }
     public function body_content_view($data)
     {        
-        return $this->template->get_body_content($this->context, $data);
+        return $this->template->get_body_content($data);
     }
     public function body_actionlist_view()
     {        
@@ -90,6 +90,6 @@ trait T_View {
     }
     public function head_view()
     {        
-        return $this->template->get_head($this->context);
+        return $this->template->get_head();
     }
 }

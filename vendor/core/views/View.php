@@ -15,23 +15,12 @@ class View implements I_View
     protected $action;
     protected $views_path;
     protected $template;
-    protected $context;
     
     function __construct() {
         $this->views_path = "/vendor/core/views";
         $this->template = new Default_Template();
-        $this->context = array();
-    }
-    public function setcontext($context) 
-    {
-        $this->context = $context;
     }
 
-    public function getcontextdata($context) 
-    {
-        return $this->context;
-    }
-    
     public function set_template_view($val) 
     {
         $this->template_view = $val;

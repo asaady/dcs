@@ -50,11 +50,22 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
     {
         return 'EProperty';
     }
+    public function getArrayNew($newobj)
+    {
+        return array('id' => $newobj['id'], 
+                    'name' => '_new_',
+                    'synonym' => 'Новый',
+                    'mditem' => $newobj['headid'],
+                    'mdid' => '',
+                    'mdtypename' => $newobj['classname'],
+                    'mdsynonym' => '',
+                    'mdtypedescription' => '');
+    }        
     public function item_classname()
     {
         return 'Entity';
     }        
-    public function load_data($context,$data='')
+    public function load_data($data='')
     {
         return array();
     }    
@@ -94,7 +105,7 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
             return tt_et;
         }
         $ent_obj = new Entity($curid); // получим объект хозяин 
-        $ent_plist = $ent_obj->properties;
+        $ent_plist = $ent_obj->getplist();
         foreach ($ent_plist as $prop)
         {
             if ($prop['name_type'] != 'id')
@@ -215,36 +226,34 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
         $sql .= $orderstr;
         return $sql;
     }
-    public function getItems($context) 
+    public function getItems($filter=array()) 
     {
         if (!count($this->properties)) {
             $properties = $this->getProperties(TRUE);
         } else {
             $properties = $this->properties;
         }
+        $context = DcsContext::getcontext();
         $objs = array();
-        $action = $context['ACTION'];
-        $limit = $context['LIMIT'];
-        $page = $context['PAGE'];
-        $filter = $context['DATA'];
-        $propid = '';
-        $docid = '';  
-        $curid = '';  
-        $ptype = '';
+        $action = $context->getattr('ACTION');
+        $limit = $context->getattr('LIMIT');
+        $page = $context->getattr('PAGE');
+        $data = $context->getattr('DATA');
+        $propid = $context->data_getattr('dcs_param_propid')['id']; //это уид реквизита отбора для выборки
+        $docid = $context->data_getattr('dcs_docid')['id'];  
+        $curid = $context->data_getattr('dcs_curid')['id'];
         $mdid = $this->id;
+        $ptype = '';
 	$offset=(int)($page-1)*$limit;
         $access_prop = array();
         $arr_prop = array();
         $entities = array();
         $ent_filter = array();
-        if (count($filter) > 0) {
-            $propid = $filter['dcs_param_id']['id']; //это уид реквизита отбора для выборки
-            $docid = (array_key_exists('dcs_docid', $filter) ? $filter['dcs_docid']['id'] : '');  
-            $curid = (array_key_exists('dcs_curid', $filter) ? $filter['dcs_curid']['id'] : '');  
-            if ($propid != '') {
-                $ent_filter[$propid] = new Filter($properties[$propid],$filter['dcs_param_val']['id']);
+        if ($propid != '') {
+            if (count($filter)) {
+                $ent_filter[$propid] = $filter;
             }
-        }    
+        }
         if (!User::isAdmin())
         {
             //вкл rls: добавим поля отбора в список реквизитов динамического списка
@@ -345,7 +354,7 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
 	DataManager::droptemptable($artemptable);
 	return $objs;
     }
-    public function getItemsProp($context) 
+    public function getItemsProp() 
     {
         return $this->getProperties(TRUE,'toset');
     }        
@@ -491,22 +500,20 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
         $strwhere = '';
         $arprop = array();
         $sql = '';
-        if ($filter) {
-            if (count($filter) > 0) {
-                foreach ($filter as $prop => $flt) {
-                    $ptype = $this->properties[$prop]['name_type'];
-                    $sw = DataManager::getstrwhere($flt,$ptype,'pv.value',$params);
-                    if ($sw !== '') {
-                        $sql .= "UNION SELECT DISTINCT it.entityid, it.entityid FROM \"PropValue_$ptype\" as pv INNER JOIN \"IDTable\" as it ON pv.id=it.id AND $sw"; 
-                    }    
-                }
-            }    
-            if ($sql !== '') {
-                $sql = substr($sql, strlen("UNION SELECT DISTINCT it.entityid, it.entityid"));
-                $sql =  "SELECT DISTINCT it.entityid as id , it.entityid ".$sql;
-                $strjoin = "it.entityid";
-            }    
-        }
+        if (count($filter) > 0) {
+            foreach ($filter as $prop => $flt) {
+                $ptype = $this->properties[$prop]['name_type'];
+                $sw = DataManager::getstrwhere($flt,$ptype,'pv.value',$params);
+                if ($sw !== '') {
+                    $sql .= "UNION SELECT DISTINCT it.entityid, it.entityid FROM \"PropValue_$ptype\" as pv INNER JOIN \"IDTable\" as it ON pv.id=it.id AND $sw"; 
+                }    
+            }
+        }    
+        if ($sql !== '') {
+            $sql = substr($sql, strlen("UNION SELECT DISTINCT it.entityid, it.entityid"));
+            $sql =  "SELECT DISTINCT it.entityid as id , it.entityid ".$sql;
+            $strjoin = "it.entityid";
+        }    
         if ($sql == '') {
             $key_edate = array_search(true, array_column($this->properties, 'isedate','id'));
             if ($key_edate !== FALSE) {
@@ -589,7 +596,7 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
     {
         return NULL;
     }        
-    public function getplist($context) 
+    public function getplist() 
     {
         return array();
     }        

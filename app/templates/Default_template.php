@@ -1,6 +1,7 @@
 <?php
 namespace Dcs\App\Templates;
 
+use Dcs\Vendor\Core\Models\DcsContext;
 use Dcs\Vendor\Core\Views\Template;
 use Dcs\Vendor\Core\Views\I_Template;
 
@@ -8,15 +9,16 @@ require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)
 
 class Default_Template extends Template implements I_Template
 {
-    public function get_head($context)
+    public function get_head()
     {
+        $context = DcsContext::getcontext();
         return "<meta charset=\"utf-8\">\n"
         . "<meta name=\"author\" content=\"".DCS_COMPANY_NAME."\">\n"
         . "<meta name=\"description\" content=\"".DCS_COMPANY_NAME."\">\n"
         . "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=Edge\">\n"
         . "<meta name=\"viewport\" content=\"width=device-width,"
                 . " initial-scale=1.0, maximum-scale=1.0, user-scalable=no\">\n"
-        . "<title>".$context['TITLE']."</title>\n"
+        . "<title>".$context->getattr('TITLE')."</title>\n"
         . "<!-- css stylesheets -->\n"
         . "<link href=\"/public/css/normalize.css\" rel=\"stylesheet\" type=\"text/css\">\n"
         . "<link href=\"/public/css/bootstrap.min.css\" rel=\"stylesheet\" type=\"text/css\">"
@@ -32,17 +34,17 @@ class Default_Template extends Template implements I_Template
         . "<script src=\"https://oss.maxcdn.com/respond/1.4.2/respond.min.js\"></script>\n"
         . "<![endif]-->\n";
     }        
-    public function get_body_header($context, $data)
+    public function get_body_header($data)
     {
         $prefix = '';
-        if ($context['PREFIX'] !== '') {
-            $prefix = "/".$context['PREFIX'];
+        $context = DcsContext::getcontext();
+        if ($context->getattr('PREFIX') !== '') {
+            $prefix = "/".$context->getattr('PREFIX');
         }
         $result = "<div class=\"navbar navbar-default\" role=\"navigation\">\n"
                   . "<div class=\"container\">\n";
-        if (($context['PREFIX'] === 'CONFIG')||
-            (($context['ACTION'] !== 'EDIT')&&
-             ($context['ACTION'] !== 'SET_EDIT'))) {
+        if (($context->getattr('PREFIX') === 'CONFIG')||
+            ($context->getattr('ACTION') !== 'EDIT')) {
             $result .="<div class=\"navbar-header col-xs-12 col-sm-12 col-md-12\">\n"
                     . "<button type=\"button\" class=\"navbar-toggle\""
                     . " data-toggle=\"collapse\" data-target=\"#b-menu-1\">\n"
@@ -55,10 +57,10 @@ class Default_Template extends Template implements I_Template
                     . "<div class=\"nav collapse navbar-collapse\" id=\"b-menu-1\">\n"
                     . "<ul class=\"nav navbar-nav pull-right\">\n";
             if (\Dcs\Vendor\Core\Models\User::isAuthorized()) {    
-                foreach($context['MENU'] as $ct) {  
+                foreach($context->getattr('MENU') as $ct) {  
                     $result .= "<li><a href=\"$prefix/$ct[ID]\">$ct[SYNONYM]</a></li>\n";
                 }
-                if (\Dcs\Vendor\Core\Models\User::isAdmin()&&($context['PREFIX'] !== 'CONFIG')) {    
+                if (\Dcs\Vendor\Core\Models\User::isAdmin()&&($context->getattr('PREFIX') !== 'CONFIG')) {    
                     $result .= "<li>\n"
                              . "<a href=\"/CONFIG/\">\n"
                              . "<i class=\"material-icons\">settings</i>\n"
@@ -95,41 +97,40 @@ class Default_Template extends Template implements I_Template
              . "</div>\n"
              . "</nav>\n";
     }        
-    public function get_body_context($context, $data)
+    public function get_body_context($data)
     {
+        $context = DcsContext::getcontext();
         $result = "<div class=\"dcs-context\">\n"
                 . "<input class=\"form-control\" name=\"dcs_prefix\" type=\"hidden\""
-                . " value=\"".$context['PREFIX']."\">\n"
+                . " value=\"".$context->getattr('PREFIX')."\">\n"
                 . "<input class=\"form-control\" name=\"dcs_mode\" type=\"hidden\""
-                . " value=\"".$context['MODE']."\">\n"
+                . " value=\"".$context->getattr('MODE')."\">\n"
                 . "<input class=\"form-control\" name=\"dcs_itemid\" type=\"hidden\""
-                . " value=\"".$context['ITEMID']."\">\n"
+                . " value=\"".$context->getattr('ITEMID')."\">\n"
                 . "<input class=\"form-control ajax\" name=\"dcs_setid\" type=\"hidden\""
-                . " value=\"".$context['SETID']."\">\n"
+                . " value=\"".$context->getattr('SETID')."\">\n"
                 . "<input class=\"form-control ajax\" name=\"dcs_curid\" type=\"hidden\""
-                . " value=\"".$context['CURID']."\">\n"
+                . " value=\"".$context->getattr('CURID')."\">\n"
                 . "<input class=\"form-control ajax\" name=\"dcs_propid\" type=\"hidden\""
-                . " value=\"".$context['PROPID']."\">\n"
+                . " value=\"".$context->getattr('PROPID')."\">\n"
                 . "<input class=\"form-control ajax\" name=\"dcs_action\" type=\"hidden\""
-                . " value=\"".$context['ACTION']."\">\n"
+                . " value=\"".$context->getattr('ACTION')."\">\n"
                 . "<input class=\"form-control ajax\" name=\"dcs_version\" type=\"hidden\""
                 . " value=\"".$data['version']."\">\n"
                 . "<input class=\"form-control ajax\" name=\"dcs_page\" type=\"hidden\""
-                . " value=\"".$context['PAGE']."\">\n"
+                . " value=\"".$context->getattr('PAGE')."\">\n"
                 . "<input class=\"form-control ajax\" name=\"dcs_command\" type=\"hidden\""
-                . " value=\"".$context['COMMAND']."\">\n"
+                . " value=\"".$context->getattr('COMMAND')."\">\n"
+                . "<input class=\"form-control ajax\" name=\"dcs_param_propid\" type=\"hidden\""
+                . " value=\"\">\n"
                 . "<input class=\"form-control ajax\" name=\"dcs_param_id\" type=\"hidden\""
                 . " value=\"\">\n"
                 . "<input class=\"form-control ajax\" name=\"dcs_param_val\" type=\"hidden\""
                 . " value=\"\">\n"
                 . "<input class=\"form-control ajax\" name=\"dcs_param_type\" type=\"hidden\""
                 . " value=\"\">\n";
-        $docid = '';
-        if (array_key_exists('dcs_docid', $context['DATA']) !== FALSE) {
-            $docid = $context['DATA']['dcs_docid']['id'];
-        }   
         $result .= "<input class=\"form-control ajax\" name=\"dcs_docid\""
-                . " type=\"hidden\" value=\"$docid\">\n";
+                . " type=\"hidden\" value=\"".$context->data_getattr('dcs_docid')['id']."\">\n";
         return $result;
     }
     public function get_body_ivalue()
@@ -207,15 +208,16 @@ class Default_Template extends Template implements I_Template
                 . "<script src=\"/public/js/moment.js\"></script>\n"
                 . "<script src=\"/public/js/core_print.js\"></script>\n";
     }        
-    public function get_body_script($context)
+    public function get_body_script()
     {
+        $context = DcsContext::getcontext();
         //echo "<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->";
         $result = "<script type=\"text/javascript\" src=\"/public/js/jquery-3.2.1.js\"></script>\n"
                 . "<script type=\"text/javascript\" src=\"/public/js/bootstrap.min.js\"></script>\n"
                 . "<script type=\"text/javascript\" src=\"/public/js/moment.js\"></script>\n"
                 . "<script type=\"text/javascript\" src=\"/public/js/core_app.js\"></script>\n";
-        if (($context['ACTION'] == 'EDIT')||
-            ($context['ACTION'] == 'CREATE')) {
+        if (($context->getattr('ACTION') == 'EDIT')||
+            ($context->getattr('ACTION') == 'CREATE')) {
             $result .= "<script src=\"/public/js/picker.js\"></script>\n"
                      . "<script src=\"/public/js/picker.date.js\"></script>\n"
                      . "<script src=\"/public/js/picker.time.js\"></script>";
@@ -328,13 +330,14 @@ class Default_Template extends Template implements I_Template
             . "</div>\n";
         return $result;
     }    
-    public function get_body_content($context,$data) 
+    public function get_body_content($data) 
     {
         $show_tab = false;
         $show_head = false;
         $show_set = false;
         $show_tabheader = false;
         $key_set = '';
+        $context = DcsContext::getcontext();
         if ((array_key_exists('PLIST', $data) !== false)&&(count($data['PLIST'])>0)) {
             $show_head = true;
         }  
@@ -345,8 +348,8 @@ class Default_Template extends Template implements I_Template
             if (array_key_exists('SETS', $data) !== false) {
                 if (count($data['SETS'])>0) {
                     if ((count($data['SETS']) == 1)&&
-                    ($context['SETID'] !== '')) {
-                        $key_set = array_search($context['SETID'], array_column($data['PLIST'],'id'));
+                    ($context->getattr('PROPID') !== '')) {
+                        $key_set = array_search($context->getattr('PROPID'), array_column($data['PLIST'],'id'));
                         $show_tabheader = true;
                     } else {
                         $show_tab = true;
@@ -359,16 +362,13 @@ class Default_Template extends Template implements I_Template
             $result .= "<ul id=\"dcsTab\" class=\"nav nav-tabs\">\n";
                 $dop = " class=\"active\"";
                 $dopfade = " in active";
-                $propid = '';
-                if (isset($context['DATA']['dcs_setid'])) {
-                    if ($context['DATA']['dcs_setid']['id'] !== '') {
-                        $dop = '';
-                        $dopfade = '';
-                        $propid = $context['DATA']['dcs_setid']['id'];
-                    }    
+                $propid = $context->data_getattr('dcs_propid')['id'];
+                if ($propid !== '') {
+                    $dop = '';
+                    $dopfade = '';
                 }    
                 $result .= "<li$dop><a data-toggle=\"tab\" href=\"#entityhead\">Заголовок</a></li>\n";
-                if ($context['ACTION'] !== 'CREATE')
+                if ($context->getattr('ACTION') !== 'CREATE')
                 {    
                     for($i=0, $props = $data['PLIST'], $size = count($props); $i<$size; $i++)
                     {
@@ -412,19 +412,19 @@ class Default_Template extends Template implements I_Template
                 } else {
                     if($t['rank']%2) {
                         $result .= "<div class=\"row\">\n";
-                        $result .= $this->outfield($t,'col-md-6',$context['ACTION']);
+                        $result .= $this->outfield($t,'col-md-6',$context->getattr('ACTION'));
                         if (($i+1) < $size) {
                             if (($props[$i+1]['rank']%2 == 0)&&($props[$i+1]['rank'] > 0)) {
                                 $i++;
                                 $t = $props[$i];
                                 $type = $t['name_type'];
-                                $result .= $this->outfield($t,'col-md-6',$context['ACTION']);
+                                $result .= $this->outfield($t,'col-md-6',$context->getattr('ACTION'));
                             }
                         }
                         $result .= "</div>\n";
                     } else {
                         $result .= "<div class=\"row\">\n";
-                        $result .= $this->outfield($t,'col-md-offset-6 col-md-6',$context['ACTION']);
+                        $result .= $this->outfield($t,'col-md-offset-6 col-md-6',$context->getattr('ACTION'));
                         $result .= "</div>\n";        
                     }
                 }
@@ -438,13 +438,14 @@ class Default_Template extends Template implements I_Template
             } elseif ($show_tabheader) {
                 $title = $data['PLIST'][$key_set]['synonym'];
                 $result .= "<p class=\"dcs-tabtitle\">$title</p>\n"
-                         . "<div id=\"".$context['SETID']."\">\n";
-                $result .= $this->set_view($data['SETS'][$context['SETID']],'dcs-items');
+                         . "<div id=\"".$context->getattr('PROPID')."\" "
+                         . "it=\"".$context->getattr('SETID')."\">\n";
+                $result .= $this->set_view($data['SETS'][$context->getattr('PROPID')],'dcs-items');
             }
             $result .= "</div>\n";
         } elseif ($show_tab) {
             $result .= "</div>\n";
-            if ($context['ACTION'] !== 'CREATE') {    
+            if ($context->getattr('ACTION') !== 'CREATE') {    
                 for($i=0, $props = $data['PLIST'], $size = count($props); $i<$size; $i++) {
                     $t = $props[$i];
                     if ($t['valmdtypename'] !== 'Sets') {
@@ -454,7 +455,7 @@ class Default_Template extends Template implements I_Template
                     if (($propid !== '')&&($propid == $t['id'])) {
                         $dop=" active in";
                     }    
-                    $result .= "<div id=\"$t[id]\" class=\"tab-pane fade$dop\">\n";
+                    $result .= "<div id=\"$t[id]\" it=\"\"  class=\"tab-pane fade$dop\">\n";
                     $result .= $this->set_view($data['SETS'][$t['id']],'dcs-items');
                     $result .= "</div>\n";
                 }
@@ -521,13 +522,14 @@ class Default_Template extends Template implements I_Template
         $result .= "</div>\n";
         return $result;
     }    
-    public function get_body_toprint_content($context, $data)
+    public function get_body_toprint_content($data)
     {
         $props=$data['PLIST'];
         $size=count($props);
         if (!$size) {    
             return;
         }    
+        $context = DcsContext::getcontext();
         $show_tab = FALSE;
         $show_head = FALSE;
         $show_set = FALSE;
@@ -542,8 +544,8 @@ class Default_Template extends Template implements I_Template
         if (($show_head)&&(!$show_set)) {
             if (array_key_exists('SETS', $data) !== FALSE) {
                 if (count($data['SETS'])>0) {
-                    if ($context['SETID'] !== '') {
-                        $key_set = array_search($context['SETID'], array_column($data['PLIST'],'id'));
+                    if ($context->getattr('SETID') !== '') {
+                        $key_set = array_search($context->getattr('SETID'), array_column($data['PLIST'],'id'));
                         $show_tabheader = TRUE;
                     }    
                 }    
@@ -606,8 +608,8 @@ class Default_Template extends Template implements I_Template
             } elseif ($show_tabheader) {
                 $title = $data['PLIST'][$key_set]['synonym'];
                 $result .= "<p class=\"dcs-tabtitle\">$title</p>\n";
-                $result .= "<div id=\"".$context['SETID']."\">\n";
-                $result .= $this->set_toprint($data['SETS'][$context['SETID']]);
+                $result .= "<div id=\"".$context->getattr('SETID')."\">\n";
+                $result .= $this->set_toprint($data['SETS'][$context->getattr('SETID')]);
             }
             $result .= "</div>\n";
         }    

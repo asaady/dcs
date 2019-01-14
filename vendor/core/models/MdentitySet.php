@@ -34,7 +34,7 @@ class MdentitySet extends Sheet implements I_Sheet
     {
         return 'Mdentity';
     }        
-    function load_data($context,$data='') 
+    function load_data($data='') 
     {
         if (!$data) {
             return array('id'=>array('id'=>$this->id, 'name'=>$this->id),
@@ -47,12 +47,11 @@ class MdentitySet extends Sheet implements I_Sheet
                       'synonym'=>array('id'=>$data['synonym'], 'name'=>$data['synonym'])
             );
     }
-    public function getItems($context) 
+    public function getItems($filter=array()) 
     {
-        $action = $context['ACTION'];
 	$sql = "SELECT md.id, md.name, md.synonym, md.mditem FROM \"MDTable\" AS md WHERE md.mditem= :mditem";
         $params = array('mditem'=>$this->id);
-        $dop = DataManager::get_md_access_text($action);
+        $dop = DataManager::get_md_access_text();
         if ($dop != '')
         {    
             $params['userid'] = $_SESSION['user_id'];
@@ -80,9 +79,10 @@ class MdentitySet extends Sheet implements I_Sheet
         }
         
     }        
-    public function getplist($context) 
+    public function getplist() 
     {
-        if ($context['PREFIX'] !== 'CONFIG') {
+        $context = DcsContext::getcontext();
+        if ($context->getattr('PREFIX') !== 'CONFIG') {
             return array();
         }    
         return array(

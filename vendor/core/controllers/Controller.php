@@ -10,9 +10,9 @@ abstract class Controller implements I_Controller {
 	public $view;
 	
 	// действие (action), вызываемое по умолчанию
-	function action_index($context)
+	function action_index()
 	{
 		$data = $this->model->get_data();		
-		$this->view->generate($context, $data);
+		$this->view->generate($data);
 	}
 }

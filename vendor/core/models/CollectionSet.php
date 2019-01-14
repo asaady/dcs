@@ -38,7 +38,7 @@ class CollectionSet extends Sheet implements I_Sheet, I_Set, I_Property
     {
         return 'CollectionItem';
     }        
-    public function load_data($context,$data='')
+    public function load_data($data='')
     {
         return NULL;
     }    
@@ -111,13 +111,13 @@ class CollectionSet extends Sheet implements I_Sheet, I_Set, I_Property
         }
         return $objs;
     }    
-    public function getItems($context) 
+    public function getItems($filter=array()) 
     {
-        $prefix = $context['PREFIX'];
-        $action = $context['ACTION'];
-        $limit = $context['LIMIT'];
-        $page = $context['PAGE'];
-        $filter = $context['DATA'];
+        $context = DcsContext::getcontext();
+        $prefix = $context->getattr('PREFIX');
+        $action = $context->getattr('ACTION');
+        $limit = $context->getattr('LIMIT');
+        $page = $context->getattr('PAGE');
         $mdid = $this->id;
         if (!isset($this->properties)) {
             $this->properties = $this->loadProperties();
@@ -130,14 +130,14 @@ class CollectionSet extends Sheet implements I_Sheet, I_Set, I_Property
             if (!User::isAdmin())
             {
                 //это уид реквизита user в таблице user_settings
-                $filter['dcs_param_id'] = array('id' => '94f6b075-1536-4d16-a548-bc8128791127','name'=>'');
-                $filter['dcs_param_val'] = array('id' => $_SESSION['user_id'],'name' => User::getUserName($_SESSION['user_id']));
+                $context->data_setattr('dcs_param_id',
+                        array('id' => '94f6b075-1536-4d16-a548-bc8128791127','name'=>''));
+                $context->data_setattr('dcs_param_val',
+                        array('id' => $_SESSION['user_id'],'name' => User::getUserName($_SESSION['user_id'])));
             }    
         } else {
-            if (count($filter) > 0) {
-                $filter_id = $filter['dcs_param_id']['id'];
-                $filter_val = $filter['dcs_param_val']['id'];
-            }
+            $filter_id = $context->data_getattr('dcs_param_id')['id'];
+            $filter_val = $context->data_getattr('dcs_param_val')['id'];
         }   
         $entities = $this->findCollByProp($filter);
         if (!count($entities))
@@ -254,7 +254,7 @@ class CollectionSet extends Sheet implements I_Sheet, I_Set, I_Property
         }  
         return $rows;
     }
-    public function getplist($context) 
+    public function getplist() 
     {
         return array();
     }        

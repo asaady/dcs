@@ -6,20 +6,19 @@ use Dcs\Vendor\Core\Models\Register;
 
 class Controller_Register extends Controller
 {
-	function __construct($context)
+	function __construct($id)
 	{
-            $this->model = new Register($context['ITEMID']);
+            $this->model = new Register($id);
             $this->view = new View();
 	}
 	
-	function action_index($context)
+	function action_index()
 	{
-		$data = $this->model->get_data($context['MODE']);
-                $context['content']=filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING).$this->view->get_views_path()."/entityset_view.php";
-                $this->view->generate($context, $data);
+		$data = $this->model->get_data();
+                $this->view->generate($data);
 	}
-	function action_view($context)
+	function action_view()
 	{
-                $this->action_index($context);
+                $this->action_index();
 	}
 }

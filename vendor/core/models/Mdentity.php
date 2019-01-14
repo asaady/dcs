@@ -5,7 +5,7 @@ require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)
 
 use PDO;
 
-class Mdentity extends Sheet implements I_Sheet, I_Item
+class Mdentity extends Sheet implements I_Sheet
 {
     use T_Sheet;
     use T_Mdentity;
@@ -209,8 +209,12 @@ class Mdentity extends Sheet implements I_Sheet, I_Item
         }
 	return $objs;
     }
-    function before_save($context, $data) 
+    function before_save($data='') 
     {
+        if (!$data) {
+            $context = DcsContext::getcontext();
+            $data = $context->getattr('DATA');
+        }    
         if (array_key_exists('name', $data))
         {
             if ($this->name != $data['name']['name']) 
@@ -264,7 +268,7 @@ class Mdentity extends Sheet implements I_Sheet, I_Item
         throw new DcsException("Class ".get_called_class().
             " create_object: unable to create new record",DCS_ERROR_WRONG_PARAMETER);
     }
-    public function getNameFromData($context,$data='')
+    public function getNameFromData($data='')
     {
         if (!$data) {
             return array('name' => $this->name, 'synonym' => $this->synonym);
@@ -352,11 +356,11 @@ class Mdentity extends Sheet implements I_Sheet, I_Item
         }
         return $objs;
     }
-    public function update_dependent_properties($context,$data)
+    public function update_dependent_properties($data)
     {
         return array('objs'=>null);
     }        
-    public function update_properties($context,$data,$n=0)     
+    public function update_properties($data,$n=0)     
     {
         $sql = '';
         $objs = array();

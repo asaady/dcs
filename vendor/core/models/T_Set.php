@@ -8,7 +8,7 @@ trait T_Set {
     {
         return NULL;
     }
-    public function getNameFromData($context,$data='')
+    public function getNameFromData($data='')
     {
         if (!$data) {
             return array('name' => $this->name, 'synonym' => $this->synonym);
@@ -17,7 +17,7 @@ trait T_Set {
                          'synonym' => $data['synonym']['name']);
         }    
     }        
-    public function getItemsProp($context) 
+    public function getItemsProp() 
     {
         return $this->getProperties(TRUE,'toset');
     }

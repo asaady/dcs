@@ -9,7 +9,7 @@ class Print_View extends View implements I_View
     }
     public function body_content_view($data)
     {
-        return $this->template->get_body_toprint_content($this->context, $data);
+        return $this->template->get_body_toprint_content($data);
     }        
     public function body_footer_view()
     {

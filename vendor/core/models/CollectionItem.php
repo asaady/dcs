@@ -11,7 +11,7 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
     use T_Collection;
     use T_Item;
     
-    public function getplist($context)
+    public function getplist()
     {
         $objs = array();
         foreach ($this->getCProperties() as $prop) {
@@ -54,7 +54,7 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
         $join = " FROM \"CTable\" AS ct";
         $params = array();
         if (!count($this->plist)) {
-            $this->getplist($context);
+            $this->getplist();
         }
         foreach ($this->plist as $row)
         {
@@ -100,9 +100,11 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
             $ares = array('status'=>'ERROR', 'msg'=>$sql);
         }
     }    
-    public function before_save($context,$data) 
+    public function before_save() 
     {
-        $this->load_data($context);
+        $context = DcsContext::getcontext();
+        $data = $context->getattr('DATA');
+        $this->load_data();
         $objs = array();
         foreach($this->plist as $row)
         {    
@@ -231,7 +233,7 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
     {
         return NULL;
     } 
-    public function update_dependent_properties($context,$data)
+    public function update_dependent_properties($data)
     {
         
     }        
@@ -239,7 +241,7 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
     {
         
     }        
-    public function update_properties($context,$data,$n=0)
+    public function update_properties($data,$n=0)
     {
         $objs = array();
         $objs['status']='OK';
@@ -251,7 +253,7 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
             $ares = $user->update($data);
             return $objs;
         }    
-        $this->load_data($context);
+        $this->load_data();
         $id = 'name';
         $sql = '';
         $params = array();
@@ -373,7 +375,7 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
 
 	return $objs;        
     }        
-    public function getNameFromData($context, $data='')
+    public function getNameFromData($data='')
     {
         if (!$data) {
             return array('name' => $this->name, 'synonym' => $this->synonym);

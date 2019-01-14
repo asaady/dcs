@@ -8,21 +8,21 @@ use Exception;
 use Dcs\Vendor\Core\Models\Entity;
 
 trait T_Sheet {
-    function get_data(&$context) 
+    function get_data() 
     {
-        $this->check_right($context);
+        $this->check_right();
         $objs = array(
           'id'=>$this->id,
           'name'=>$this->name,
           'synonym'=>$this->synonym,
           'version'=>$this->version
           );
-        $objs['PLIST'] = $this->getplist($context);
-        $objs['SETS'] = $this->getsets($context);
-        $objs['PSET'] = $this->getItemsProp($context);
+        $objs['PLIST'] = $this->getplist();
+        $objs['SETS'] = $this->getsets();
+        $objs['PSET'] = $this->getItemsProp();
        return $objs;
     }
-    public function getsets($context)
+    public function getsets()
     {
         return array();
     }        
@@ -41,12 +41,11 @@ trait T_Sheet {
     {
         return $this->id;
     }
-    function getnewid()
+    function getnewid($headid,$classname)
     {
 	$res = DataManager::dm_beginTransaction();
-        $headid = $this->getid();
         $sql = "INSERT INTO \"NewObjects\" (headid,classname) VALUES (:headid,:classname) RETURNING \"id\"";
-        $res=DataManager::dm_query($sql,array('headid'=>$headid,'classname'=>$this->item_classname()));
+        $res=DataManager::dm_query($sql,array('headid'=>$headid,'classname'=>$classname));
         if(!$res) {
             $res = DataManager::dm_rollback();
             throw new DcsException("Class ".get_called_class().
@@ -56,13 +55,20 @@ trait T_Sheet {
 	$res = DataManager::dm_commit();
         return $row['id'];
     }
-    function create($context) 
+    function create() 
     {
-        $id = $this->getnewid();
-        $redirect = '/'.$context['PREFIX'].'/'.$id;
+        $headid = $this->getid();
+        $classname = $this->item_classname();
+        $context = DcsContext::getcontext();
+        if ($context->getattr('SETID')) {
+            $headid = $context->getattr('DATA')['dcs_param_id']['id'];
+            $classname = 'Item';
+        }
+        $id = $this->getnewid($headid,$classname);
+        $redirect = '/'.$context->getattr('PREFIX').'/'.$id;
         return array('status'=>'OK', 'id'=>$id, 'redirect'=>$redirect);
     }
-    public function save_new($context,$data)
+    public function save_new($data)
     {
     }        
 
@@ -79,17 +85,17 @@ trait T_Sheet {
         if ($this->head) {
             $phead = $this->head;
             $phead->add_navlist($navlist); 
-            $strval = $phead->getNameFromData($this->getcontext())['synonym'];
+            $strval = $phead->getNameFromData()['synonym'];
             $navlist[] = array('id'=>$this->head->getid(),'name'=>sprintf("%s",$strval));
         }
     }
-    public function get_navlist($context)
+    public function get_navlist()
     {
         $navlist = array();
         $strval = 'Новый';
         $strkey = $this->id;
         if (!$this->isnew) {
-            $strval = $this->getNameFromData($context)['synonym'];
+            $strval = $this->getNameFromData()['synonym'];
         }    
         $this->add_navlist($navlist);
         $navlist[] = array('id' => $strkey,'name' => sprintf("%s",$strval));
@@ -166,6 +172,18 @@ trait T_Sheet {
 	}  
         return $this;
     }
+    public function getArrayNew($newobj)
+    {
+        return array('id' => $newobj['id'], 
+                    'name' => '_new_',
+                    'synonym' => 'Новый',
+                    'mdid' => $newobj['headid'],
+                    'mdname' => $newobj['classname'],
+                    'mdsynonym' => '',
+                    'mditem' => '',
+                    'mdtypename' => '',
+                    'mdtypedescription' => '');
+    }        
     public function getDetails($id) 
     {
         $sql = $this->txtsql_forDetails();
@@ -187,20 +205,21 @@ trait T_Sheet {
         $s_class = explode('\\',get_called_class());
         return end($s_class);
     }
-    public function update($context,$data)     
+    public function update($data)     
     {
         if ($this->isnew) {
-            $arr_name = $this->getNameFromData($context,$data);
+            $arr_name = $this->getNameFromData($data);
             if (!$this->create_object($arr_name['name'],$arr_name['synonym'])) {
                 throw new DcsException("Class ".get_called_class().
                     " save_new: unable to save new object",DCS_ERROR_SQL);
             }
         }
-        $res = $this->update_properties($context,$data);
-        if ($context['ACTION'] == 'SET_EDIT') {
+        $context = DcsContext::getcontext();
+        $res = $this->update_properties($data);
+        if ($context->getattr('SETID')) {
             if ($res['status'] == 'OK')
             {
-                $res1 = $this->update_dependent_properties($context,$res['objs']);
+                $res1 = $this->update_dependent_properties($res['objs']);
                 if (is_array($res1['objs'])) {
                     $res['objs'] += $res1['objs'];
                 }
@@ -241,23 +260,31 @@ trait T_Sheet {
 //        $objs['PSET'] = $pset;
 //        $objs['SETS'] = $sets;
 //    } 
-    public function getItemsByFilter($context) 
+    public function getItemsByFilter() 
     {
-        $prefix = $context['PREFIX'];
-        $action = $context['ACTION'];
+        $context = DcsContext::getcontext();
+        $prefix = $context->getattr('PREFIX');
+        $action = $context->getattr('ACTION');
     	$objs = array();
-        $objs['PLIST'] = $this->getplist($context);
+        $objs['PLIST'] = $this->getplist();
         $objs['LDATA'] = array();
-        $objs['LDATA'][$this->id] = $this->load_data($context);
-        $objs['PSET'] = $this->getItemsProp($context);
-        $objs['SDATA'] = $this->getItems($context);
-        $objs['SETS'] = $this->getsets($context);
-        $classname = $context['CLASSNAME'];
-        if ($action == 'SET_EDIT') {
+        $objs['LDATA'][$this->id] = $this->load_data();
+        $objs['PSET'] = $this->getItemsProp();
+        $objs['SDATA'] = $this->getItems();
+        $objs['SETS'] = $this->getsets();
+        $classname = $context->getattr('CLASSNAME');
+        if ($context->data_getattr('dcs_setid')['name'] !== '') {
             $classname = 'Sets';
         }
         $objs['actionlist'] = DataManager::getActionsbyItem($classname,$prefix,$action);
-        $objs['navlist'] = $this->get_navlist($context);
+        $objs['navlist'] = $this->get_navlist();
+	return $objs;
+    }
+    public function getListItemsByFilter($filter=array()) 
+    {
+    	$objs = array();
+        $objs['PSET'] = $this->head->getItemsProp();
+        $objs['SDATA'] = $this->head->getItems($filter);
 	return $objs;
     }
     public function getaccessright_id()
@@ -297,7 +324,7 @@ trait T_Sheet {
         }
         return 'VIEW';
     }
-    public function check_right(&$context) 
+    public function check_right() 
     {
         $res = "deny";
         $isadmin = User::isAdmin();
@@ -309,7 +336,8 @@ trait T_Sheet {
         if ($res == 'deny') {
             throw new DcsException('Access denied',DCS_DENY_ACCESS);
         }
-        $context['ACTION'] = $this->setcontext_action($res, $context['PREFIX']);
+        $context = DcsContext::getcontext();
+        $context->setattr('ACTION',$this->setcontext_action($res, $context->getattr('PREFIX')));
     }
     public function property($pid)
     {
@@ -386,8 +414,10 @@ trait T_Sheet {
         }
         return $objs;
     }
-    public function after_choice($context,$data)
+    public function after_choice()
     {
+        $context = DcsContext::getcontext();
+        $data = $context->getattr('DATA');
         if ($data['dcs_param_type']['name'] == 'cid') {
             $modelname = "\\Dcs\\Vendor\\Core\\Models\\CollectionItem";
             $dep_prop = 'name';
@@ -403,9 +433,9 @@ trait T_Sheet {
             throw new DcsException("Class ".get_called_class().
                 " constructor: id is not valid",DCS_ERROR_WRONG_PARAMETER);
         }
-        $plist = $this->getplist($context);
-        $c_plist = $ent->getplist($context);
-        $c_ldata = $ent->load_data($context);
+        $plist = $this->getplist();
+        $c_plist = $ent->getplist();
+        $c_ldata = $ent->load_data();
         $objs = array();
         foreach ($c_plist as $cprop) {
             $valprop = $cprop[$dep_prop];
@@ -427,4 +457,66 @@ trait T_Sheet {
         }
         return $objs;
     }        
+    public function before_save($data='') 
+    {
+        if (!$data) {
+            $context = DcsContext::getcontext();
+            $data = $context->getattr('DATA');
+        }    
+        $sql = '';
+        $objs = array();
+        if (!count($this->plist)) {
+            $this->getplist();
+        }
+        if (!count($this->data)) {
+            $this->load_data();
+        }
+        foreach ($this->plist as $prop)
+        {    
+            $propid = $prop['id'];
+            if ($propid == 'id') {
+                continue;
+            }    
+            if (!array_key_exists($propid, $data)) {        
+                continue;
+            }
+            $nval = $data[$propid]['name'];
+            $nvalid = $data[$propid]['id'];
+            $pvalid = '';
+            $pval = '';
+            if (array_key_exists($propid, $this->data)) {        
+                $pval = $this->data[$propid]['name'];
+                $pvalid = $this->data[$propid]['id'];
+            }
+            if ($prop['name_type'] == 'id') {
+                if ($pvalid == $nvalid) {
+                    continue;
+                }    
+                if (($pvalid == DCS_EMPTY_ENTITY)&&($nvalid=='')) {
+                    continue;
+                }
+            } elseif ($prop['name_type'] == 'date') {
+                if (substr($pval,0,19) == substr($nval,0,19)) 
+                {
+                    continue;
+                }    
+            } 
+            elseif ($prop['name_type']=='bool') 
+            {
+                if ((bool)$pval==(bool)$nval) 
+                {
+                    continue;
+                }   
+            } 
+            else 
+            {
+                if ($pval==$nval) 
+                {
+                    continue;
+                }    
+            }
+            $objs[]=array('id'=>$propid, 'name'=>$prop['name'],'pvalid'=>$pvalid, 'pval'=>$pval, 'nvalid'=>$nvalid, 'nval'=>$nval);
+        }       
+	return $objs;
+    }
 }    

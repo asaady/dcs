@@ -6,6 +6,7 @@ use DateTime;
 use Exception;
 
 use Dcs\Vendor\Core\Models\Entity;
+use Dcs\Vendor\Core\Models\Filter;
 
 trait T_Sheet {
     function get_data() 
@@ -270,7 +271,7 @@ trait T_Sheet {
         $objs['LDATA'] = array();
         $objs['LDATA'][$this->id] = $this->load_data();
         $objs['PSET'] = $this->getItemsProp();
-        $objs['SDATA'] = $this->getItems();
+        $objs['SDATA'] = $this->getItems(DcsContext::getfilters());
         $objs['SETS'] = $this->getsets();
         $classname = $context->getattr('CLASSNAME');
         if ($context->data_getattr('dcs_setid')['name'] !== '') {

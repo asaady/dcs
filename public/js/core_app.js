@@ -849,26 +849,18 @@ $('body').on('click', '#filter', function (e)
     var curval = '';
     var fval  = $el_cur.html();
     var fid   = $el_cur.attr("it");
-    $("input[name='dcs_param_id']").val(curcol); 
     if (fid !== '') {
-        $el_fval.val(fid); 
         curval = fid;
     } else {
-        $el_fval.val(fval); 
         curval = fval;
     }
-    if (curval !== "") {
-        if (filter_val != curval) {
-            $el_fval.val(curval); 
-        } else {
-            $el_fval.val(''); 
-        }    
-    } else  {
-        if (filter_val !== "") {
-            $el_fval.val(''); 
-        }    
+    if (filter_val !== "") {
+        curval = '';
     }    
-    curval = $el_fval.val();
+    $el_fval.val(curval); 
+    $("input[name='dcs_param_id']").val(fid); 
+    $("input[name='dcs_param_type']").val($el_cur.attr("vt")); 
+    $("input[name='dcs_param_propid']").val(curcol); 
     $("input[name='dcs_command']").val('load'); 
     $data = $('.ajax').serializeArray();
     $.ajax({

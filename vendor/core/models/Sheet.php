@@ -196,10 +196,6 @@ abstract class Sheet extends Model implements I_Sheet
         $res = DataManager::dm_query($sql,$params); 
         return $res->fetchAll(PDO::FETCH_ASSOC);
     }
-    public function rowname($arr) {
-        $param = str_replace("-","", strtolower($arr['name']));
-        return str_replace(" ","", $param);
-    }
     public static function txtsql_access() 
     {
         return '';

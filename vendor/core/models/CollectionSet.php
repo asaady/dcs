@@ -4,6 +4,7 @@ namespace Dcs\Vendor\Core\Models;
 use PDO;
 use DateTime;
 use Exception;
+use Dcs\Vendor\Core\Models\Filter;
 
 class CollectionSet extends Sheet implements I_Sheet, I_Set, I_Property
 {
@@ -60,7 +61,7 @@ class CollectionSet extends Sheet implements I_Sheet, I_Set, I_Property
 //      val = filter value
 //      val_min = min filter value (optional)    
 //      val_max = max filter value (optional)    
-    public function findCollByProp($filter) 
+    public function findCollByProp($filters) 
     {
         
         $ftype='';
@@ -68,34 +69,24 @@ class CollectionSet extends Sheet implements I_Sheet, I_Set, I_Property
         $propid = '';
         $strwhere = '';
         $col_filter = array();
-        if (count($filter)>0) {
-            $propid = $filter['dcs_param_id']['id'];
-            if ($propid != '') {
-                $arprop = $this->properties[$propid];
-                $ftype = $arprop['name_type'];
-                if ($ftype == 'text') {
-                    return array();
-                }
-                $dbtable = "CPropValue_$ftype";
-                $col_filter[$propid] = new Filter($this->properties[$propid],$filter['dcs_param_val']['id']);
+        foreach($filters as $filter) {
+            $propid = $filter->getprop();
+            $ftype = $filter->gettype();
+            if ($ftype == 'text') {
+                return array();
             }
+            $dbtable = "CPropValue_$ftype";
+            $col_filter[$propid] = $filter;
+            break;
         }    
         $params = array();
-        if ($col_filter) {
-            if (count($col_filter) > 0) {
-                foreach ($col_filter as $prop => $flt) {
-                    $ptype = $this->properties[$prop]['name_type'];
-                    $sw = DataManager::getstrwhere($flt,$ptype,'pv.value',$params,'pv','pid');
-                    if ($sw !== '') {
-                        $strwhere .= "AND $sw"; 
-                    }    
-                }
-                $strwhere = substr($strwhere, strlen("AND"));
-            }
-        }    
+        if (count($col_filter) > 0) {
+            $strwhere = Filter::getstrwhere($col_filter,'pv_','.value',$params);
+        }
         
         if ($strwhere != '') {
-            $sql = "SELECT DISTINCT pv.id as cid FROM \"$dbtable\" as pv WHERE $strwhere"; 
+            $rowname = Filter::rowname($propid);
+            $sql = "SELECT DISTINCT pv.id as cid FROM \"$dbtable\" as pv_$rowname WHERE $strwhere"; 
         } else {
             $sql = "SELECT et.id as cid FROM \"CTable\" as et WHERE et.mdid=:mdid LIMIT ".DCS_COUNT_REC_BY_PAGE; 
             $params = array('mdid'=>$this->id);
@@ -124,8 +115,6 @@ class CollectionSet extends Sheet implements I_Sheet, I_Set, I_Property
         }
         $plist = $this->properties;
     	$objs = array();
-        $filter_id = '';
-        $filter_val =  '';
         if ($this->name == 'user_settings') {
             if (!User::isAdmin())
             {
@@ -135,9 +124,6 @@ class CollectionSet extends Sheet implements I_Sheet, I_Set, I_Property
                 $context->data_setattr('dcs_param_val',
                         array('id' => $_SESSION['user_id'],'name' => User::getUserName($_SESSION['user_id'])));
             }    
-        } else {
-            $filter_id = $context->data_getattr('dcs_param_id')['id'];
-            $filter_val = $context->data_getattr('dcs_param_val')['id'];
         }   
         $entities = $this->findCollByProp($filter);
         if (!count($entities))
@@ -158,7 +144,7 @@ class CollectionSet extends Sheet implements I_Sheet, I_Set, I_Property
                 continue;
             }
             $rid = $row['id'];
-            $rowname = $this->rowname($row);
+            $rowname = Filter::rowname($rid);
             $rowtype = $row['name_type'];
             
             if ($rowtype=='cid')
@@ -181,22 +167,12 @@ class CollectionSet extends Sheet implements I_Sheet, I_Set, I_Property
                 $str0_req .= ", '$rid' as pid_$rowname, '' as id_$rowname, pv_$rowname.value as name_$rowname";
                 $str_req .=" LEFT JOIN \"CPropValue_$rowtype\" as pv_$rowname ON et.id = pv_$rowname.id AND pv_$rowname.pid=:$rowname";
             }    
-            if ($filter_id != '')
-            {
-                if ($rid == $filter_id)
-                {
-                    $filtername = "pv_$rowname.value";
-                    $filtertype = $rowtype;
-                }    
-            }
             $params[$rowname]=$rid;
-            
         }
         $strwhere='';
-        if ($filtername!='')
+        if (count($filter))
         {
-            $col_filter = new Filter($this->properties[$filter['dcs_param_id']['id']],$filter['dcs_param_val']['id']);
-            $strwhere = DataManager::getstrwhere($col_filter,$filtertype,$filtername,$params);
+            $strwhere = Filter::getstrwhere($filter,'pv_','.value',$params);
         }
         $str0_req .=" FROM tt_et as et";
         $sql = $str0_req.$str_req;

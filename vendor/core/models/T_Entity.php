@@ -3,6 +3,7 @@ namespace Dcs\Vendor\Core\Models;
 
 use PDO;
 use DateTime;
+use Dcs\Vendor\Core\Models\Filter;
 
 trait T_Entity {
     public static function etxtsql_access($ra_tbl = 'RoleAccess', $type = 'mdid') 
@@ -342,7 +343,7 @@ trait T_Entity {
                 continue;
             }
             $rid = $row['id'];
-            $rowname = $this->rowname($row);
+            $rowname = Filter::rowname($rid);
             $rowtype = $row['name_type'];
             $str0_t = ", tv_$rowname.propid as propid_$rowname, pv_$rowname.value as name_$rowname, '' as id_$rowname";
             $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";

@@ -95,7 +95,7 @@ trait T_Item
             while($row = $sth->fetch(PDO::FETCH_ASSOC)) {
                 $this->data['id'] = array('id'=>$row['id'],'name'=>$row['id']);
                 foreach($this->plist as $prow) {
-                    $rowname = $this->rowname($prow);
+                    $rowname = Filter::rowname($prow['id']);
                     if (array_key_exists('id_'.$rowname, $row)) {
                         $this->data[$prow['id']] = array(
                             'id'=>$row["id_$rowname"],

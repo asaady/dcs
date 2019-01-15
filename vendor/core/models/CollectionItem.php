@@ -61,7 +61,7 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
             if ($row['field'] == 0) {
                 continue;
             }
-            $rowname = $this->rowname($row);
+            $rowname = Filter::rowname($row['id']);
             $rowtype = $row['name_type'];
             if ($rowtype=='cid')
             {

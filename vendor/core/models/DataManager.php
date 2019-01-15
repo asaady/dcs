@@ -6,6 +6,7 @@ use PDOStatement;
 use PDOException;
 use Dcs\Vendor\Core\Models\DcsException;
 use Dcs\Vendor\Core\Models\Db;
+use Dcs\Vendor\Core\Models\Filter;
 
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING) . "/app/dcs_const.php");
 
@@ -134,29 +135,29 @@ class DataManager {
         return $sth->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public static function getstrwhere($filter, $type, $name, &$params,$colname='it',$parname='propid') 
-    {
-        $strwhere = '';
-        if (!($filter instanceof Filter)) {
-            throw new DcsException("it is not filter class",DCS_ERROR_WRONG_PARAMETER);
-        }
-        $fval = $filter->getval();
-        $prop = $filter->getprop();
-        $pid = $prop['id'];
-        $strpid = str_replace('-', '', $pid);
-        if ($fval != '') {
-            switch ($type) {
-                case 'date': $filterval = "$name>='" . substr($fval, 0, 10) . " 00:00:00+3' AND $name<='" . substr($fval, 0, 10) . " 23:59:59+3'";
-                    break;
-                default: $filterval = "$name=:par".$strpid;
-                    $params['par'.$strpid] = $fval;
-                    break;
-            }
-            $params['pid'.$strpid] = $pid;
-            $strwhere .= " $filterval and $colname.$parname=:pid$strpid";
-        }
-        return $strwhere;
-    }
+//    public static function getstrwhere($filter, $name, &$params,$colname='it',$parname='propid') 
+//    {
+//        $strwhere = '';
+//        if (!($filter instanceof Filter)) {
+//            throw new DcsException("it is not filter class",DCS_ERROR_WRONG_PARAMETER);
+//        }
+//        $fval = $filter->getval();
+//        $pid = $filter->getprop();
+//        $type = $filter->gettype();
+//        $strpid = str_replace('-', '', $pid);
+//        if ($fval != '') {
+//            switch ($type) {
+//                case 'date': $filterval = "$name>='" . substr($fval, 0, 10) . " 00:00:00+3' AND $name<='" . substr($fval, 0, 10) . " 23:59:59+3'";
+//                    break;
+//                default: $filterval = "$name=:par".$strpid;
+//                    $params['par'.$strpid] = $fval;
+//                    break;
+//            }
+//            $params['pid'.$strpid] = $pid;
+//            $strwhere .= " $filterval and $colname.$parname=:pid$strpid";
+//        }
+//        return $strwhere;
+//    }
 
     public static function createtemptable($sql, $tmpname, $params = []) {
         $sth = self::dm_query("CREATE TEMP TABLE $tmpname AS ($sql);", $params);

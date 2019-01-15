@@ -2,6 +2,7 @@
 namespace Dcs\Vendor\Core\Models;
 
 use PDO;
+use Dcs\Vendor\Core\Models\Filter;
 
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 
@@ -50,6 +51,18 @@ class DcsContext
             self::$_instance = new self;  // создаем экземпляр данного класса
         }
         return self::$_instance; // возвращаем экземпляр данного класса
+    }
+    
+    public static function getfilters()
+    {
+        $context = self::getcontext();
+        if ($context->data_getattr('dcs_param_val')['name'] == '') {
+            return array();
+        }
+        return array($context->data_getattr('dcs_param_propid')['name'] =>
+                new Filter($context->data_getattr('dcs_param_propid')['name'],
+                        $context->data_getattr('dcs_param_val')['name'],
+                        $context->data_getattr('dcs_param_type')['name']));
     }
     
     protected function setitems($data, &$curval, &$validation, &$indx,&$indd)

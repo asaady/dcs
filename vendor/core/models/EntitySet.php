@@ -79,11 +79,11 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
         $plist = $this->getProperties(true,'toset');
         foreach ($plist as $prop)
         {
-            if ($prop['name_type']=='id') //фильтруем только по полям ссылочного типа
+            if ($prop['name_type'] == 'id') //фильтруем только по полям ссылочного типа
             {
                 $propid = $prop['propid']; // ид шаблона реквизита
                 $key = array_search($propid, $arr_ent_propid);
-                if ($key!==FALSE)
+                if ($key !== FALSE)
                 {
                     //нашли реквизит по которому надо отфильтровать строки и добавили к массиву фильтров
                     $ent_filter[$prop['id']] = new Filter($prop,$ent_obj->getattrid($key));
@@ -156,7 +156,7 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
         $activity_id = array_search('activity', array_column($plist,'name','id'));
         foreach($plist as $row) {
             $rid = $row['id'];
-            $rowname = $this->rowname($row);
+            $rowname = Filter::rowname($rid);
             $rowtype = $row['name_type'];
             $str0_t = ", tv_$rowname.propid as propid_$rowname, pv_$rowname.value as name_$rowname, '' as id_$rowname";
             $str_t = " LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
@@ -239,7 +239,6 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
         $limit = $context->getattr('LIMIT');
         $page = $context->getattr('PAGE');
         $data = $context->getattr('DATA');
-        $propid = $context->data_getattr('dcs_param_propid')['id']; //это уид реквизита отбора для выборки
         $docid = $context->data_getattr('dcs_docid')['id'];  
         $curid = $context->data_getattr('dcs_curid')['id'];
         $mdid = $this->id;
@@ -248,12 +247,6 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
         $access_prop = array();
         $arr_prop = array();
         $entities = array();
-        $ent_filter = array();
-        if ($propid != '') {
-            if (count($filter)) {
-                $ent_filter[$propid] = $filter;
-            }
-        }
         if (!User::isAdmin())
         {
             //вкл rls: добавим поля отбора в список реквизитов динамического списка
@@ -280,7 +273,7 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
         }
         if ($this->mdtypename=='Items') //запрошены строки ТЧ?
         {
-            $tt_et = $this->get_tt_items($docid, $curid, $ent_filter, $entities);
+            $tt_et = $this->get_tt_items($docid, $curid, $filter, $entities);
         }    
         else
         {
@@ -291,7 +284,7 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
         }    
         if ($tt_et == '')
         {
-            $tt_et = $this->findEntitiesByProp('tt_et', $access_prop, $ent_filter ,$limit);
+            $tt_et = $this->findEntitiesByProp('tt_et', $access_prop, $filter ,$limit);
         }    
         if ($tt_et == '')
         {
@@ -302,20 +295,22 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
         $artemptable[] = $tt_et;
         $plist = $this->getProperties(TRUE,'toset');
         $params = array();
-        $sql = $this->sqltext_entitylist($properties,$ent_filter,$arr_prop,$access_prop,$action,$params);
+        $sql = $this->sqltext_entitylist($properties,$filter,$arr_prop,$access_prop,$action,$params);
         if ($sql=='')
         {
             return $objs;
         }    
+//        die(var_dump($sql).var_dump($params));
 	$res = DataManager::dm_query($sql,$params);
         $arr_e = array();
         $arr_name = array();
         $arr_id = array_filter($properties, function ($prow) { return $prow['name_type'] == 'id'; });
+        $i = 0;
         while($row = $res->fetch(PDO::FETCH_ASSOC)) {
             $objs[$row['id']] = array('id'=>$row['id'],'name'=>'','class' => 'active');
             $arr_name[$row['id']] = array();
             foreach($plist as $rid => $row_plist) {
-                $field_val = $this->rowname($row_plist);
+                $field_val = Filter::rowname($rid);
                 $field_id = "propid_$field_val";
                 $rowid = "id_$field_val";
                 $rowname = "name_$field_val";
@@ -502,11 +497,13 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
         $sql = '';
         if (count($filter) > 0) {
             foreach ($filter as $prop => $flt) {
-                $ptype = $this->properties[$prop]['name_type'];
-                $sw = DataManager::getstrwhere($flt,$ptype,'pv.value',$params);
-                if ($sw !== '') {
-                    $sql .= "UNION SELECT DISTINCT it.entityid, it.entityid FROM \"PropValue_$ptype\" as pv INNER JOIN \"IDTable\" as it ON pv.id=it.id AND $sw"; 
-                }    
+                $sw = Filter::getstrwhere(array($prop=>$flt),'pv_','.value',$params);
+                $ptype = $flt->gettype();
+                $rowname = Filter::rowname($prop);
+                $sql .= "UNION SELECT DISTINCT it.entityid, it.entityid "
+                        . "FROM \"PropValue_$ptype\" as pv_$rowname "
+                        . "INNER JOIN \"IDTable\" as it "
+                        . "ON pv_$rowname.id=it.id $sw"; 
             }
         }    
         if ($sql !== '') {

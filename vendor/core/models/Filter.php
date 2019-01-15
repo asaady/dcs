@@ -6,16 +6,18 @@ use Exception;
 class Filter
 {
     protected $prop;
+    protected $type;
     protected $val;
     protected $valmin;
     protected $valmax;
-    public function __construct($prop, $val, $valmin='',$valmax='')
+    public function __construct($prop, $val, $type, $valmin='',$valmax='')
     {
 	if (!$prop) {
             throw new DcsException("empty propid Filter");
 	}
         $this->prop = $prop; 
         $this->val = $val; 
+        $this->type = $type; 
         $this->valmin = $valmin; 
         $this->valmax = $valmax; 
     }
@@ -31,6 +33,10 @@ class Filter
     {
         return $this->prop;
     }
+    public function gettype()
+    {
+        return $this->type;
+    }
     public function getmdid()
     {
         return $this->prop['mdid'];
@@ -45,15 +51,15 @@ class Filter
     }
     public function get_findstr($prefix,$postfix,&$params) 
     {
-        $rowname = $prefix.str_replace(" ","",strtolower($this->prop['name'])).$postfix;
+        $rowname = $prefix.self::rowname($this->prop).$postfix;
         $strwhere='';
         $fval = $this->val;
-        $type = $this->prop['name_type'];
+        $type = $this->type;
         if ($type == 'date')
         {
             $rowname = "to_char($rowname,'YYYY-MM-DD')";
         }    
-        $parname = 'par_'.str_replace("-","_",$this->prop['id']);
+        $parname = 'par_'.str_replace("-","_",$this->prop);
         if ($fval != '') {    
             if (is_array($fval)) {
                 if (count($fval) > 1) {    
@@ -89,6 +95,10 @@ class Filter
             }
         } 
         return $strwhere;
+    }
+    public static function rowname($rid) {
+        $param = str_replace("-","", strtolower($rid));
+        return str_replace(" ","", $param);
     }
     public static function getstrwhere($arr_filter,$prefix,$postfix,&$params) 
     {

@@ -10,6 +10,10 @@ class Mdentity extends Sheet implements I_Sheet
     use T_Sheet;
     use T_Mdentity;
     
+    public function dbtablename()
+    {
+        return 'MDTable';
+    }
     public function txtsql_forDetails() 
     {
         return "SELECT mdt.id, mdt.name, mdt.synonym, mdt.mditem, "

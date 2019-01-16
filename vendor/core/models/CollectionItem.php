@@ -11,6 +11,10 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
     use T_Collection;
     use T_Item;
     
+    public function dbtablename()
+    {
+        return 'CTable';
+    }
     public function getplist()
     {
         $objs = array();

@@ -11,6 +11,10 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
     use T_Set;
     use T_Entity;
     
+    public function dbtablename()
+    {
+        return 'MDTable';
+    }
     public function loadProperties()
     {
         $sql = $this->txtsql_properties("mdid");

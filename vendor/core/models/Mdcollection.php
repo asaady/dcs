@@ -10,6 +10,10 @@ class Mdcollection extends Sheet implements I_Sheet, I_Set, I_Property
     use T_Mdentity;
     use T_Collection;
     
+    public function dbtablename()
+    {
+        return 'MDTable';
+    }
     public function txtsql_forDetails() 
     {
         return "SELECT mdt.id, mdt.name, mdt.synonym, mdt.mditem, "

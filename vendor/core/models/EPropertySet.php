@@ -1,7 +1,7 @@
 <?php
 namespace Dcs\Vendor\Core\Models;
 
-class EPropertySet extends PropertySet {
+class EPropertySet {
     use T_Sheet;
     use T_Set;
     

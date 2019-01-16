@@ -11,6 +11,10 @@ class EProperty extends Sheet
     use T_Item;
     use T_Property;
     
+    public function dbtablename()
+    {
+        return 'MDProperties';
+    }
     public function txtsql_forDetails()
     {
         return "SELECT mp.id, mp.name, mp.synonym, mp.mdid, 

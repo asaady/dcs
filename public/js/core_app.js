@@ -747,12 +747,16 @@ function erase_success (result)
     var itemid = $("input[name='dcs_itemid']").val(); 
     var propid = $("input[name='dcs_propid']").val();    
     $('#dcsModal').modal('hide');
-    dop='';
-    if (propid !== '')
-    {
-        dop ='?dcs_propid='+propid; 
-    }   
-    location.href=getprefix()+'/'+itemid+dop;
+    if (result.status == 'ERROR') {
+        delete_error(result);
+    } else {
+        var dop='';
+        if (propid !== '')
+        {
+            dop ='?dcs_propid='+propid; 
+        }   
+        location.href=getprefix()+'/'+itemid+dop;
+    }
 };
 function erase() {
     var $data;
@@ -768,7 +772,8 @@ function erase() {
       type: 'get',
       dataType: 'json',
       data: $data,
-        success: erase_success
+        success: erase_success,
+        error: delete_error
     });
 };
 function before_delete_success(result) 
@@ -807,6 +812,7 @@ function before_delete_success(result)
 }   
 function delete_error(result) 
 {
+    console.log(result);
     $(".modal-title").text('Действие не выполнено.');
     $('body').one('click', '#dcsModalOK', function () {
         $('#dcsModal').modal('hide');

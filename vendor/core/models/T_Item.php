@@ -184,7 +184,7 @@ trait T_Item
                                 break;
                             }
                         } else {
-                            $arr_dep_ent_propid = array_column($dep_ent->plist,'propid','id');
+                            $arr_dep_ent_propid = array_column($dep_ent->getplist(),'propid','id');
                             $dep_ent_pid = array_search($prop['propid'],$arr_dep_ent_propid);
                             if ($dep_ent_pid === FALSE) {
                                 //среди реквизитов зависимого объекта нет шаблона реквизита текущего объекта
@@ -199,25 +199,26 @@ trait T_Item
                     }    
                     
                     //попробуем найти объекты зависимого реквизита  - в надежде установить единственное значение
-                    $context = DcsContext::getcontext();
-                    $context->getattr('DATA')['dcs_itemid'] =  array('id' => $dep_prop['valmdid'],'name' => '');
-                    $context->getattr('DATA')['dcs_curid'] = array('id'=>$this->id,'name'=>'');
-                    if ($this->mdtypename == 'Items') {
-                        //это строка тч - в фильтр передадим объект владелец ТЧ
-                        $ar_obj = DataManager::get_obj_by_item($this->id);
-                        if (count($ar_obj)>0) {
-                            $filter['DATA']['dcs_docid'] = array('id'=>$ar_obj[0]['id'],'name'=>'');
-                        }
-                    }
-                    $es = new EntitySet($dep_prop['valmdid']);
-                    $ar_dep_data = $es->getItems($filter);
-                    foreach ($ar_dep_data as $dep_entid => $obj) {
-                        $res[$dep_pid] = array('value'=>$dep_entid,'id'=>$dep_entid,'type'=>$dep_prop['name_type'], 'name'=>$obj['name']);
-                        break;
-                    }
-                    if (count($res) == 0) {
-                        $res[$dep_pid] = array('value'=>DCS_EMPTY_ENTITY,'type'=>$dep_prop['name_type'], 'name'=>'');                    
-                    }
+                    //НАДО ПЕРЕДЕЛЫВАТЬ!!!!
+//                    $context = DcsContext::getcontext();
+//                    $context->data_setattr('dcs_itemid', array('id' => $dep_prop['valmdid'],'name' => ''));
+//                    $context->getattr('DATA')['dcs_curid'] = array('id'=>$this->id,'name'=>'');
+//                    if ($this->mdtypename == 'Items') {
+//                        //это строка тч - в фильтр передадим объект владелец ТЧ
+//                        $ar_obj = DataManager::get_obj_by_item($this->id);
+//                        if (count($ar_obj)>0) {
+//                            $filter['DATA']['dcs_docid'] = array('id'=>$ar_obj[0]['id'],'name'=>'');
+//                        }
+//                    }
+//                    $es = new EntitySet($dep_prop['valmdid']);
+//                    $ar_dep_data = $es->getItems($filter);
+//                    foreach ($ar_dep_data as $dep_entid => $obj) {
+//                        $res[$dep_pid] = array('value'=>$dep_entid,'id'=>$dep_entid,'type'=>$dep_prop['name_type'], 'name'=>$obj['name']);
+//                        break;
+//                    }
+//                    if (count($res) == 0) {
+//                        $res[$dep_pid] = array('value'=>DCS_EMPTY_ENTITY,'type'=>$dep_prop['name_type'], 'name'=>'');                    
+//                    }
                 }
             }
         }    

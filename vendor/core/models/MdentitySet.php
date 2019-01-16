@@ -9,6 +9,10 @@ class MdentitySet extends Sheet implements I_Sheet
     use T_Sheet;
     use T_Set;
     
+    public function dbtablename()
+    {
+        return 'CTable';
+    }
     public function txtsql_forDetails() 
     {
         return "SELECT ct.id, ct.name, ct.synonym, 

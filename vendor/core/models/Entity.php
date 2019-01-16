@@ -16,6 +16,10 @@ class Entity extends Sheet implements I_Sheet, I_Item
     protected $enumber;
     protected $num;
     
+    public function dbtablename()
+    {
+        return 'ETable';
+    }
     public function getplist()
     {
         $sql = $this->txtsql_properties("mdid");

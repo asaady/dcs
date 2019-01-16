@@ -520,4 +520,30 @@ trait T_Sheet {
         }       
 	return $objs;
     }
+    function before_delete() 
+    {
+        $nval="удалить";
+        return array($this->id=>array(
+            'id'=>$this->id,
+            'name'=>"Элемент ".$this->get_mdsynonym(),
+            'pval'=>$this->name,
+            'nval'=>$nval
+                ));
+    }    
+    function delete() 
+    {
+	DataManager::dm_beginTransaction();
+        $id = $this->id;
+        $params = array();
+        $params['id']=$id;
+        $sql = "DELETE FROM \"".$this->dbtablename()."\" WHERE id = :id";
+        try {
+            DataManager::dm_query($sql,$params);
+        } catch (DcsException $exc) {
+            DataManager::dm_rollback();
+            return array('status'=>'ERROR','msg'=>$exc->getTraceAsString());
+        }
+        DataManager::dm_commit();
+        return array('status'=>'OK', 'id'=>$this->id);
+    }    
 }    

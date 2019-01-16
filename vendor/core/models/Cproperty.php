@@ -11,6 +11,10 @@ class Cproperty extends Sheet implements I_Sheet
     use T_Item;
     use T_Property;
     
+    public function dbtablename()
+    {
+        return 'CProperties';
+    }
     public function getplist($context)
     {
         return array(

@@ -9,6 +9,7 @@ interface I_Sheet
     public function get_data();
     public function get_select_properties($strwhere);
     public function getArrayNew($newobj);    
+    public function dbtablename();
     public function getItems($filter=array());
     public function getItemsByFilter();
     public function getItemsByName($name);

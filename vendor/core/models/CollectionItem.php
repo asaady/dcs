@@ -248,10 +248,6 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
     {
         
     }        
-    public function save_new()
-    {
-        
-    }        
     public function update_properties($data,$n=0)
     {
         $objs = array();

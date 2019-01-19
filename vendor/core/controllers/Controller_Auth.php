@@ -45,7 +45,7 @@ class Controller_Auth extends Controller
         } elseif (empty($password['name'])) {
             $arData = array('status'=>'ERROR', 'msg'=>"Введите пароль");
         } else {
-            $remember = (bool)$remember['name'];
+            $remember = (bool)$rememberme['name'];
             $user = new User();
             $auth_result = $user->authorize($username['name'], $password['name'], $remember);
             if (!$auth_result) {

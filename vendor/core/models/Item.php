@@ -27,7 +27,7 @@ class Item extends Sheet implements I_Sheet
             throw new DcsException("Class ".get_called_class().
                 " constructor: id is wrong",DCS_ERROR_WRONG_PARAMETER);
         }
-        $this->setid = $arData['setid'];
+        $this->setid = $arData['headid'];
         $this->name = $arData['name']; 
         $this->mdid = $arData['mdid'];
         if ($this->name === '_new_') {
@@ -38,27 +38,18 @@ class Item extends Sheet implements I_Sheet
         $this->mdsynonym = $arData['mdsynonym'];
         $this->mditem = $arData['mditem'];
         $this->mdtypename = $arData['mdtypename'];
-//        if ($this->head) {
-//
-//            $this->mdname = $this->head->getname();
-//            $this->mdsynonym = $this->head->getsynonym();
-//            $this->mditem = $this->head->getmditem();
-//            $this->mdtypename = $this->head->getmdtypename();
-//        }    
         if ($hd) {
-//            if ($hd->getid() !== $this->mdid) {
-//                throw new DcsException("Class ".get_called_class().
-//                " constructor: head is wrong",DCS_ERROR_WRONG_PARAMETER);
-//            }
             $this->set_head($hd);
         } else {    
             $this->head = $this->get_head();
         }
         if ($this->isnew) {
             foreach ($this->head->getplist() as $prop) {
-                if ($prop['valmdtypename'] == 'Item') {
+                if ($prop['valmdtypename'] == 'Items') {
                     $this->mdid = $prop['valmdid'];
                     $this->mdname = $prop['name_valmdid'];
+                    $this->mditem = $prop['valmditem'];
+                    $this->mdtypename = $prop['valmdtypename'];
                     break;
                 }
             }
@@ -70,7 +61,7 @@ class Item extends Sheet implements I_Sheet
     }
     public function txtsql_forDetails() 
     {
-        return "select et.id, it.rank as name, '' as synonym, it.parentid as setid,
+      return "select et.id, it.rank as name, '' as synonym, it.parentid as headid,
                     et.mdid , md.name as mdname, md.synonym as mdsynonym, 
                     md.mditem, tp.name as mdtypename, tp.synonym as mdtypedescription 
                     FROM \"ETable\" as et
@@ -103,7 +94,7 @@ class Item extends Sheet implements I_Sheet
         return array('id' => $newobj['id'], 
                     'name' => '_new_',
                     'synonym' => 'Новый',
-                    'setid' => $newobj['headid'],
+                    'headid' => $newobj['headid'],
                     'mdid' => '',
                     'mdname' => $newobj['classname'],
                     'mdsynonym' => '',
@@ -116,7 +107,7 @@ class Item extends Sheet implements I_Sheet
         if ($this->head) {
             $phead = $this->head;
             $phead->add_navlist($navlist); 
-            $navlist[] = array('id'=>$this->head->getdocid()."?dcs_setid=".$this->head->getpropid(),'name'=>sprintf("%s",$this->head));
+            $navlist[] = array('id'=>$this->head->getdocid()."?dcs_propid=".$this->head->getpropid(),'name'=>sprintf("%s",$this->head));
         }
     }
     public function getaccessright_id()
@@ -144,6 +135,10 @@ class Item extends Sheet implements I_Sheet
             return new Sets($this->setid);
         }    
         return new Sets($this->get_set_by_item());
+    }
+    public function dbtablename()
+    {
+        return 'ETable';
     }
     public function item_classname()
     {
@@ -192,10 +187,67 @@ class Item extends Sheet implements I_Sheet
 //        }
 //    }
 //    public function createItem($name,$prefix='')
+//    public static function getPropsUse($mditem) 
+//    {
+//        $sql = "SELECT pu.id, pu.name, pu.synonym, pv_propid.value as propid, 
+//                     pv_type.value as type, ct_type.name as name_type, 
+//                     pv_len.value as length, pv_prc.value as prec, 
+//                     pv_valmd.value as valmdid, md_valmd.name as valmdname 
+//                     FROM \"CTable\" as pu 
+//                inner join \"CPropValue_cid\" as pv_propid 
+//                    inner join \"CProperties\" as cp_propid
+//                    ON pv_propid.pid=cp_propid.id
+//                    AND cp_propid.name='propid'
+//                    inner join \"CTable\" as ct_propid
+//                    ON pv_propid.value = ct_propid.id
+//                    
+//                    inner join \"CPropValue_cid\" as pv_type
+//                        inner join \"CProperties\" as cp_type
+//                        ON pv_type.pid=cp_type.id
+//                        AND cp_type.name='type'
+//                        inner join \"CTable\" as ct_type
+//                        ON pv_type.value = ct_type.id
+//                    ON pv_propid.value = pv_type.id
+//                    AND ct_propid.mdid = cp_type.mdid
+//                    left join \"CPropValue_int\" as pv_len
+//                        inner join \"CProperties\" as cp_len
+//                        ON pv_len.pid=cp_len.id
+//                        AND cp_len.name='length'
+//                    ON pv_propid.value = pv_len.id
+//                    AND ct_propid.mdid = cp_len.mdid
+//                    
+//                    left join \"CPropValue_int\" as pv_prc
+//                        inner join \"CProperties\" as cp_prc
+//                        ON pv_prc.pid=cp_prc.id
+//                        AND cp_prc.name='prec'
+//                    ON pv_propid.value = pv_prc.id
+//                    AND ct_propid.mdid = cp_prc.mdid
+//                    
+//                    left join \"CPropValue_mdid\" as pv_valmd
+//                        inner join \"CProperties\" as cp_valmd
+//                        ON pv_valmd.pid=cp_valmd.id
+//                        AND cp_valmd.name='valmdid'
+//                        inner join \"MDTable\" as md_valmd
+//                        ON pv_valmd.value = md_valmd.id
+//                    ON pv_propid.value = pv_valmd.id
+//                    AND ct_propid.mdid = cp_valmd.mdid
+//                    
+//                ON pu.id=pv_propid.id
+//                AND pu.mdid = cp_propid.mdid
+//                inner join \"CPropValue_cid\" as pv_mditem
+//                    inner join \"CProperties\" as cp_mditem
+//                    ON pv_mditem.pid=cp_mditem.id
+//                    AND cp_mditem.name='mditem'
+//                ON pu.id=pv_mditem.id
+//                AND pv_mditem.value = :mditem";
+//        $params = array();
+//        $params['mditem'] = $mditem;
+//        $res = DataManager::dm_query($sql,$params); 
+//        return $res->fetchAll(PDO::FETCH_ASSOC);
+//        
+//    }
     public function create_object($name,$synonym='') 
     {
-        $arSetItemProp = self::getMDSetItem($this->mdentity->getid());
-        $mdid = $arSetItemProp['valmdid'];
         $objs = array();
         $objs['PSET'] = $this->getProperties(true,'toset');
         $sql = "INSERT INTO \"ETable\" (id, mdid, name) VALUES (:id, :mdid, :name) RETURNING \"id\"";
@@ -203,70 +255,77 @@ class Item extends Sheet implements I_Sheet
         $params['id']=$this->id;
         $params['mdid']=$this->mdid;
         $params['name']= str_replace('Set','Item', $name);
-        $res = DataManager::dm_query($sql,$params); 
-        if ($res)
-        {
-            $row = $res->fetch(PDO::FETCH_ASSOC);
-            $childid = $row['id'];
-            
-            $rank = DataManager::saveItemToSetDepList($this->id,$childid);
-            if ($rank>=0)
-            {    
-                $item = new Entity($childid);
-                $arPropsUse = self::getPropsUse($item->head->getmditem());
-                $irank=0;
-                foreach ($arPropsUse as $prop)
-                {
-                    $irank++;
-                    $row = $this->isExistTheProp($prop['propid']);
-                    if (!$row)
-                    {    
-                        $data = array();
-                        $data['name'] = $prop['name'];
-                        $data['synonym'] = $prop['synonym'];
-                        $data['mdid']=$item->mdentity->getid();
-                        $data['rank']=$irank;
-                        $data['ranktoset']=$irank;
-                        $data['ranktostring']=$irank;
-                        if (isset($prop['length']))
-                        {
-                            $data['length'] = $prop['length'];
-                        }   
-                        if (isset($prop['prec']))
-                        {
-                            $data['prec'] = $prop['prec'];
-                        }   
-                        $data['pid'] = $prop['propid'];
-                        if ($prop['name_type']=='date')
-                        {    
-                            $data['isedate']='true';
-                        }
-                        $row = $this->createProperty($data);
-                    }    
-                    if ($row)
+        try {
+            $res = DataManager::dm_query($sql,$params); 
+            $rank = DataManager::saveItemToSetDepList($this->setid,$this->id);
+            if (!$rank)
+            {
+                throw new DcsException('unable save item to setdeplist');
+            }    
+            $arPropsUse = DataManager::getPropsUse($this->getmditem());
+            $irank=0;
+            $plist = $this->getplist();
+            foreach ($arPropsUse as $prop)
+            {
+                $irank++;
+                $propid = $prop['propid'];
+                $arr_prop = array_filter($plist,function($rw) use ($propid) { 
+                                return $rw['propid'] == $propid;
+                            });
+                if (!count($arr_prop))
+                {    
+                    $data = array();
+                    $data['name'] = $prop['name'];
+                    $data['synonym'] = $prop['synonym'];
+                    $data['mdid']=$this->mdid;
+                    $data['mdtypename']=$this->mdtypename;
+                    $data['rank']=$irank;
+                    $data['ranktoset']=$irank;
+                    $data['ranktostring']=$irank;
+                    if (isset($prop['length']))
                     {
-                        if (strtolower($prop['name'])==='rank')
-                        {
-                            $sql="INSERT INTO \"IDTable\" (entityid, propid, userid) VALUES (:entityid, :propid, :userid) RETURNING \"id\"";
-                            $params = array();
-                            $params['entityid']=$childid;
-                            $params['propid']=$row['id'];
-                            $params['userid']=$_SESSION["user_id"];
-                            $res = DataManager::dm_query($sql,$params); 
-                            $rowid = $res->fetch(PDO::FETCH_ASSOC);
-                            if ($rowid)
-                            {
-                                $sql="INSERT INTO \"PropValue_int\" (id, value) VALUES (:id, :value)";
-                                $params = array();
-                                $params['id']=$rowid['id'];
-                                $params['value']=$rank;
-                                $res = DataManager::dm_query($sql,$params); 
-                                $rowid = $res->fetch(PDO::FETCH_ASSOC);
-                            }    
-                        }    
+                        $data['length'] = $prop['length'];
+                    }   
+                    if (isset($prop['prec']))
+                    {
+                        $data['prec'] = $prop['prec'];
+                    }   
+                    $data['pid'] = $prop['propid'];
+                    if ($prop['name_type']=='date')
+                    {    
+                        $data['isedate']='true';
+                    }
+                    $row = DataManager::createProperty($data);
+                } else {
+                    $row = current($arr_prop);
+                }
+                if (strtolower($prop['name'])==='rank')
+                {
+                    $sql="INSERT INTO \"IDTable\" (entityid, propid, userid) VALUES (:entityid, :propid, :userid) RETURNING \"id\"";
+                    $params = array();
+                    $params['entityid']=$this->id;
+                    $params['propid']=$row['id'];
+                    $params['userid']=$_SESSION["user_id"];
+                    try {
+                        $res = DataManager::dm_query($sql,$params); 
+                    } catch (DcsException $ex) {
+                        throw $ex;
                     }    
+                    $rowid = $res->fetch(PDO::FETCH_ASSOC);
+                    $sql="INSERT INTO \"PropValue_int\" (id, value) VALUES (:id, :value)";
+                    $params = array();
+                    $params['id']=$rowid['id'];
+                    $params['value']=$rank;
+                    try {
+                        $res = DataManager::dm_query($sql,$params); 
+                    } catch (DcsException $ex) {
+                        throw $ex;
+                    }    
+                    $rowid = $res->fetch(PDO::FETCH_ASSOC);
                 }    
             }    
+        } catch (DcsException $e) {
+            throw $e;
         }    
     }        
 //    public function get_navlist($context)

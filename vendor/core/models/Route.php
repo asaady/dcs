@@ -105,7 +105,7 @@ class Route {
             return;
         }
         try {
-            $controller->$action($context);
+            $controller->$action();
         } catch (DcsException $ex) {
             $this->error_route($ex);
             return;

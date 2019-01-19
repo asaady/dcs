@@ -27,10 +27,6 @@ class Controller_Ajax extends Controller
             $id = $context->data_getattr('dcs_param_id')['id'];
         } elseif ($context->getattr('COMMAND') == 'FIELD_SAVE') {
             $id = $context->data_getattr('dcs_curid')['id'];
-        } elseif ($context->getattr('COMMAND') == 'CREATE') {
-            if ($context->data_getattr('dcs_setid')['id']) {
-                $id = $context->data_getattr('dcs_param_id')['id'];
-            }    
         }
         
         $validation = Common_data::check_uuid($id);

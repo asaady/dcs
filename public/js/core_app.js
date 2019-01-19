@@ -52,6 +52,10 @@ function onchoice(data)
 }
 function onGetMdData(data)
 {
+    $("input[name='dcs_param_propid']").val(''); 
+    $("input[name='dcs_param_id']").val(''); 
+    $("input[name='dcs_param_val']").val(''); 
+    $("input[name='dcs_param_type']").val(''); 
     $.each(data.items, function(key, val) {
         if (val.id) {    
             $("input#"+val.id).val(val.name);
@@ -61,6 +65,10 @@ function onGetMdData(data)
 
 function onGetData(data)
 {
+    $("input[name='dcs_param_propid']").val(''); 
+    $("input[name='dcs_param_id']").val(''); 
+    $("input[name='dcs_param_val']").val(''); 
+    $("input[name='dcs_param_type']").val(''); 
     $.each(data, function(key, val) {
         if (val.id) {    
             $("input#"+key).val(val.id);
@@ -199,6 +207,10 @@ function onLoadGetData(data) {
     var exd = 0;
     var shtml = '';
     var $curlist = $("#"+curid+"~.types_list");
+    $("input[name='dcs_curid']").val('');
+    $("input[name='dcs_param_id']").val('');
+    $("input[name='dcs_param_val']").val('');
+    $("input[name='dcs_param_type']").val('');
     $curlist.empty();
     $.each(data, function(key, val) 
     {
@@ -249,13 +261,13 @@ $('input.form-control').keyup(function(eventObject) {
             $("#"+curid+"~.types_list").slideUp('fast'); 
             if (name.length>1) {
                 $("input[name='dcs_command']").val('find');
+                if (itype == 'propid') {    
+                    $("input[name='dcs_command']").val('prop_find');
+                }
                 $("input[name='dcs_curid']").val(curid);
                 $("input[name='dcs_param_id']").val(it);
                 $("input[name='dcs_param_val']").val(name);
                 $("input[name='dcs_param_type']").val(itype);
-                if (itype == 'propid') {    
-                    $("input[name='dcs_command']").val('prop_find');
-                }
                 $data = $('.ajax').serializeArray();
                 $.getJSON(
                     getprefix()+'/ajax/'+itemid,

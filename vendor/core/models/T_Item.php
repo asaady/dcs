@@ -238,6 +238,9 @@ trait T_Item
             if ($propid == 'id') {
                 continue;
             }
+            if (strtolower($propval['name']) == 'rank') {
+                continue;
+            }
             $p_arr = array_filter($this->plist,function($item) use ($propid){
                             return $item['id'] === $propid;
                         });
@@ -285,7 +288,6 @@ trait T_Item
             }    
 	}
         $objs = $this->before_save($vals);
-	DataManager::dm_beginTransaction();
         $upd = array();
         $cnt = 0;
 	foreach($objs as $propval){
@@ -309,8 +311,7 @@ trait T_Item
 	    $sql = "INSERT INTO \"IDTable\" (userid, entityid, propid) VALUES (:userid, :id, :propid) RETURNING \"id\"";
 	    $res = DataManager::dm_query($sql,$params);
 	    if(!$res) {
-		DataManager::dm_rollback();
- 		return array('status'=>'ERROR','msg'=>"Невозможно добавить в таблицу IDTable запись ".$sql);
+                throw new DcsException(array('status'=>'ERROR','msg'=>"Невозможно добавить в таблицу IDTable запись "));
 	    }
 	    $row = $res->fetch(PDO::FETCH_ASSOC);
             $t_val = $propval['nval'];
@@ -330,24 +331,21 @@ trait T_Item
             $params['id'] = $row['id'];
 	    $res = DataManager::dm_query($sql,$params);
 	    if(!$res) {
-                DataManager::dm_rollback();
-                return array(
-                'status'=>'ERROR',
-                'msg'=>"Невозможно добавить в таблицу PropValue_$type "
-                        . "запись ".$sql
-                );
+                throw new DcsException(array(
+                    'status'=>'ERROR',
+                    'msg'=>"Невозможно добавить в таблицу PropValue_$type "
+                            . "запись ".$sql
+                ));
 	    }
             $cnt++;
             $upd[$propid] = array('value'=>$t_val,'type'=>$type, 'name'=>$vals[$propid]['name']);
 	}
         if ($cnt > 0)
         {    
-            DataManager::dm_commit();	
             $status = 'OK';
         }
         else
         {
-            DataManager::dm_rollback();
             $status = 'NONE';
         }    
         return array('status'=>$status, 'id'=>$this->id, 'objs'=>$upd);

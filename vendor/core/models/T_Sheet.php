@@ -44,28 +44,33 @@ trait T_Sheet {
     }
     function getnewid($headid,$classname)
     {
-	$res = DataManager::dm_beginTransaction();
-        $sql = "INSERT INTO \"NewObjects\" (headid,classname) VALUES (:headid,:classname) RETURNING \"id\"";
-        $res=DataManager::dm_query($sql,array('headid'=>$headid,'classname'=>$classname));
+        $params = array('headid'=>$headid,
+                       'classname'=>$classname);
+	DataManager::dm_beginTransaction();
+        $sql = "INSERT INTO \"NewObjects\" (headid,classname) "
+                . "VALUES (:headid,:classname) RETURNING \"id\"";
+        $res=DataManager::dm_query($sql,$params);
         if(!$res) {
-            $res = DataManager::dm_rollback();
+            DataManager::dm_rollback();
             throw new DcsException("Class ".get_called_class().
                     " getnewid: new row insert unable",DCS_ERROR_SQL);
         }    
         $row = $res->fetch(PDO::FETCH_ASSOC);
-	$res = DataManager::dm_commit();
+	DataManager::dm_commit();
         return $row['id'];
     }
     function create() 
     {
-        $headid = $this->getid();
-        $classname = $this->item_classname();
         $context = DcsContext::getcontext();
-        if ($context->getattr('SETID')) {
-            $headid = $context->getattr('DATA')['dcs_param_id']['id'];
-            $classname = 'Item';
-        }
-        $id = $this->getnewid($headid,$classname);
+        $headid = $this->getid();
+        $setid = $context->getattr('SETID');
+        if ($setid) {
+            $id = $this->getnewid($setid,
+                            'Item');
+        } else {
+            $id = $this->getnewid($headid,
+                            $this->item_classname());
+        }    
         $redirect = '/'.$context->getattr('PREFIX').'/'.$id;
         return array('status'=>'OK', 'id'=>$id, 'redirect'=>$redirect);
     }
@@ -208,24 +213,28 @@ trait T_Sheet {
     }
     public function update($data)     
     {
-        if ($this->isnew) {
-            $arr_name = $this->getNameFromData($data);
-            if (!$this->create_object($arr_name['name'],$arr_name['synonym'])) {
-                throw new DcsException("Class ".get_called_class().
-                    " save_new: unable to save new object",DCS_ERROR_SQL);
+        try {
+            DataManager::dm_beginTransaction();
+            if ($this->isnew) {
+                $arr_name = $this->getNameFromData($data);
+                $this->create_object($arr_name['name'],$arr_name['synonym']);
             }
+            $context = DcsContext::getcontext();
+            $res = $this->update_properties($data);
+            if ($context->getattr('SETID')) {
+                if ($res['status'] == 'OK')
+                {
+                    $res1 = $this->update_dependent_properties($res['objs']);
+                    if (is_array($res1['objs'])) {
+                        $res['objs'] += $res1['objs'];
+                    }
+                }    
+            }
+        } catch (DcsException $ex) {
+            DataManager::dm_rollback();
+            throw $ex;
         }
-        $context = DcsContext::getcontext();
-        $res = $this->update_properties($data);
-        if ($context->getattr('SETID')) {
-            if ($res['status'] == 'OK')
-            {
-                $res1 = $this->update_dependent_properties($res['objs']);
-                if (is_array($res1['objs'])) {
-                    $res['objs'] += $res1['objs'];
-                }
-            }    
-        }
+        DataManager::dm_commit();
         return $res;
     }
     public function get_head() {

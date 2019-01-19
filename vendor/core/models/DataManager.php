@@ -342,7 +342,14 @@ class DataManager {
         } else {
             $sql = "UPDATE \"SetDepList\" SET rank=:rank WHERE parentid=:parentid AND childid=:childid";
         }
-        $sth = self::dm_query($sql, array('parentid' => $parentid, 'childid' => $childid, 'rank' => $valrank));
+        try {
+            $sth = self::dm_query($sql, array('parentid' => $parentid, 
+                                              'childid' => $childid, 
+                                              'rank' => $valrank));
+        } catch (DcsException $ex) {
+            self::dm_rollback();
+            throw $ex;
+        }
         return $valrank;
     }
 
@@ -1200,5 +1207,162 @@ class DataManager {
 
         $sth = DataManager::dm_query($sql,array('itemid' => $itemid));
         return $sth->fetch(PDO::FETCH_ASSOC);
+    }
+    /*
+     * Создание свойства метаданного
+     */
+    public static function create_property($data) 
+    {
+        if (($data['mdtypename'] == 'Cols')||
+            ($data['mdtypename'] == 'Comps')||
+            ($data['mdtypename'] == 'Regs')) {
+            $props= array(
+                'id'=>array('name'=>'id','type'=>'str'),
+                'name'=>array('name'=>'name','type'=>'str'),
+                'synonym'=>array('name'=>'synonym','type'=>'str'),
+                'type'=>array('name'=>'type','type'=>'str'),
+                'length'=>array('name'=>'length','type'=>'int'),
+                'prec'=>array('name'=>'prec','type'=>'int'),
+                'rank'=>array('name'=>'rank','type'=>'int'),
+                'ranktoset'=>array('name'=>'ranktoset','type'=>'int'),
+                'valmdid'=>array('name'=>'valmdid','type'=>'mdid')
+            );
+            $dbtable = 'CProperties';
+        }    
+        else 
+        {
+            $props= array(
+                'id'=>array('name'=>'id','type'=>'str'),
+                'name'=>array('name'=>'name','type'=>'str'),
+                'synonym'=>array('name'=>'synonym','type'=>'str'),
+                'type'=>array('name'=>'type','type'=>'cid'),
+                'length'=>array('name'=>'length','type'=>'int'),
+                'prec'=>array('name'=>'prec','type'=>'int'),
+                'rank'=>array('name'=>'rank','type'=>'int'),
+                'ranktostring'=>array('name'=>'ranktostring','type'=>'int'),
+                'ranktoset'=>array('name'=>'ranktoset','type'=>'int'),
+                'isedate'=>array('name'=>'isedate','type'=>'bool'),
+                'valmdid'=>array('name'=>'valmdid','type'=>'mdid'),
+                'propid'=>array('name'=>'propid','type'=>'mdid')
+            );
+            $dbtable = 'MDProperties';
+        }
+        $sql='';
+        $objs = array();
+        $fname ='';
+        $fval = '';
+        $params=array();
+        foreach ($props as $key=>$prop)
+        {    
+            if ($key=='id') 
+            {
+                continue;
+            }    
+            if (array_key_exists($key, $data))
+            {
+                if ($prop['type']=='mdid')
+                {    
+                    $par=$data[$prop['name']]['id'];
+                } 
+                elseif ($prop['type']=='cid')
+                {    
+                    $par=$data[$prop['name']]['id'];
+                } 
+                else
+                {
+                    $par=$data[$prop['name']]['name'];
+                }
+                if ($par=='')
+                {
+                    continue;
+                }    
+                $params[$prop['name']]= $par;    
+                $fname .=", $prop[name]";
+                $fval .=", :$prop[name]";
+            }    
+        }
+        $fname = substr($fname,1);
+        $fval = substr($fval,1);
+        $objs['status']='NONE';
+        if ($fname!='')
+        {
+            $objs['status']='OK';
+            $params['id']=$data['id'];
+            $sql = "INSERT INTO \"$dbtable\" ($fname, mdid) VALUES ($fval,:id) RETURNING \"id\";";
+            try {
+                $res = DataManager::dm_query($sql,$params);
+            } catch (Exception $exc) {
+                throw $exc;
+            }
+            $row = $res->fetch(PDO::FETCH_ASSOC);
+            $objs['id']= $row['id'];
+        }
+	return $objs;
+    }
+    public static function getPropsUse($mditem) 
+    {
+        $sql="SELECT pu.id, pu.name, pu.synonym, pv_propid.value as propid, 
+                pv_type.value as type, ct_type.name as name_type, 
+                pv_len.value as length, pv_prc.value as prec, 
+                pv_valmd.value as valmdid, md_valmd.name as valmdname 
+                FROM \"CTable\" as pu 
+                inner join \"CPropValue_cid\" as pv_propid 
+                    inner join \"CProperties\" as cp_propid
+                    ON pv_propid.pid=cp_propid.id
+                    AND cp_propid.name='propid'
+                    inner join \"CTable\" as ct_propid
+                    ON pv_propid.value = ct_propid.id
+                    
+                    inner join \"CPropValue_cid\" as pv_type
+                        inner join \"CProperties\" as cp_type
+                        ON pv_type.pid=cp_type.id
+                        AND cp_type.name='type'
+                        inner join \"CTable\" as ct_type
+                        ON pv_type.value = ct_type.id
+                    ON pv_propid.value = pv_type.id
+                    AND ct_propid.mdid = cp_type.mdid
+
+                    left join \"CPropValue_int\" as pv_len
+                        inner join \"CProperties\" as cp_len
+                        ON pv_len.pid=cp_len.id
+                        AND cp_len.name='length'
+                    ON pv_propid.value = pv_len.id
+                    AND ct_propid.mdid = cp_len.mdid
+                    
+                    left join \"CPropValue_int\" as pv_prc
+                        inner join \"CProperties\" as cp_prc
+                        ON pv_prc.pid=cp_prc.id
+                        AND cp_prc.name='prec'
+                    ON pv_propid.value = pv_prc.id
+                    AND ct_propid.mdid = cp_prc.mdid
+                    
+                    left join \"CPropValue_mdid\" as pv_valmd
+                        inner join \"CProperties\" as cp_valmd
+                        ON pv_valmd.pid=cp_valmd.id
+                        AND cp_valmd.name='valmdid'
+                        inner join \"MDTable\" as md_valmd
+                        ON pv_valmd.value = md_valmd.id
+                    ON pv_propid.value = pv_valmd.id
+                    AND ct_propid.mdid = cp_valmd.mdid
+                    
+                ON pu.id=pv_propid.id
+                AND pu.mdid = cp_propid.mdid
+                inner join \"CPropValue_cid\" as pv_mditem
+                    inner join \"CProperties\" as cp_mditem
+                    ON pv_mditem.pid=cp_mditem.id
+                    AND cp_mditem.name='mditem'
+                ON pu.id=pv_mditem.id
+                AND pv_mditem.value = :mditem";
+        $params = array();
+        $params['mditem']=$mditem;
+        $res = DataManager::dm_query($sql,$params); 
+        return $res->fetchAll(PDO::FETCH_ASSOC);
+    }
+    public static function IsExistTheProp($mdid,$propid) 
+    {
+	$sql = "SELECT 	mp.name, mp.id, mp.synonym, mp.rank FROM \"MDProperties\" as mp
+		WHERE mp.mdid=:mdid and mp.propid=:propid";	
+	$res = DataManager::dm_query($sql,array('mdid'=>$mdid,'propid'=>$propid));
+	return $res->fetch(PDO::FETCH_ASSOC);
     }
 }

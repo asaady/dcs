@@ -104,10 +104,12 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
             $ares = array('status'=>'ERROR', 'msg'=>$sql);
         }
     }    
-    public function before_save() 
+    public function before_save($data='') 
     {
-        $context = DcsContext::getcontext();
-        $data = $context->getattr('DATA');
+        if (!$data) {
+            $context = DcsContext::getcontext();
+            $data = $context->getattr('DATA');
+        }    
         $this->load_data();
         $objs = array();
         foreach($this->plist as $row)

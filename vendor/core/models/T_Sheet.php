@@ -59,7 +59,7 @@ trait T_Sheet {
 	DataManager::dm_commit();
         return $row['id'];
     }
-    function create() 
+    public function create() 
     {
         $context = DcsContext::getcontext();
         $headid = $this->getid();

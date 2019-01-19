@@ -6,6 +6,7 @@ interface I_Sheet
     public function after_choice();
     public function before_save($data='');
     public function create_object($name,$synonym='');
+    public function create();
     public function get_data();
     public function get_select_properties($strwhere);
     public function getArrayNew($newobj);    

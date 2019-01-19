@@ -3,7 +3,7 @@ namespace Dcs\Vendor\Core\Models;
 
 use PDO;
 use DateTime;
-use Exception;
+use Dcs\Vendor\Core\Models\DcsException;
 
 class CollectionItem extends Sheet implements I_Sheet, I_Item
 {
@@ -172,69 +172,74 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
         $sql ="INSERT INTO \"CTable\" (id, name, synonym, mdid) "
                     . "VALUES (:id, :name, :synonym, :mdid) RETURNING \"id\"";
       	DataManager::dm_beginTransaction();
-        $res = DataManager::dm_query($sql,$params); 
-        if ($res) {
-            $rowid = $res->fetch(PDO::FETCH_ASSOC);
-            DataManager::dm_commit();
-            return $rowid['id'];
+        try {
+            $res = DataManager::dm_query($sql,$params); 
+            if (!$res) {
+                throw new DcsException("Class ".get_called_class().
+                    " create_object: unable to create new record",
+                        DCS_ERROR_WRONG_PARAMETER);
+            }    
+        } catch (DcsException $ex) {
+            DataManager::dm_rollback();
+            throw $ex;
         }
-        DataManager::dm_rollback();
-        throw new DcsException("Class ".get_called_class().
-            " create_object: unable to create new record",DCS_ERROR_WRONG_PARAMETER);
+        $rowid = $res->fetch(PDO::FETCH_ASSOC);
+        DataManager::dm_commit();
+        return $rowid['id'];
     }        
 
-    function create($data)
-    {
-        
-        $curname = $data['name']['name'];
-        if ($curname=='') {
-            return array('status'=>'ERROR', 'msg'=>'Name is empty');
-        }    
-        if ($this->head->getname()=='Users') {
-            $user = new User;
-            return $user->create($data);
-        }    
-        $sql ="INSERT INTO \"CTable\" (name, synonym, mdid) "
-                . "VALUES (:name, :synonym, :mdid) RETURNING \"id\"";
-        $params = array('name' => $curname, 
-                'synonym'=>$data['synonym']['name'],
-                'mdid'=> $this->head->getid());
-        $res = DataManager::dm_query($sql,$params);
-        $row = $res ->fetch(PDO::FETCH_ASSOC);
-        $id = $row['id'];
-        $ares = array('status'=>'OK', 'id'=>$id);
-        foreach ($this->plist as $f)
-        {   
-            if (!array_key_exists($f['id'],$data)) continue;
-            $dataname= $data[$f['id']];
-            $type= $f['name_type'];
-            if ($dataname['name']=='')
-            {
-                continue;
-            }
-            $val = $dataname['name'];
-            if ($type == 'bool') {
-                if ($val == 't') {
-                    $val = 'true';
-                }
-                if ($val != 'true') {
-                    $val = 'false';
-                }
-            } elseif (($type == 'id')||($type == 'cid')||($type == 'mdid')) {
-                $val = $dataname['id'];
-            }    
-
-            $sql = "INSERT INTO \"CPropValue_$type\" (id, pid, value) "
-                    . "VALUES (:id, :pid, :value) RETURNING \"id\"";
-            $params = array();
-            $params['id'] = $id;
-            $params['pid'] = $f['id'];
-            $params['value'] = $val;
-            DataManager::dm_query($sql,$params) or 
-                DcsException::doThrow('$sql: '.$sql, DCS_ERROR_SQL);
-        }    
-        return $ares;
-    }
+//    function create()
+//    {
+//        
+//        $curname = $data['name']['name'];
+//        if ($curname=='') {
+//            return array('status'=>'ERROR', 'msg'=>'Name is empty');
+//        }    
+//        if ($this->head->getname()=='Users') {
+//            $user = new User;
+//            return $user->create($data);
+//        }    
+//        $sql ="INSERT INTO \"CTable\" (name, synonym, mdid) "
+//                . "VALUES (:name, :synonym, :mdid) RETURNING \"id\"";
+//        $params = array('name' => $curname, 
+//                'synonym'=>$data['synonym']['name'],
+//                'mdid'=> $this->head->getid());
+//        $res = DataManager::dm_query($sql,$params);
+//        $row = $res ->fetch(PDO::FETCH_ASSOC);
+//        $id = $row['id'];
+//        $ares = array('status'=>'OK', 'id'=>$id);
+//        foreach ($this->plist as $f)
+//        {   
+//            if (!array_key_exists($f['id'],$data)) continue;
+//            $dataname= $data[$f['id']];
+//            $type= $f['name_type'];
+//            if ($dataname['name']=='')
+//            {
+//                continue;
+//            }
+//            $val = $dataname['name'];
+//            if ($type == 'bool') {
+//                if ($val == 't') {
+//                    $val = 'true';
+//                }
+//                if ($val != 'true') {
+//                    $val = 'false';
+//                }
+//            } elseif (($type == 'id')||($type == 'cid')||($type == 'mdid')) {
+//                $val = $dataname['id'];
+//            }    
+//
+//            $sql = "INSERT INTO \"CPropValue_$type\" (id, pid, value) "
+//                    . "VALUES (:id, :pid, :value) RETURNING \"id\"";
+//            $params = array();
+//            $params['id'] = $id;
+//            $params['pid'] = $f['id'];
+//            $params['value'] = $val;
+//            DataManager::dm_query($sql,$params) or 
+//                DcsException::doThrow('$sql: '.$sql, DCS_ERROR_SQL);
+//        }    
+//        return $ares;
+//    }
     public function getItemsByName($name)
     {
         return NULL;

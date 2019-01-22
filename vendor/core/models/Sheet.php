@@ -147,14 +147,14 @@ abstract class Sheet extends Model implements I_Sheet
             'id',
             'name',
             'synonym',
-            'propid',
+            'id_propid',
             'name_type',
             'rank',
             'ranktoset',
             'ranktostring',
-            'valmdid',
+            'id_valmdid',
             'name_valmdid',
-            'valmdtypename',
+            'name_valmditem',
             'field',
             'class'
              );

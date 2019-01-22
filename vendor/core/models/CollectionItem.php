@@ -17,12 +17,23 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
     }
     public function getplist()
     {
-        $objs = array();
-        foreach ($this->getCProperties() as $prop) {
-            $objs[] = $prop;
+        $sql = DataManager::get_select_cproperties("WHERE mp.mdid = :mdid");
+        $res = DataManager::dm_query($sql,array('mdid'=>$this->mdid));
+        $this->plist = array();
+        $this->plist[] = array('id'=>'name','name'=>'name','synonym'=>'NAME',
+                        'rank'=>1,'ranktoset'=>2,'ranktostring'=>1,
+                        'id_type'=>'str', 'name_type'=>'str',
+                        'id_valmdid'=>'', 'name_valmdid'=>'',
+                        'name_valmditem'=>'','class'=>'active','field'=>1);
+        $this->plist[] = array('id'=>'synonym','name'=>'synonym','synonym'=>'Синоним',
+                        'rank'=>2,'ranktoset'=>3,'ranktostring'=>0,
+                        'id_type'=>'str', 'name_type'=>'str',
+                        'id_valmdid'=>'', 'name_valmdid'=>'',
+                        'name_valmditem'=>'','class'=>'active','field'=>1);
+        while ($prop = $res->fetch(PDO::FETCH_ASSOC)) {
+            $this->plist[] = $prop;
         }  
-        $this->plist = $objs;
-        return $objs;
+        return $this->plist;
     }        
     public function txtsql_forDetails() 
     {
@@ -51,8 +62,11 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
     {
         return NULL;
     }        
-    
-    public function get_tt_sql_data()
+     public function loadProperties()
+    {
+        return array();
+    }        
+   public function get_tt_sql_data()
     {
         $sql = "SELECT ct.id, ct.name, ct.synonym, ct.mdid";
         $join = " FROM \"CTable\" AS ct";
@@ -63,6 +77,9 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
         foreach ($this->plist as $row)
         {
             if ($row['field'] == 0) {
+                continue;
+            }
+            if (($row['id'] == 'name')||($row['id'] == 'synonym')) {
                 continue;
             }
             $rowname = Filter::rowname($row['id']);
@@ -158,36 +175,6 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
                     'mdtypename' => '',
                     'mdtypedescription' => '');
     }        
-    public function create_object($name,$synonym='')
-    {
-        if (!$synonym) {
-            $synonym = $name;
-        }
-        $params = array(
-                'name' => $name, 
-                'synonym'=>$synonym,
-                'mdid'=> $this->mdid,
-                'id'=> $this->id
-                );
-        $sql ="INSERT INTO \"CTable\" (id, name, synonym, mdid) "
-                    . "VALUES (:id, :name, :synonym, :mdid) RETURNING \"id\"";
-      	DataManager::dm_beginTransaction();
-        try {
-            $res = DataManager::dm_query($sql,$params); 
-            if (!$res) {
-                throw new DcsException("Class ".get_called_class().
-                    " create_object: unable to create new record",
-                        DCS_ERROR_WRONG_PARAMETER);
-            }    
-        } catch (DcsException $ex) {
-            DataManager::dm_rollback();
-            throw $ex;
-        }
-        $rowid = $res->fetch(PDO::FETCH_ASSOC);
-        DataManager::dm_commit();
-        return $rowid['id'];
-    }        
-
 //    function create()
 //    {
 //        
@@ -240,10 +227,6 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
 //        }    
 //        return $ares;
 //    }
-    public function getItemsByName($name)
-    {
-        return NULL;
-    } 
     public function update_dependent_properties($data)
     {
         
@@ -382,13 +365,8 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
 
 	return $objs;        
     }        
-    public function getNameFromData($data='')
+    public function get_items() 
     {
-        if (!$data) {
-            return array('name' => $this->name, 'synonym' => $this->synonym);
-        } else {
-            return array('name' => $data['name']['name'],
-                         'synonym' => $data['synonym']['name']);
-        }    
+        return NULL;
     }        
 }

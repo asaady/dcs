@@ -10,9 +10,14 @@ function set_input_fieldid($curinp, curvalue)
 {
     var curname = $curinp.attr('name');
     var $curdiv = $curinp.parent('div');
+    var inpid = curname;
+    var $curinpid = $curinp;
     if ((curname.indexOf('name_') + 1) > 0) {
-        $curdiv.find('input#'+curname.substring(5)).val(curvalue);
+        inpid = curname.substring(5);
+        $curinpid = $curdiv.find('input#'+inpid);
     }
+    $curinpid.val(curvalue);
+    return $curinpid.attr('id');
 }
 function actionlist(data)
 {
@@ -90,6 +95,11 @@ function onloadlist(data)
     var $mh = $("#modalhead");
     $mh.empty();
     $mt.empty();
+    $("input[name='dcs_curid']").val('');
+    $("input[name='dcs_param_propid']").val(''); 
+    $("input[name='dcs_param_id']").val('');
+    $("input[name='dcs_param_val']").val('');
+    $("input[name='dcs_param_type']").val('');
     if (!Object.keys(data).length) {
         return;
     }
@@ -152,6 +162,9 @@ function onLoadValID(data)
     var arr_type = ['id','cid','mdid','propid'];
     var pset;
     var sdata;
+    if ('SETID' in data) {    
+        $("input[name='dcs_setid']").val(data['SETID']);
+    }
     if ('LDATA' in data) {    
         $.each(data.LDATA, function(id, val) {
             $("input.form-control[id='id']").val(id);
@@ -163,7 +176,7 @@ function onLoadValID(data)
                     if (pval.name_type=='text') {
                         $("textarea.form-control[id="+cid+"]").val(dname);
                     } else {    
-                        if ('valmdtypename' in pval) {
+                        if ('name_valmditem' in pval) {
                             if (pval.valmdtypename == 'Sets') {
                                 $("div.tab-pane[id="+cid+"]").attr('it',did);
                             }
@@ -365,6 +378,11 @@ function setvalid($obj,cid,cname)
 }
 function setvals(data)
 {
+    $("input[name='dcs_curid']").val('');
+    $("input[name='dcs_param_id']").val('');
+    $("input[name='dcs_param_propid']").val('');
+    $("input[name='dcs_param_val']").val('');
+    $("input[name='dcs_param_type']").val('');
     var $row = $('tr#'+data['id']);
     $.each(data['objs'], function(key, val) 
     {
@@ -649,10 +667,10 @@ $('body').on('click', 'ul.types_list li', function(){
     var $curdiv = $(this).parent().parent();
     var $curinp = $curdiv.find("input[type='text']");
     var curtype = $curinp.attr('vt');
-    set_input_fieldid($curinp,lid);
+    var propid = set_input_fieldid($curinp,lid);
     $curinp.val(tx); 
     $(".types_list").slideUp('fast'); 
-    $("input[name='dcs_param_propid']").val(''); 
+    $("input[name='dcs_param_propid']").val(propid); 
     $("input[name='dcs_param_id']").val(lid); 
     $("input[name='dcs_param_val']").val(tx); 
     $("input[name='dcs_param_type']").val(curtype); 
@@ -698,14 +716,7 @@ $('a[data-toggle="tab"]').on('shown.bs.tab', function(e){
     $x.hide();
     var activeid = $(e.target).attr('href').substring(1);
     var itemid = $("input[name='dcs_itemid']").val();    
-    var s_param_id = '';
-    if (activeid != 'entityhead') {
-        s_param_id = $("div.tab-pane[id="+activeid+"]").attr('it'); 
-    } else {
-        activeid = '';
-    } 
     $("input[name='dcs_propid']").val(activeid); 
-    $("input[name='dcs_setid']").val(s_param_id); 
     $("input[name='dcs_command']").val('load'); 
     var $data = $('.ajax').serializeArray();
     $.ajax(
@@ -1123,8 +1134,6 @@ function activate_pickadate()
 $(document).ready(function() 
 { 
     var itemid = $("input[name='dcs_itemid']").val(); 
-    var action = $("input[name='dcs_action']").val(); 
-    var prefix = $("input[name='dcs_prefix']").val();
     var command = $("input[name='dcs_command']").val();
 //    activate_pickadate();
     if (command !== '') {

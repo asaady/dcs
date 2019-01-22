@@ -280,7 +280,7 @@ class Sets extends Entity implements I_Sheet
 
         }
         if (count($arr_e)) {
-            $this->fill_entsetname($objs,$arr_e);
+            DataManager::fill_entsetname($objs,$arr_e);
         }    
 	DataManager::droptemptable($artemptable);
 	

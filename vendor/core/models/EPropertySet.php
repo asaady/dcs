@@ -3,7 +3,6 @@ namespace Dcs\Vendor\Core\Models;
 
 class EPropertySet {
     use T_Sheet;
-    use T_Set;
     
     public function head() {
         return new Mdentity($this->mdid);

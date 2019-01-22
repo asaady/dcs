@@ -15,18 +15,6 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
     {
         return 'MDTable';
     }
-    public function loadProperties()
-    {
-        $sql = $this->txtsql_properties("mdid");
-        $properties = array();
-        $params = array('mdid'=> $this->mdid);
-        $res = DataManager::dm_query($sql,$params);
-        while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
-            $properties[$row['id']] = $row;
-        }    
-        $this->properties = $properties;
-        return $properties;
-    }        
     public static function txtsql_access() 
     {
         return self::etxtsql_access('RoleAccess', 'mdid');
@@ -117,13 +105,13 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
                 continue;
             }    
             //проверка: у объекта хозяина есть реквизит тогоже mdid что и у владельца выбираемой сущности
-            if (!array_key_exists($prop['valmdid'],$ar_obj))
+            if (!array_key_exists($prop['id_valmdid'],$ar_obj))
             {
                 continue;
             }   
             //нашли реквизит который имеет в себе ТЧ и строки ТЧ которые надо выбрать
             $filter_id = $prop['id'];
-            $filter_pid = $ar_obj[$prop['valmdid']]['pid'];
+            $filter_pid = $ar_obj[$prop['id_valmdid']]['pid'];
             break;    
         }   
         if ($filter_id != '')
@@ -197,12 +185,12 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
             $str0_req .= $str0_t;
             $str_req .= $str_t;
             
-            if ($row['valmdid'] == $mdid) {
+            if ($row['id_valmdid'] == $mdid) {
                 //rls совпал с объектом - в таком случае фильтруем по id объекта а не по реквизиту объекта
                 continue;
             } else {
-                if (in_array($row['propid'], $arr_prop)) {
-                    $rls = DataManager::arr_rls($row['propid'], $access_prop, $action);
+                if (in_array($row['id_propid'], $arr_prop)) {
+                    $rls = DataManager::arr_rls($row['id_propid'], $access_prop, $action);
                     if (!count($rls)) {    
                         //rls есть а доступных значений реквизита нет - значит доступ к списку запрещен
                         return $objs;
@@ -230,7 +218,7 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
         $sql .= $orderstr;
         return $sql;
     }
-    public function getItems($filter=array()) 
+    public function get_items($filter=array()) 
     {
         if (!count($this->properties)) {
             $properties = $this->getProperties(TRUE);
@@ -242,9 +230,8 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
         $action = $context->getattr('ACTION');
         $limit = $context->getattr('LIMIT');
         $page = $context->getattr('PAGE');
-        $data = $context->getattr('DATA');
-        $docid = $context->data_getattr('dcs_docid')['id'];  
-        $curid = $context->data_getattr('dcs_curid')['id'];
+//        $docid = $context->data_getattr('dcs_docid')['id'];  
+//        $curid = $context->data_getattr('dcs_curid')['id'];
         $mdid = $this->id;
         $ptype = '';
 	$offset=(int)($page-1)*$limit;
@@ -256,7 +243,8 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
             //вкл rls: добавим поля отбора в список реквизитов динамического списка
             $access_prop = DataManager::get_access_prop();
             $arr_prop = array_unique(array_column($access_prop,'propid'));
-            $expr = function($row) use ($arr_prop) { return (($row['ranktoset']==0)&&(!in_array($row['propid'], $arr_prop))); };            
+            $expr = function($row) use ($arr_prop) { return (($row['ranktoset']==0)&&
+                    (!in_array($row['propid'], $arr_prop))); };            
         }    
         else
         {
@@ -268,91 +256,171 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
             foreach ($arr_prop as $prop)
             {
                 $props_templ = new CollectionItem($prop);
-                if ($props_templ->getattrbyname('valmdid') == $mdid) {
+                if ($props_templ->getattrbyname('id_valmdid') == $mdid) {
                     //на объект есть список доступа - тогда просто выбираем эти объекты из списка
-                    $entities = array_unique(array_column(array_filter($access_prop,function($row) use ($prop) { return ($row['propid']==$prop); }),'value'));
+                    $entities = array_unique(array_column(array_filter($access_prop,
+                            function($row) use ($prop) { return ($row['propid']==$prop); }),'value'));
                     break;
                 }    
             }    
         }
-        if ($this->mdtypename=='Items') //запрошены строки ТЧ?
-        {
-            $tt_et = $this->get_tt_items($docid, $curid, $filter, $entities);
-        }    
-        else
-        {
+//        if ($this->mdtypename=='Items') //запрошены строки ТЧ?
+//        {
+//            $tt_et = $this->get_tt_items($docid, $curid, $filter, $entities);
+//        }    
+//        else
+//        {
             if (count($entities))
             {
-                $tt_et = $this->get_EntitiesFromList($entities,'tt_et',$limit);
+                $tt_et = DataManager::get_EntitiesFromList($entities,'tt_et',$limit);
             }    
-        }    
+//        }    
         if ($tt_et == '')
         {
             $tt_et = $this->findEntitiesByProp('tt_et', $access_prop, $filter ,$limit);
         }    
         if ($tt_et == '')
         {
-            return $objs;
+            return NULL;
         }
         $artemptable = array();
-	$this->createtemptable_all($tt_et,$artemptable);
+	DataManager::create_ent_alltemptable($tt_et,$artemptable,$this->mdid);
         $artemptable[] = $tt_et;
         $plist = $this->getProperties(TRUE,'toset');
         $params = array();
         $sql = $this->sqltext_entitylist($properties,$filter,$arr_prop,$access_prop,$action,$params);
         if ($sql=='')
         {
-            return $objs;
+            return NULL;
         }    
-//        die(var_dump($sql).var_dump($params));
 	$res = DataManager::dm_query($sql,$params);
-        $arr_e = array();
-        $arr_name = array();
-        $arr_id = array_filter($properties, function ($prow) { return $prow['name_type'] == 'id'; });
-        $i = 0;
-        while($row = $res->fetch(PDO::FETCH_ASSOC)) {
-            $objs[$row['id']] = array('id'=>$row['id'],'name'=>'','class' => 'active');
-            $arr_name[$row['id']] = array();
-            foreach($plist as $rid => $row_plist) {
-                $field_val = Filter::rowname($rid);
-                $field_id = "propid_$field_val";
-                $rowid = "id_$field_val";
-                $rowname = "name_$field_val";
-                $type = $row_plist['name_type'];
-                $r_name = $row[$rowname];
-                $r_id = $row[$rowid];
-                if (strtolower($row_plist['name']) == 'activity')
-                {
-                    if ($row[$rowname]===false)
-                    {    
-                        $objs[$row['id']]['class'] ='erased';               
-                    }    
-                }    
-                if ($type == 'id') {
-                    if (($row[$rowid])&&($row[$rowid]!=DCS_EMPTY_ENTITY)) {
-                        if (!in_array($row[$rowid],$arr_e)){
-                            $arr_e[]=$row[$rowid];
-                        }
-                    }
-                    $r_name = '';
-                } else {
-                    if ($type == 'date') {
-                        $r_name = substr($r_name,0,10);
-                    }    
-                }    
-                $objs[$row['id']][$row[$field_id]] = array('id'=>$r_id,'name'=>$r_name);
-                if ($row_plist['ranktostring'] > 0) {
-                    $arr_name[$row['id']][$row_plist['ranktostring']] = $r_name;
-                }
-            }
-        }
-        if (count($arr_e))
-        {
-            $this->fill_entsetname($objs,$arr_e);
-        }
 	DataManager::droptemptable($artemptable);
-	return $objs;
+        return $res;
     }
+    
+//    public function getItems($filter=array()) 
+//    {
+//        if (!count($this->properties)) {
+//            $properties = $this->getProperties(TRUE);
+//        } else {
+//            $properties = $this->properties;
+//        }
+//        $context = DcsContext::getcontext();
+//        $objs = array();
+//        $action = $context->getattr('ACTION');
+//        $limit = $context->getattr('LIMIT');
+//        $page = $context->getattr('PAGE');
+//        $data = $context->getattr('DATA');
+//        $docid = $context->data_getattr('dcs_docid')['id'];  
+//        $curid = $context->data_getattr('dcs_curid')['id'];
+//        $mdid = $this->id;
+//        $ptype = '';
+//	$offset=(int)($page-1)*$limit;
+//        $access_prop = array();
+//        $arr_prop = array();
+//        $entities = array();
+//        if (!User::isAdmin())
+//        {
+//            //вкл rls: добавим поля отбора в список реквизитов динамического списка
+//            $access_prop = DataManager::get_access_prop();
+//            $arr_prop = array_unique(array_column($access_prop,'propid'));
+//            $expr = function($row) use ($arr_prop) { return (($row['ranktoset']==0)&&(!in_array($row['propid'], $arr_prop))); };            
+//        }    
+//        else
+//        {
+//            $expr = function($row){ return ($row['ranktoset']==0); };
+//        }    
+//        $tt_et = '';
+//        if (count($arr_prop))
+//        {    
+//            foreach ($arr_prop as $prop)
+//            {
+//                $props_templ = new CollectionItem($prop);
+//                if ($props_templ->getattrbyname('valmdid') == $mdid) {
+//                    //на объект есть список доступа - тогда просто выбираем эти объекты из списка
+//                    $entities = array_unique(array_column(array_filter($access_prop,function($row) use ($prop) { return ($row['propid']==$prop); }),'value'));
+//                    break;
+//                }    
+//            }    
+//        }
+//        if ($this->mdtypename=='Items') //запрошены строки ТЧ?
+//        {
+//            $tt_et = $this->get_tt_items($docid, $curid, $filter, $entities);
+//        }    
+//        else
+//        {
+//            if (count($entities))
+//            {
+//                $tt_et = $this->get_EntitiesFromList($entities,'tt_et',$limit);
+//            }    
+//        }    
+//        if ($tt_et == '')
+//        {
+//            $tt_et = $this->findEntitiesByProp('tt_et', $access_prop, $filter ,$limit);
+//        }    
+//        if ($tt_et == '')
+//        {
+//            return $objs;
+//        }
+//        $artemptable = array();
+//	$this->createtemptable_all($tt_et,$artemptable);
+//        $artemptable[] = $tt_et;
+//        $plist = $this->getProperties(TRUE,'toset');
+//        $params = array();
+//        $sql = $this->sqltext_entitylist($properties,$filter,$arr_prop,$access_prop,$action,$params);
+//        if ($sql=='')
+//        {
+//            return $objs;
+//        }    
+////        die(var_dump($sql).var_dump($params));
+//	$res = DataManager::dm_query($sql,$params);
+//        $arr_e = array();
+//        $arr_name = array();
+////        $arr_id = array_filter($properties, function ($prow) { return $prow['name_type'] == 'id'; });
+//        $i = 0;
+//	DataManager::droptemptable($artemptable);
+//        while($row = $res->fetch(PDO::FETCH_ASSOC)) {
+//            $objs[$row['id']] = array('id'=>$row['id'],'name'=>'','class' => 'active');
+//            $arr_name[$row['id']] = array();
+//            foreach($plist as $rid => $row_plist) {
+//                $field_val = Filter::rowname($rid);
+//                $field_id = "propid_$field_val";
+//                $rowid = "id_$field_val";
+//                $rowname = "name_$field_val";
+//                $type = $row_plist['name_type'];
+//                $r_name = $row[$rowname];
+//                $r_id = $row[$rowid];
+////                if (strtolower($row_plist['name']) == 'activity')
+////                {
+////                    if ($row[$rowname]===false)
+////                    {    
+////                        $objs[$row['id']]['class'] ='erased';               
+////                    }    
+////                }    
+//                if ($type == 'id') {
+//                    if (($row[$rowid])&&($row[$rowid]!=DCS_EMPTY_ENTITY)) {
+//                        if (!in_array($row[$rowid],$arr_e)){
+//                            $arr_e[]=$row[$rowid];
+//                        }
+//                    }
+//                    $r_name = '';
+////                } else {
+////                    if ($type == 'date') {
+////                        $r_name = substr($r_name,0,10);
+////                    }    
+//                }    
+//                $objs[$row['id']][$row[$field_id]] = array('id'=>$r_id,'name'=>$r_name);
+////                if ($row_plist['ranktostring'] > 0) {
+////                    $arr_name[$row['id']][$row_plist['ranktostring']] = $r_name;
+////                }
+//            }
+//        }
+//        if (count($arr_e))
+//        {
+//            $this->fill_entsetname($objs,$arr_e);
+//        }
+//	return $objs;
+//    }
     public function getItemsProp() 
     {
         return $this->getProperties(TRUE,'toset');
@@ -520,7 +588,11 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
             if ($key_edate !== FALSE) {
                 //если есть реквизит с установленным флагом isedate сортируем по этому реквизиту по убыванию
                 $strjoin = "et.id";
-                $sql = "SELECT et.id, COALESCE(pv.value,'epoch'::timestamp) as value FROM \"ETable\" as et LEFT JOIN \"IDTable\" as it  INNER JOIN \"PropValue_date\" as pv ON pv.id=it.id AND it.propid=:propid ON et.id=it.entityid "; 
+                $sql = "SELECT et.id, COALESCE(pv.value,'epoch'::timestamp) as value "
+                        . "FROM \"ETable\" as et LEFT JOIN \"IDTable\" as it "
+                        . "INNER JOIN \"PropValue_date\" as pv "
+                        . "ON pv.id=it.id AND it.propid=:propid "
+                        . "ON et.id=it.entityid "; 
                 $strwhere = " et.mdid=:mdid";
                 $params['propid'] = $key_edate;
                 $params['mdid'] = $mdid;

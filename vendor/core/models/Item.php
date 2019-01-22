@@ -45,11 +45,11 @@ class Item extends Sheet implements I_Sheet
         }
         if ($this->isnew) {
             foreach ($this->head->getplist() as $prop) {
-                if ($prop['valmdtypename'] == 'Items') {
-                    $this->mdid = $prop['valmdid'];
+                if ($prop['name_valmditem'] == 'Items') {
+                    $this->mdid = $prop['id_valmdid'];
                     $this->mdname = $prop['name_valmdid'];
-                    $this->mditem = $prop['valmditem'];
-                    $this->mdtypename = $prop['valmdtypename'];
+                    $this->mditem = $prop['id_valmditem'];
+                    $this->mdtypename = $prop['name_valmditem'];
                     break;
                 }
             }
@@ -141,6 +141,10 @@ class Item extends Sheet implements I_Sheet
         return 'ETable';
     }
     public function item_classname()
+    {
+        return NULL;
+    }        
+    public function get_items()
     {
         return NULL;
     }        

@@ -17,24 +17,56 @@ trait T_Sheet {
           'name'=>$this->name,
           'synonym'=>$this->synonym,
           'version'=>$this->version
-          );
+        );
         $objs['PLIST'] = $this->getplist();
         $objs['SETS'] = $this->getsets();
         $objs['PSET'] = $this->getItemsProp();
-       return $objs;
+        return $objs;
     }
-    public function getsets()
+    //array sets properties for output
+    public function getsets() 
     {
-        return array();
-    }        
-    public function getcontext()
-    {
-        return array(
-        'ITEMID' => '',
-        'ACTION' => 'VIEW',
-        'PREFIX' => 'ENTERPRISE'
-        );
-    }            
+        if (!count($this->plist)) {
+            $this->getplist();
+        }
+        $psets = array_filter($this->plist,function($item){
+                            return $item['name_valmditem'] === 'Sets';
+                        });
+        if (!count($psets)) {
+            return array();
+        }
+        $propid = '';
+        $context = DcsContext::getcontext();
+        $propid = $context->data_getattr('dcs_propid')['id'];
+        $sets = array();
+        foreach ($psets as $prop) {
+            $mdset = new Mdentity($prop['id_valmdid']);
+            $props = $mdset->get_arritems();
+            $items = array_filter($props,function($item){
+                            return $item['name_valmditem'] === 'Items';
+                        });
+            $sets[$prop['id']] = array();
+            if (!count($items)) {
+                continue;
+            }
+            foreach ($items as $item) {
+                $mditem = new Mdentity($item['id_valmdid']);
+                $sets[$prop['id']] = array_filter($mditem->get_arritems(),
+                            function($item) {
+                                return $item['ranktoset'] > 0;
+                            });
+            }
+            if ($propid == $prop['id']) {
+                $context->setattr('SETID',$this->get_valid($propid));
+                $context->setattr('PROPID',$propid);
+            } elseif (count($psets) == 1) { 
+                $context->setattr('SETID',$this->get_valid($prop['id']));
+                $context->setattr('PROPID',$prop['id']);
+                break;
+            }  
+        }  
+        return $sets;
+    }
     public function setnamesynonym()
     {
     }        
@@ -42,42 +74,24 @@ trait T_Sheet {
     {
         return $this->id;
     }
-    function getnewid($headid,$classname)
-    {
-        $params = array('headid'=>$headid,
-                       'classname'=>$classname);
-	DataManager::dm_beginTransaction();
-        $sql = "INSERT INTO \"NewObjects\" (headid,classname) "
-                . "VALUES (:headid,:classname) RETURNING \"id\"";
-        $res=DataManager::dm_query($sql,$params);
-        if(!$res) {
-            DataManager::dm_rollback();
-            throw new DcsException("Class ".get_called_class().
-                    " getnewid: new row insert unable",DCS_ERROR_SQL);
-        }    
-        $row = $res->fetch(PDO::FETCH_ASSOC);
-	DataManager::dm_commit();
-        return $row['id'];
-    }
     public function create() 
     {
         $context = DcsContext::getcontext();
         $headid = $this->getid();
+        $classname = $this->item_classname();
+        $propid = $context->getattr('PROPID');
         $setid = $context->getattr('SETID');
-        if ($setid) {
-            $id = $this->getnewid($setid,
-                            'Item');
-        } else {
-            $id = $this->getnewid($headid,
-                            $this->item_classname());
+        if ($propid) {
+            if (!$setid) {
+                
+            }    
+            $headid = $setid;
+            $classname = 'Item';
         }    
+        $id = DataManager::getnewid($headid,$classname);
         $redirect = '/'.$context->getattr('PREFIX').'/'.$id;
         return array('status'=>'OK', 'id'=>$id, 'redirect'=>$redirect);
     }
-    public function save_new($data)
-    {
-    }        
-
     public function render()
     {
         return array('status'=>'OK', 'id'=>$this->id);
@@ -119,31 +133,6 @@ trait T_Sheet {
     // filter - function returning bool 
     //          or string 'toset' / 'tostring'
     //
-    public function fill_entname(&$data,$arr_e) {
-        $arr_entities = $this->getAllEntitiesToStr($arr_e);
-        foreach($arr_entities as $rid=>$prow) {
-            foreach($data as $id=>$row) {
-                if ($row['id'] == $rid) {
-                    $data[$id]['name'] = $prow['name'];
-                }        
-            }
-        }    
-    }
-    public function fill_entsetname(&$data,$arr_e) {
-        $arr_entities = $this->getAllEntitiesToStr($arr_e);
-        foreach($arr_entities as $rid=>$prow) {
-            foreach($data as $id=>$row) {
-                foreach($row as $pid=>$pdata) {
-                    if (!is_array($pdata)) {
-                        continue;
-                    }
-                    if ($pdata['id'] == $rid) {
-                        $data[$id][$pid]['name'] = $prow['name'];
-                    }        
-                }    
-            }
-        }
-    }
     public function getattr($propid) 
     {
         $val = '';
@@ -213,13 +202,12 @@ trait T_Sheet {
     }
     public function update($data)     
     {
+        $context = DcsContext::getcontext();
+        DataManager::dm_beginTransaction();
         try {
-            DataManager::dm_beginTransaction();
             if ($this->isnew) {
-                $arr_name = $this->getNameFromData($data);
-                $this->create_object($arr_name['name'],$arr_name['synonym']);
+                $this->create_object($this->params_to_create($data));
             }
-            $context = DcsContext::getcontext();
             $res = $this->update_properties($data);
             if ($context->getattr('SETID')) {
                 if ($res['status'] == 'OK')
@@ -275,17 +263,27 @@ trait T_Sheet {
         $context = DcsContext::getcontext();
         $prefix = $context->getattr('PREFIX');
         $action = $context->getattr('ACTION');
+        $propid = $context->getattr('PROPID');
     	$objs = array();
         $objs['PLIST'] = $this->getplist();
         $objs['LDATA'] = array();
         $objs['LDATA'][$this->id] = $this->load_data();
-        $objs['PSET'] = $this->getItemsProp();
-        $objs['SDATA'] = $this->getItems(DcsContext::getfilters());
-        $objs['SETS'] = $this->getsets();
         $classname = $context->getattr('CLASSNAME');
-        if ($context->data_getattr('dcs_setid')['name'] !== '') {
+        $setid = '';
+        if ($propid) {
+            $setid = $this->get_valid($propid);
             $classname = 'Sets';
         }
+        if (!$setid) {
+            $objs['PSET'] = $this->getItemsProp();
+            $objs['SDATA'] = $this->getItems(DcsContext::getfilters());
+        } else {
+            $set = new Sets($setid,$this);
+            $objs['PSET'] = $set->getItemsProp();
+            $objs['SDATA'] = array($propid => $set->getItems(DcsContext::getfilters()));
+        }   
+        $objs['SETID'] = $setid;
+        $objs['SETS'] = $this->getsets();
         $objs['actionlist'] = DataManager::getActionsbyItem($classname,$prefix,$action);
         $objs['navlist'] = $this->get_navlist();
 	return $objs;
@@ -294,7 +292,7 @@ trait T_Sheet {
     {
     	$objs = array();
         $objs['PSET'] = $this->head->getItemsProp();
-        $objs['SDATA'] = $this->head->getItems($filter);
+        $objs['SDATA'] = $this->head->getListItems($filter);
 	return $objs;
     }
     public function getaccessright_id()
@@ -389,7 +387,7 @@ trait T_Sheet {
                 };
             } elseif (strtolower($filter) == 'sets') {
                 $f = function($item) {
-                    return $item['valmdtypename'] === 'Sets';
+                    return $item['name_valmditem'] === 'Sets';
                 };
             } else {
                 $f = NULL;
@@ -427,22 +425,16 @@ trait T_Sheet {
     public function after_choice()
     {
         $context = DcsContext::getcontext();
-        $data = $context->getattr('DATA');
-        if ($data['dcs_param_type']['name'] == 'cid') {
+        if ($context->data_getattr('dcs_param_type')['name'] == 'cid') {
             $modelname = "\\Dcs\\Vendor\\Core\\Models\\CollectionItem";
             $dep_prop = 'name';
-        } elseif ($data['dcs_param_type']['name'] == 'id') {
+        } elseif ($context->data_getattr('dcs_param_type')['name'] == 'id') {
             $modelname = "\\Dcs\\Vendor\\Core\\Models\\Entity";
             $dep_prop = 'propid';
         } else {
             return array('msg'=>'OK');
         }
-        try {
-            $ent = new $modelname($data['dcs_param_id']['id']);
-        } catch (Exception $ex) {
-            throw new DcsException("Class ".get_called_class().
-                " constructor: id is not valid",DCS_ERROR_WRONG_PARAMETER);
-        }
+        $ent = new $modelname($context->data_getattr('dcs_param_id')['id']);
         $plist = $this->getplist();
         $c_plist = $ent->getplist();
         $c_ldata = $ent->load_data();
@@ -485,6 +477,9 @@ trait T_Sheet {
         {    
             $propid = $prop['id'];
             if ($propid == 'id') {
+                continue;
+            }    
+            if ($prop['field'] == 0) {
                 continue;
             }    
             if (!array_key_exists($propid, $data)) {        
@@ -541,18 +536,349 @@ trait T_Sheet {
     }    
     function delete() 
     {
-	DataManager::dm_beginTransaction();
         $id = $this->id;
         $params = array();
         $params['id']=$id;
         $sql = "DELETE FROM \"".$this->dbtablename()."\" WHERE id = :id";
-        try {
-            DataManager::dm_query($sql,$params);
-        } catch (DcsException $exc) {
-            DataManager::dm_rollback();
-            return array('status'=>'ERROR','msg'=>$exc->getTraceAsString());
-        }
-        DataManager::dm_commit();
+        DataManager::dm_query($sql,$params);
         return array('status'=>'OK', 'id'=>$this->id);
     }    
+    public function params_to_create($data='')
+    {
+        $name = $this->name;
+        $synonym = $this->synonym;
+        if ($data) {
+            $name = $data['name']['name'];
+            $synonym = $data['synonym']['name'];
+        }    
+        return array(
+                'name' => $name, 
+                'synonym'=>$synonym,
+                'mdid'=> $this->mdid,
+                'id'=> $this->id
+                );
+    }        
+    public function create_object($params)
+    {
+        $str_par = '';
+        $str_pvar = '';
+        foreach ($params as $par=>$val) {
+            $str_par .= ", $par";
+            $str_pvar .= ", :$par";
+        }
+        $str_par = substr($str_par,1);
+        $str_pvar = substr($str_pvar,1);
+        $sql ="INSERT INTO \"".$this->dbtablename()."\" ($str_par) "
+                    . "VALUES ($str_pvar) RETURNING \"id\"";
+        $res = DataManager::dm_query($sql,$params); 
+        $rowid = $res->fetch(PDO::FETCH_ASSOC);
+        $this->after_create();
+        return $rowid['id'];
+    }        
+    public function after_create()
+    {
+        return NULL;
+    }
+
+    public function getItemsByName($name) 
+    {
+        return NULL;
+    }
+    public function getItemsProp() 
+    {
+        return $this->getProperties(TRUE,'toset');
+    }
+    public function getNameFromData($data='')
+    {
+        if (!$data) {
+            return array('name' => $this->name, 'synonym' => $this->synonym);
+        } else {
+            return array('name' => $data['name']['name'],
+                         'synonym' => $data['synonym']['name']);
+        }    
+    }      
+    public function get_arritems()
+    {
+        return $this->get_items()->fetchAll(PDO::FETCH_ASSOC);
+    }        
+    public function getItems($filter=array()) 
+    {
+        $context = DcsContext::getcontext();
+        $propid = $context->getattr('PROPID');
+        if ($propid) {
+            $setid = $this->get_valid($propid);
+            if ((!$setid)||($setid === DCS_EMPTY_ENTITY)) {
+                return array($propid => array());
+            }    
+            $context->setattr('SETID',$setid);
+            $set = new Sets($setid,$this);
+            return array($propid => $set->getItems($filter));
+        }
+        $objs = array();
+        $this->loadProperties();
+        $arr_e = array();
+        $res = $this->get_items();
+        if (!$res) {
+            return $objs;
+        }
+        while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
+            $c_arr = array();
+            $c_arr['class'] = 'active';
+            foreach ($this->properties as $prop) {
+                $propid = $prop['id'];
+                if ($propid == 'id') {
+                    continue;   
+                }
+                if (($propid == 'name')||($propid == 'synonym')) {
+                    $c_arr[$propid] = array(
+                                    'id'=>'',
+                                    'name' => $row[$propid]);
+                    continue;   
+                }
+                if ($prop['ranktoset'] == 0) {
+                    continue;   
+                }
+                $rowname = Filter::rowname($propid);
+                $id_rowname = 'id_'.$rowname;
+                $name_rowname = 'name_'.$rowname;
+                $propid_rowname = 'propid_'.$rowname;
+                if (array_key_exists($propid_rowname, $row)) {
+                    if (($prop['name_type'] == 'id')||
+                        ($prop['name_type'] == 'cid')||    
+                        ($prop['name_type'] == 'mdid')) {    
+                        $c_arr[$row[$propid_rowname]] = array(
+                                            'id'=>$row[$id_rowname],
+                                            'name' => $row[$name_rowname]);
+                        if ($prop['name_type'] == 'id') {
+                            if (($row[$id_rowname])&&
+                                ($row[$id_rowname]!=DCS_EMPTY_ENTITY)) {
+                                    if (!in_array($row[$id_rowname],$arr_e)){
+                                        $arr_e[]=$row[$id_rowname];
+                                    }
+                            }
+                        }    
+                    } elseif ($prop['name_type'] == 'date') {
+                        $c_arr[$row[$propid_rowname]] = array(
+                                        'id'=>'',
+                                        'name' => substr($row[$name_rowname],0,10));
+                    } else {
+                        $c_arr[$row[$propid_rowname]] = array(
+                                            'id'=>'',
+                                            'name' => $row[$name_rowname]);
+                    }
+                }
+                if (strtolower($prop['name']) == 'activity')
+                {
+                    if ($row[$name_rowname]===false)
+                    {    
+                        $c_arr['class'] ='erased';               
+                    }    
+                }    
+            }
+            $objs[$row['id']] = $c_arr;
+        }
+        if (count($arr_e))
+        {
+            DataManager::fill_entsetname($objs,$arr_e);
+        }
+        return $objs;
+    }
+    public function getListItems($filter=array()) 
+    {
+        $objs = array();
+        $this->loadProperties();
+        $arr_e = array();
+        $res = $this->get_items();
+        if (!$res) {
+            return $objs;
+        }
+        while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
+            $c_arr = array();
+            $c_arr['class'] = 'active';
+            foreach ($this->properties as $prop) {
+                $propid = $prop['id'];
+                if ($propid == 'id') {
+                    continue;   
+                }
+                if (($propid == 'name')||($propid == 'synonym')) {
+                    $c_arr[$propid] = array(
+                                    'id'=>'',
+                                    'name' => $row[$propid]);
+                    continue;   
+                }
+                if ($prop['ranktoset'] == 0) {
+                    continue;   
+                }
+                $rowname = Filter::rowname($propid);
+                $id_rowname = 'id_'.$rowname;
+                $name_rowname = 'name_'.$rowname;
+                $propid_rowname = 'propid_'.$rowname;
+                if (array_key_exists($propid_rowname, $row)) {
+                    if (($prop['name_type'] == 'id')||
+                        ($prop['name_type'] == 'cid')||    
+                        ($prop['name_type'] == 'mdid')) {    
+                        $c_arr[$row[$propid_rowname]] = array(
+                                            'id'=>$row[$id_rowname],
+                                            'name' => $row[$name_rowname]);
+                        if ($prop['name_type'] == 'id') {
+                            if (($row[$id_rowname])&&
+                                ($row[$id_rowname]!=DCS_EMPTY_ENTITY)) {
+                                    if (!in_array($row[$id_rowname],$arr_e)){
+                                        $arr_e[]=$row[$id_rowname];
+                                    }
+                            }
+                        }    
+                    } elseif ($prop['name_type'] == 'date') {
+                        $c_arr[$row[$propid_rowname]] = array(
+                                        'id'=>'',
+                                        'name' => substr($row[$name_rowname],0,10));
+                    } else {
+                        $c_arr[$row[$propid_rowname]] = array(
+                                            'id'=>'',
+                                            'name' => $row[$name_rowname]);
+                    }
+                }
+                if (strtolower($prop['name']) == 'activity')
+                {
+                    if ($row[$name_rowname]===false)
+                    {    
+                        $c_arr['class'] ='erased';               
+                    }    
+                }    
+            }
+            $objs[$row['id']] = $c_arr;
+        }
+        if (count($arr_e))
+        {
+            DataManager::fill_entsetname($objs,$arr_e);
+        }
+        return $objs;
+    }
+    public function loadProperties()
+    {
+        $properties = array();
+        $sql = $this->txtsql_properties("mdid");
+        if (!$sql) {
+            return $properties;
+        }
+        $params = array('mdid'=> $this->mdid);
+        $res = DataManager::dm_query($sql,$params);
+        while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
+            $properties[$row['id']] = $row;
+        }    
+        $this->properties = $properties;
+        return $properties;
+    }        
+//    public function load_data($data='')
+//    {
+//        $this->data['id'] = array('id'=>'','name'=>$this->id);
+//        $this->data['name'] = array('id'=>'','name'=>$this->name);
+//        $this->data['synonym'] = array('id'=>'','name'=>$this->synonym);
+//        if (!count($this->plist)) {
+//            $this->getplist();
+//        }
+//        if (!$data) {
+//            $sql = $this->get_tt_sql_data();
+//            $sth = DataManager::dm_query($sql,array('id'=>$this->id));        
+//            while($row = $sth->fetch(PDO::FETCH_ASSOC)) {
+//                foreach($this->plist as $prow) {
+//                    $this->data[$prow['id']] = array('id'=>'','name'=>'');
+//                    if (array_key_exists("name_".$prow['id'], $row)) {
+//                        $this->data[$prow['id']]['name'] = $row["name_".$prow['id']];
+//                    }
+//                    if (array_key_exists("id_".$prow['id'], $row)) {
+//                        $this->data[$prow['id']]['id'] = $row["id_".$prow['id']];
+//                    }
+//                    if (array_key_exists($prow['id'], $row)) {
+//                        $this->data[$prow['id']]['name'] = $row[$prow['id']];
+//                    }
+//                }    
+//            }
+//        } else {
+//            $this->data['id'] = array('id'=>'','name'=>$data['id']);
+//            foreach($this->plist as $prow) {
+//                $this->data[$prow['id']] = array('id'=>'','name'=>'');
+//                if (array_key_exists("name_".$prow['id'], $data)) {
+//                    $this->data[$prow['id']]['name'] = $data["name_".$prow['id']];
+//                }
+//                if (array_key_exists("id_".$prow['id'], $data)) {
+//                    $this->data[$prow['id']]['id'] = $data["id_".$prow['id']];
+//                }
+//                if (array_key_exists($prow['id'], $data)) {
+//                    $this->data[$prow['id']]['name'] = $data[$prow['id']];
+//                }
+//            }    
+//        }  
+//        $this->version = time();
+//        $this->head = $this->get_head();
+//        $this->check_right();
+//        return $this->data;
+//    }            
+    public function load_data($data='')
+    {
+        $this->data['id'] = array('id'=>'','name'=>$this->id);
+        $this->data['name'] = array('id'=>'','name'=>$this->name);
+        $this->data['synonym'] = array('id'=>'','name'=>$this->synonym);
+        if (!count($this->plist)) {
+            $this->getplist();
+        }
+        if (!$data) {
+            foreach($this->plist as $prow) {
+                $this->data[$prow['id']] = array('id'=>'','name'=>'');
+            }    
+            $artemptable = $this->get_tt_sql_data();
+            $sql = "select * from tt_out";
+            $sth = DataManager::dm_query($sql);        
+            $arr_e = array();
+            while($row = $sth->fetch(PDO::FETCH_ASSOC)) {
+                $this->data['id'] = array('id'=>$row['id'],'name'=>$row['id']);
+                foreach($this->plist as $prow) {
+                    $this->data[$prow['id']] = array('id'=>'','name'=>'');
+                    $rowname = Filter::rowname($prow['id']);
+                    if (array_key_exists('id_'.$rowname, $row)) {
+                        $this->data[$prow['id']]['id'] = $row["id_$rowname"];
+                        if ($prow['name_type'] === 'id') {
+                            if ($prow['name_valmditem'] !== 'Sets') {    
+                                if (($row["id_$rowname"])&&
+                                    ($row["id_$rowname"] != DCS_EMPTY_ENTITY)) {
+                                    if (!in_array($row["id_$rowname"],$arr_e)){
+                                        $arr_e[] = $row["id_$rowname"];
+                                    }
+                                }    
+                            }    
+                        }
+                    }
+                    if (array_key_exists('name_'.$rowname, $row)) {
+                        $this->data[$prow['id']]['name'] = $row["name_$rowname"];
+                    }
+                    if (array_key_exists($rowname, $row)) {
+                        $this->data[$prow['id']]['name'] = $row[$rowname];
+                    }
+                }    
+            }
+            if (count($arr_e)) {
+                DataManager::fill_entname($this->data,$arr_e);
+            }
+            DataManager::droptemptable($artemptable);
+        } else {
+            $this->data['id'] = array('id'=>'','name'=>$data['id']);
+            foreach($this->plist as $prow) {
+                $this->data[$prow['id']] = array('id'=>'','name'=>'');
+                if (array_key_exists('name_'.$prow['id'], $data)) {
+                    $this->data[$prow['id']]['name'] = $data['name_'.$prow['id']];
+                }    
+                if (array_key_exists('id_'.$prow['id'], $data)) {
+                    $this->data[$prow['id']]['id'] = $data['id_'.$prow['id']];
+                }    
+                if (array_key_exists($prow['id'], $data)) {
+                    $this->data[$prow['id']]['name'] = $data[$prow['id']];
+                }
+            }    
+        }
+        $this->version = time();
+        $this->head = $this->get_head();
+        $this->setnamesynonym();
+        $this->check_right();
+        return $this->data;
+    }            
 }    

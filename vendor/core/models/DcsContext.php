@@ -59,6 +59,9 @@ class DcsContext
         if ($context->data_getattr('dcs_param_val')['name'] == '') {
             return array();
         }
+        if ($context->data_getattr('dcs_param_')['name'] == '') {
+            return array();
+        }
         return array($context->data_getattr('dcs_param_propid')['name'] =>
                 new Filter($context->data_getattr('dcs_param_propid')['name'],
                         $context->data_getattr('dcs_param_val')['name'],

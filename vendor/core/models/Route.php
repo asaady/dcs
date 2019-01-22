@@ -73,9 +73,8 @@ class Route {
         }
         $action = $this->get_action_error($ex_code);
         $this->seterrorcontext();
-        $context = DcsContext::getcontext();
-        $controller = new Controller_Error($context);
-        $controller->$action($context,$data);
+        $controller = new Controller_Error();
+        $controller->$action($data);
     }        
 
     public function start()
@@ -166,7 +165,7 @@ class Route {
                     WHERE et.id=:itemid  and ct.name = 'Sets'
                 UNION SELECT 'CollectionItem', ct.name, ct.id, ct.synonym, md.name FROM \"CTable\" as ct INNER JOIN \"MDTable\" as md ON ct.mdid=md.id AND md.name<>'MDitems' WHERE ct.id=:itemid
                 UNION SELECT 'EProperty', mp.name, mp.id, mp.synonym, md.name  FROM \"MDProperties\" as mp INNER JOIN \"MDTable\" as md ON mp.mdid=md.id WHERE mp.id=:itemid
-                UNION SELECT 'CProperty', cp.name, cp.id, cp.synonym, md.name FROM \"CProperties\" as cp INNER JOIN \"MDTable\" as md ON cp.mdid=md.id WHERE cp.id=:itemid 
+                UNION SELECT 'Cproperty', cp.name, cp.id, cp.synonym, md.name FROM \"CProperties\" as cp INNER JOIN \"MDTable\" as md ON cp.mdid=md.id WHERE cp.id=:itemid 
                 UNION SELECT 'RProperty', mp.name, mp.id, mp.synonym, md.name  FROM \"RegProperties\" as mp INNER JOIN \"MDTable\" as md ON mp.mdid=md.id WHERE mp.id=:itemid";
 
         $artt = array();

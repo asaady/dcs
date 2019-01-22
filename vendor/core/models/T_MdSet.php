@@ -15,8 +15,8 @@ trait T_MdSet {
 //        $objs['LDATA'] = $this->getItems($context);
 //	return $objs;
 //    }
-    public function getItemsByName($name)
-    {
-        return NULL;
-    }
+//    public function getItemsByName($name)
+//    {
+//        return NULL;
+//    }
 }

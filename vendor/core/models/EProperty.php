@@ -8,9 +8,54 @@ require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)
 class EProperty extends Sheet  
 {
     use T_Sheet;
-    use T_Item;
     use T_Property;
     
+    protected $propid;
+    protected $name_propid;
+    
+    public function __construct($id,$hd='')
+    {
+        if ($id === '') {
+            throw new DcsException("Class ".get_called_class().
+                    " constructor: id is empty",DCS_ERROR_WRONG_PARAMETER);
+        }
+        $this->id = $id;
+        $this->isnew = false;
+        $arData = $this->getDetails($id);
+        if (!$arData) {
+            throw new DcsException("Class ".get_called_class().
+                " constructor: id is wrong",DCS_ERROR_WRONG_PARAMETER);
+        }
+        $this->mdid = $arData['mdid'];
+        $this->name = $arData['name']; 
+        $this->synonym = $arData['synonym']; 
+        $this->propid = $arData['propid']; 
+        $this->name_propid = $arData['name_propid']; 
+        $this->mdname = $arData['mdname'];
+        $this->mdsynonym = $arData['mdsynonym'];
+        $this->mditem = $arData['mditem'];
+        $this->mdtypename = $arData['mdtypename'];
+        if ($hd) {
+            $this->set_head($hd);
+        } else {    
+            $this->head = $this->get_head();
+        }
+        if ($this->name === '_new_') {
+            $this->isnew = true;
+        }    
+        $this->plist = array();
+        $this->data = array();
+        $this->version = time();
+        
+    }
+    public function setpropid($propid)
+    {
+        $this->propid = $propid;
+    }
+    public function getpropid()
+    {
+        return $this->propid;
+    }
     public function dbtablename()
     {
         return 'MDProperties';
@@ -18,6 +63,7 @@ class EProperty extends Sheet
     public function txtsql_forDetails()
     {
         return "SELECT mp.id, mp.name, mp.synonym, mp.mdid, 
+            mp.propid as propid, pr.name as name_propid,
             md.name as mdname, md.synonym as mdsynonym, 
             md.mditem, tp.name as mdtypename, tp.synonym as mdtypedescription
             FROM \"MDProperties\" AS mp
@@ -25,16 +71,22 @@ class EProperty extends Sheet
                     INNER JOIN \"CTable\" as tp
                     ON md.mditem = tp.id
                 ON mp.mdid = md.id 
+                LEFT JOIN \"CTable\" as pr
+                ON mp.propid = pr.id
             WHERE mp.id = :id";
     }        
     public function get_tt_sql_data()
     {        
-        return "SELECT mp.id, mp.propid, pr.name as name_propid, mp.name, mp.synonym, 
-            pst.value as type, pt.name as name_type, mp.length, mp.prec, mp.mdid, 
-            mp.rank, mp.ranktostring, mp.ranktoset, mp.isedate, mp.isenumber, 
-            mp.isdepend, pmd.value as valmdid, valmd.name AS name_valmdid, 
-            valmd.synonym AS valmdsynonym, valmd.mditem as valmditem, 
-            mi.name as valmdtypename, 1 as field,'active' as class FROM \"MDProperties\" AS mp
+        $artemptable = array();
+        $sql = "SELECT mp.id, mp.name, mp.synonym, 
+            mp.propid as id_propid, pr.name as name_propid, 
+            pst.value as id_type, pt.name as name_type, 
+            mp.length, mp.prec, mp.mdid, mp.rank, mp.ranktostring, mp.ranktoset, 
+            mp.isedate, mp.isenumber, mp.isdepend, 
+            pmd.value as id_valmdid, valmd.name as name_valmdid, 
+            valmd.synonym AS valmdsynonym, valmd.mditem as id_valmditem, 
+            mi.name as name_valmditem, 1 as field,'active' as class 
+            FROM \"MDProperties\" AS mp
 		  LEFT JOIN \"CTable\" as pr
 		    LEFT JOIN \"CPropValue_mdid\" as pmd
         		INNER JOIN \"MDTable\" as valmd
@@ -51,52 +103,55 @@ class EProperty extends Sheet
 		    ON pr.id = pst.id
 		  ON mp.propid = pr.id
 		WHERE mp.id = :id";
+
+        $artemptable[] = DataManager::createtemptable($sql,'tt_out',array('id'=>$this->id));   
+        return $artemptable;
     }    
-    public function load_data($data='')
-    {
-        $this->data['id'] = array('id'=>'','name'=>$this->id);
-        $this->data['name'] = array('id'=>'','name'=>$this->name);
-        $this->data['synonym'] = array('id'=>'','name'=>$this->synonym);
-        if (!count($this->plist)) {
-            $this->getplist();
-        }
-        if (!$data) {
-            $sql = $this->get_tt_sql_data();
-            $sth = DataManager::dm_query($sql,array('id'=>$this->id));        
-            while($row = $sth->fetch(PDO::FETCH_ASSOC)) {
-                foreach($this->plist as $prow) {
-                    if (array_key_exists($prow['id'], $row)) {
-                        if (($prow['name_type'] == 'cid') || 
-                            ($prow['name_type'] == 'id') || 
-                            ($prow['name_type'] == 'mdid')) {
-                            $this->data[$prow['id']] = array('id'=>$row[$prow['id']],'name'=>$row['name_'.$prow['id']]);
-                        } else {
-                            $this->data[$prow['id']] = array('id'=>'','name'=>$row[$prow['id']]);
-                        }
-                    } else {
-                        $this->data[$prow['id']] = array('id'=>'','name'=>'');
-                    }
-                }    
-            }
-        } else {
-            $this->data['id'] = array('id'=>'','name'=>$data['id']);
-            foreach($this->plist as $prow) {
-                if (array_key_exists("name_".$prow['id'], $data)) {
-                    $this->data[$prow['id']] = array(
-                        'id'=>$data[$prow['id']],
-                        'name'=>$data["name_".$prow['id']]);
-                } elseif (array_key_exists($prow['id'], $data)) {
-                    $this->data[$prow['id']] = array('id'=>'','name'=>$data[$prow['id']]);
-                } else {
-                    $this->data[$prow['id']] = array('id'=>'','name'=>'');
-                }
-            }    
-        }    
-        $this->version = time();
-        $this->head = $this->get_head();
-        $this->check_right();
-        return $this->data;
-    }            
+//    public function load_data($data='')
+//    {
+//        $this->data['id'] = array('id'=>'','name'=>$this->id);
+//        $this->data['name'] = array('id'=>'','name'=>$this->name);
+//        $this->data['synonym'] = array('id'=>'','name'=>$this->synonym);
+//        if (!count($this->plist)) {
+//            $this->getplist();
+//        }
+//        if (!$data) {
+//            $sql = $this->get_tt_sql_data();
+//            $sth = DataManager::dm_query($sql,array('id'=>$this->id));        
+//            while($row = $sth->fetch(PDO::FETCH_ASSOC)) {
+//                foreach($this->plist as $prow) {
+//                    if (array_key_exists($prow['id'], $row)) {
+//                        if (($prow['name_type'] == 'cid') || 
+//                            ($prow['name_type'] == 'id') || 
+//                            ($prow['name_type'] == 'mdid')) {
+//                            $this->data[$prow['id']] = array('id'=>$row[$prow['id']],'name'=>$row['name_'.$prow['id']]);
+//                        } else {
+//                            $this->data[$prow['id']] = array('id'=>'','name'=>$row[$prow['id']]);
+//                        }
+//                    } else {
+//                        $this->data[$prow['id']] = array('id'=>'','name'=>'');
+//                    }
+//                }    
+//            }
+//        } else {
+//            $this->data['id'] = array('id'=>'','name'=>$data['id']);
+//            foreach($this->plist as $prow) {
+//                if (array_key_exists("name_".$prow['id'], $data)) {
+//                    $this->data[$prow['id']] = array(
+//                        'id'=>$data[$prow['id']],
+//                        'name'=>$data["name_".$prow['id']]);
+//                } elseif (array_key_exists($prow['id'], $data)) {
+//                    $this->data[$prow['id']] = array('id'=>'','name'=>$data[$prow['id']]);
+//                } else {
+//                    $this->data[$prow['id']] = array('id'=>'','name'=>'');
+//                }
+//            }    
+//        }    
+//        $this->version = time();
+//        $this->head = $this->get_head();
+//        $this->check_right();
+//        return $this->data;
+//    }            
     public static function txtsql_access()
     {
         return '';
@@ -105,44 +160,57 @@ class EProperty extends Sheet
     {
         $plist = array(
             '0'=>array('id'=>'id','name'=>'id','synonym'=>'ID',
-                        'rank'=>0,'ranktoset'=>1,'ranktostring'=>0,
-                        'name_type'=>'str','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'readonly','field'=>1),
+                        'rank'=>0,'ranktoset'=>1,'ranktostring'=>0, 'isdepend'=>false,
+                        'name_type'=>'str','name_valmdid'=>'','id_valmdid'=>'',
+                        'name_valmditem'=>'','class'=>'readonly','field'=>1),
             '1'=>array('id'=>'name','name'=>'name','synonym'=>'NAME',
-                        'rank'=>1,'ranktoset'=>2,'ranktostring'=>1,
-                        'name_type'=>'str','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'active','field'=>1),
+                        'rank'=>1,'ranktoset'=>2,'ranktostring'=>1, 'isdepend'=>false,
+                        'name_type'=>'str','name_valmdid'=>'','id_valmdid'=>'',
+                        'name_valmditem'=>'','class'=>'active','field'=>1),
             '2'=>array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM',
-                        'rank'=>2,'ranktoset'=>3,'ranktostring'=>0,
-                        'name_type'=>'str','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'active','field'=>1),
+                        'rank'=>2,'ranktoset'=>3,'ranktostring'=>0, 'isdepend'=>false,
+                        'name_type'=>'str','name_valmdid'=>'','id_valmdid'=>''
+                        ,'name_valmditem'=>'','class'=>'active','field'=>1),
             '3'=>array('id'=>'propid','name'=>'propid','synonym'=>'PROPID',
-                        'rank'=>3,'ranktoset'=>0,'ranktostring'=>0,
-                        'name_type'=>'cid','name_valmdid'=>DCS_PROPS_TEMPL_NAME,'valmdid'=>DCS_PROPS_TEMPL_ID,'valmdtypename'=>'Cols','class'=>'active','field'=>1),
+                        'rank'=>3,'ranktoset'=>0,'ranktostring'=>0, 'isdepend'=>false,
+                        'name_type'=>'cid','name_valmdid'=>DCS_PROPS_TEMPL_NAME,'id_valmdid'=>DCS_PROPS_TEMPL_ID,
+                        'name_valmditem'=>'Cols','class'=>'active','field'=>1),
             '4'=>array('id'=>'type','name'=>'type','synonym'=>'TYPE',
-                        'rank'=>4,'ranktoset'=>5,'ranktostring'=>0,
-                        'name_type'=>'cid','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'readonly','field'=>0),
+                        'rank'=>4,'ranktoset'=>5,'ranktostring'=>0, 'isdepend'=>TRUE,
+                        'name_type'=>'cid','name_valmdid'=>'','id_valmdid'=>'',
+                        'name_valmditem'=>'','class'=>'readonly','field'=>0),
             '5'=>array('id'=>'rank','name'=>'rank','synonym'=>'RANK',
-                        'rank'=>7,'ranktoset'=>0,'ranktostring'=>0,
-                        'name_type'=>'int','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'active','field'=>1),
+                        'rank'=>7,'ranktoset'=>0,'ranktostring'=>0, 'isdepend'=>false,
+                        'name_type'=>'int','name_valmdid'=>'','id_valmdid'=>'',
+                        'name_valmditem'=>'','class'=>'active','field'=>1),
             '6'=>array('id'=>'ranktoset','name'=>'ranktoset','synonym'=>'RANKTOSET',
-                        'rank'=>8,'ranktoset'=>0,'ranktostring'=>0,
-                        'name_type'=>'int','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'active','field'=>1),
+                        'rank'=>8,'ranktoset'=>0,'ranktostring'=>0, 'isdepend'=>false,
+                        'name_type'=>'int','name_valmdid'=>'','id_valmdid'=>'',
+                        'name_valmditem'=>'','class'=>'active','field'=>1),
             '7'=>array('id'=>'ranktostring','name'=>'ranktostring','synonym'=>'RANKTOSTRING',
-                        'rank'=>10,'ranktoset'=>0,'ranktostring'=>0,
-                        'name_type'=>'int','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'active','field'=>1),
+                        'rank'=>10,'ranktoset'=>0,'ranktostring'=>0, 'isdepend'=>false,
+                        'name_type'=>'int','name_valmdid'=>'','id_valmdid'=>'',
+                        'name_valmditem'=>'','class'=>'active','field'=>1),
             '8' => array('id'=>'isedate','name'=>'isedate','synonym'=>'ISEDATE',
-                        'rank'=>11,'ranktoset'=>0,'ranktostring'=>0,
-                        'name_type'=>'bool','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'active','field'=>1),
+                        'rank'=>11,'ranktoset'=>0,'ranktostring'=>0, 'isdepend'=>false,
+                        'name_type'=>'bool','name_valmdid'=>'','id_valmdid'=>'',
+                        'name_valmditem'=>'','class'=>'active','field'=>1),
             '9' => array('id'=>'isenumber','name'=>'isenumber','synonym'=>'ISENUMBER',
-                        'rank'=>12,'ranktoset'=>0,'ranktostring'=>0,
-                        'name_type'=>'bool','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'active','field'=>1),
+                        'rank'=>12,'ranktoset'=>0,'ranktostring'=>0, 'isdepend'=>false,
+                        'name_type'=>'bool','name_valmdid'=>'','id_valmdid'=>'',
+                        'name_valmditem'=>'','class'=>'active','field'=>1),
             '10' => array('id'=>'isdepend','name'=>'isdepend','synonym'=>'ISDEPEND',
-                        'rank'=>12,'ranktoset'=>0,'ranktostring'=>0,
-                        'name_type'=>'bool','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'active','field'=>1),
+                        'rank'=>12,'ranktoset'=>0,'ranktostring'=>0, 'isdepend'=>false,
+                        'name_type'=>'bool','name_valmdid'=>'','id_valmdid'=>'',
+                        'name_valmditem'=>'','class'=>'active','field'=>1),
             '11' => array('id'=>'valmdid','name'=>'valmdid','synonym'=>'VALMDID',
-                        'rank'=>19,'ranktoset'=>8,'ranktostring'=>0,
-                        'name_type'=>'mdid','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'readonly','field'=>0),
-            '12' => array('id'=>'valmdtypename','name'=>'valmdtypename','synonym'=>'VALMDTYPENAME',
-                        'rank'=>20,'ranktoset'=>9,'ranktostring'=>0,
-                        'name_type'=>'str','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'readonly','field'=>0),
+                        'rank'=>19,'ranktoset'=>8,'ranktostring'=>0, 'isdepend'=>TRUE,
+                        'name_type'=>'mdid','name_valmdid'=>'','id_valmdid'=>'',
+                        'name_valmditem'=>'','class'=>'readonly','field'=>0),
+            '12' => array('id'=>'valmditem','name'=>'valmditem','synonym'=>'VALMDTYPENAME',
+                        'rank'=>20,'ranktoset'=>9,'ranktostring'=>0, 'isdepend'=>TRUE,
+                        'name_type'=>'cid','name_valmdid'=>'','id_valmdid'=>'',
+                        'name_valmditem'=>'','class'=>'readonly','field'=>0),
              );
         $this->plist = $plist;
         return $plist;
@@ -180,15 +248,13 @@ class EProperty extends Sheet
     {
         return NULL;
     }        
-    public function create_object($name,$synonym='')
-    {
-        return NULL;
-    }        
     public function getArrayNew($newobj)
     {
         return array('id' => $newobj['id'], 
                     'name' => '_new_',
                     'synonym' => 'Новый',
+                    'propid' => '',
+                    'name_propid' => '',
                     'mdid' => $newobj['headid'],
                     'mdname' => $newobj['classname'],
                     'mdsynonym' => '',
@@ -196,15 +262,15 @@ class EProperty extends Sheet
                     'mdtypename' => '',
                     'mdtypedescription' => '');
     }        
-    public function getNameFromData($data='')
-    {
-        if (!$data) {
-            return array('name' => $this->name, 'synonym' => $this->synonym);
-        } else {
-            return array('name' => $data['name']['name'],
-                         'synonym' => $data['synonym']['name']);
-        }    
-    }        
+//    public function getNameFromData($data='')
+//    {
+//        if (!$data) {
+//            return array('name' => $this->name, 'synonym' => $this->synonym);
+//        } else {
+//            return array('name' => $data['name']['name'],
+//                         'synonym' => $data['synonym']['name']);
+//        }    
+//    }        
     function get_history_data($entityid)
     {
         if (!count($this->data)) {
@@ -286,32 +352,136 @@ class EProperty extends Sheet
         
         return array('LDATA'=>$ardata,'PSET'=>$plist, 'name'=>$this->name,'synonym'=>$this->synonym);
     } 
-    function update($data) {
+//    function update($data) {
+//        $sql = '';
+//        $objs = $this->before_save();
+//        $params = array();
+//        foreach($objs as $row)
+//        {    
+//            $val = $row['nval'];
+//            if ($row['name']=='propid')
+//            {
+//                $val = $row['nvalid'];
+//            }   
+//            $sql .= ", $row[name]=:$row[name]";
+//            $params[$row['name']] = $val;
+//        }
+//        $objs['status']='NONE';
+//        if ($sql!=''){
+//            $objs['status']='OK';
+//            $sql = substr($sql,1);
+//            $id = $this->id;
+//            $sql = "UPDATE \"MDProperties\" SET$sql WHERE id=:id";
+//            $params['id']=$id;
+//            $res = DataManager::dm_query($sql,$params);
+//            if(!$res) {
+//                return array('status'=>'ERROR', 'msg'=>$sql);
+//            }
+//        }
+//        return array('status'=>'OK', 'id'=>$this->id);
+//    }
+    public function update_properties($data,$n=0)   
+    {
+        $objs = array();
+        $objs['status']='OK';
+        $objs['objs']=array();
+        $objs['id']=$this->id;
+        $this->load_data();
         $sql = '';
-        $objs = $this->before_save();
         $params = array();
-        foreach($objs as $row)
+        foreach($this->plist as $row)
         {    
-            $val = $row['nval'];
-            if ($row['name']=='propid')
+            $key = $row['name'];
+            $id = $row['id'];
+            if ($key=='id')
             {
-                $val = $row['nvalid'];
-            }   
-            $sql .= ", $row[name]=:$row[name]";
-            $params[$row['name']] = $val;
+                continue;
+            }    
+            if (!array_key_exists($id, $data))
+            {
+                continue;
+            }    
+            $dataname = $data[$id]['name'];
+            $valname = $this->data[$id]['name'];
+            $dataid = $data[$id]['id'];
+            $valid = $this->data[$id]['id'];
+            if (($row['name_type']=='id')||($row['name_type']=='cid')||($row['name_type']=='mdid')) 
+            {
+                if ($dataid!='')
+                {
+                    if ($dataid===$valid)
+                    {
+                        continue;
+                    }    
+                    $val = $dataid;
+                }
+                else 
+                {
+                    if ($valid!='')
+                    {
+                        $val = TZ_EMPTY_ENTITY;
+                    }
+                    else
+                    {
+                        continue;
+                    }    
+                }
+            }    
+            else
+            {
+                if (isset($dataname))
+                {
+                    if ($dataname===$valname)
+                    {
+                        continue;
+                    }    
+                    if (($dataname=='')&&($valname==''))
+                    {
+                        continue;
+                    }    
+                    $val = $dataname;
+                }
+                else
+                {
+                    continue;
+                }    
+            }    
+            $sql .= ", $key=:$key";
+            $params[$key] = $val;
+        }    
+        $sql = "UPDATE \"MDProperties\" SET ".substr($sql, 1)." WHERE id=:id";
+        $params['id'] = $this->id;
+        $res = DataManager::dm_query($sql,$params);
+        return $objs;
+    }        
+    public function update_dependent_properties($data)
+    {        
+        return array();
+    }        
+    public function params_to_create($data='')
+    {
+        $name = $this->name;
+        $synonym = $this->synonym;
+        if ($data) {
+            $name = $data['name']['name'];
+            $synonym = $data['synonym']['name'];
+        }    
+        $context = DcsContext::getcontext();
+        $propid = $context->data_getattr('propid')['id'];
+        if (!$propid) {
+            throw new DcsException('propid is empty');
         }
-        $objs['status']='NONE';
-        if ($sql!=''){
-            $objs['status']='OK';
-            $sql = substr($sql,1);
-            $id = $this->id;
-            $sql = "UPDATE \"MDProperties\" SET$sql WHERE id=:id";
-            $params['id']=$id;
-            $res = DataManager::dm_query($sql,$params);
-            if(!$res) {
-                return array('status'=>'ERROR', 'msg'=>$sql);
-            }
-        }
-        return array('status'=>'OK', 'id'=>$this->id);
-    }
+        $this->setpropid($propid);
+        return array(
+                'name' => $name, 
+                'synonym'=>$synonym,
+                'propid'=> $propid,
+                'mdid'=> $this->mdid,
+                'id'=> $this->id
+                );
+    }        
+    public function get_items() 
+    {
+        return NULL;
+    }        
 }

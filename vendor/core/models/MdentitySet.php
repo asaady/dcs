@@ -7,7 +7,6 @@ use PDO;
 class MdentitySet extends Sheet implements I_Sheet
 {
     use T_Sheet;
-    use T_Set;
     
     public function dbtablename()
     {
@@ -51,9 +50,14 @@ class MdentitySet extends Sheet implements I_Sheet
                       'synonym'=>array('id'=>$data['synonym'], 'name'=>$data['synonym'])
             );
     }
-    public function getItems($filter=array()) 
+    public function get_items() 
     {
-	$sql = "SELECT md.id, md.name, md.synonym, md.mditem FROM \"MDTable\" AS md WHERE md.mditem= :mditem";
+	$sql = "SELECT md.id, md.name, md.synonym, "
+                . "md.mditem as id_mditem, ct.name as name_mditem, 'mditem' as propid_mditem "
+                . "FROM \"MDTable\" AS md "
+                . "INNER JOIN \"CTable\" as ct "
+                . "ON md.mditem = ct.id "
+                . "WHERE md.mditem= :mditem";
         $params = array('mditem'=>$this->id);
         $dop = DataManager::get_md_access_text();
         if ($dop != '')
@@ -61,18 +65,30 @@ class MdentitySet extends Sheet implements I_Sheet
             $params['userid'] = $_SESSION['user_id'];
             $sql .= " AND ".$dop;
         }    
-        $sth = DataManager::dm_query($sql,$params);        
-        $objs = array();
-        while($row = $sth->fetch(PDO::FETCH_ASSOC)) 
-        {
-            $objs[$row['id']] = array();
-            $objs[$row['id']]['id'] = array('id'=>'','name'=>$row['id']);
-            $objs[$row['id']]['name'] = array('id'=>'','name'=>$row['name']);
-            $objs[$row['id']]['synonym'] = array('id'=>'','name'=>$row['synonym']);
-            $objs[$row['id']]['class'] = 'active';
-        }
-        return $objs;
-    }
+        return DataManager::dm_query($sql,$params);        
+    }        
+//    public function getItems($filter=array()) 
+//    {
+//	$sql = "SELECT md.id, md.name, md.synonym, md.mditem FROM \"MDTable\" AS md WHERE md.mditem= :mditem";
+//        $params = array('mditem'=>$this->id);
+//        $dop = DataManager::get_md_access_text();
+//        if ($dop != '')
+//        {    
+//            $params['userid'] = $_SESSION['user_id'];
+//            $sql .= " AND ".$dop;
+//        }    
+//        $sth = DataManager::dm_query($sql,$params);        
+//        $objs = array();
+//        while($row = $sth->fetch(PDO::FETCH_ASSOC)) 
+//        {
+//            $objs[$row['id']] = array();
+//            $objs[$row['id']]['id'] = array('id'=>'','name'=>$row['id']);
+//            $objs[$row['id']]['name'] = array('id'=>'','name'=>$row['name']);
+//            $objs[$row['id']]['synonym'] = array('id'=>'','name'=>$row['synonym']);
+//            $objs[$row['id']]['class'] = 'active';
+//        }
+//        return $objs;
+//    }
     public function setcontext_action($param, $prefix) 
     {
         if ($prefix == 'CONFIG')
@@ -92,29 +108,21 @@ class MdentitySet extends Sheet implements I_Sheet
         return array(
             '0'=>array('id'=>'id','name'=>'id','synonym'=>'ID',
                         'rank'=>0,'ranktoset'=>1,'ranktostring'=>0,
-                        'name_type'=>'str','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'readonly','field'=>1),
+                        'name_type'=>'str','name_valmdid'=>'','id_valmdid'=>'','name_valmditem'=>'','class'=>'readonly','field'=>1),
             '1'=>array('id'=>'name','name'=>'name','synonym'=>'NAME',
                         'rank'=>1,'ranktoset'=>2,'ranktostring'=>1,
-                        'name_type'=>'str','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'active','field'=>1),
+                        'name_type'=>'str','name_valmdid'=>'','id_valmdid'=>'','name_valmditem'=>'','class'=>'active','field'=>1),
             '2'=>array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM',
                         'rank'=>2,'ranktoset'=>3,'ranktostring'=>0,
-                        'name_type'=>'str','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'active','field'=>1),
+                        'name_type'=>'str','name_valmdid'=>'','id_valmdid'=>'','name_valmditem'=>'','class'=>'active','field'=>1),
             '3'=>array('id'=>'version','name'=>'version','synonym'=>'VERSION',
                         'rank'=>4,'ranktoset'=>0,'ranktostring'=>0,
-                        'name_type'=>'str','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'hidden','field'=>0),
+                        'name_type'=>'str','name_valmdid'=>'','id_valmdid'=>'','name_valmditem'=>'','class'=>'hidden','field'=>0),
              );
-    }
-    public function getItemsByName($name)
-    {
-        
     }
     public function create_object($name,$synonym='')
     {
         return NULL;
-    }        
-    public function get_select_properties($strwhere)
-    {
-        return NULL;    
     }        
     public function txtsql_property($parname)
     {
@@ -126,7 +134,7 @@ class MdentitySet extends Sheet implements I_Sheet
     }        
     public function loadProperties() 
     {
-        return array(
+        $properties = array(
             'id' => array(
                     'id'=>'id','name'=>'id','synonym'=>'ID','rank'=>0,
                     'ranktoset'=>1,'ranktostring'=>0,'type'=>'str',
@@ -144,10 +152,12 @@ class MdentitySet extends Sheet implements I_Sheet
                     'class'=>'active','field'=>1),
             'mditem'=>array(
                     'id'=>'mditem','name'=>'mditem','synonym'=>'MDITEM',
-                    'rank'=>4,'ranktoset'=>0,'ranktostring'=>0,'type'=>'cid',
+                    'rank'=>4,'ranktoset'=>4,'ranktostring'=>0,'type'=>'cid',
                     'name_type'=>'cid','valmdid'=>'','valmdtypename'=>'Cols',
                     'class'=>'hidden','field'=>1)
             );        
+        $this->properties = $properties;
+        return $properties;
     }        
 }
 

@@ -10,137 +10,6 @@ trait T_Item
     {
         return NULL;
     }
-    public function getItemsByName($name) 
-    {
-        return NULL;
-    }
-    public function getItemsProp() 
-    {
-        return array();
-    }        
-    public function getItems($filter = array()) 
-    {
-        return array();
-    }
-    public function loadProperties()
-    {
-        return array();
-    }        
-    public function getNameFromData($data='')
-    {
-        if (!count($this->plist)) {
-            $this->plist = $this->getplist();
-        }
-        if (!$data) {
-            if (!count($this->data)) {
-                $this->load_data();
-            }
-            $data = $this->data;
-        }
-        $artoStr = array();
-        $isDocs = $this->mdtypename === 'Docs';
-        foreach($this->plist as $prop)
-        {
-            if (!array_key_exists($prop['id'],$data)) {
-                continue;
-            }
-            if ($prop['ranktostring'] > 0) 
-            {
-              $artoStr[$prop['id']] = $prop['ranktostring'];
-            }
-        }
-        if (!count($artoStr)) {
-            return array('name' => '',
-                     'synonym' => '');
-        }    
-        asort($artoStr);
-        $res = '';
-        foreach($artoStr as $pr => $rank) {
-            $pkey = array_search($pr, array_column($this->plist,'id'));
-            if ($isDocs && ($this->plist[$pkey]['isenumber'] ||
-                            $this->plist[$pkey]['isedate'])) {
-                continue;
-            }    
-            if (!array_key_exists($pr,$data)) {
-                continue;
-            }
-            $name = $data[$pr]['name'];
-            if ($this->plist[$pkey]['name_type'] == 'date') {
-                $name = substr($name,0,10);
-            }
-            $res .= ' '.$name;
-        }
-        if ($isDocs) {
-            $datetime = new DateTime($this->edate);
-            $res = $this->head->getsynonym()." №".$this->enumber." от ".$datetime->format('d-m-y').$res;
-        } elseif ($res != '') {
-                $res = substr($res, 1);
-        }    
-        return array('name' => $res,
-                     'synonym' => $res);
-    }
-    public function load_data($data='')
-    {
-        if (!count($this->plist)) {
-            $this->getplist();
-        }
-        if (!$data) {
-            foreach($this->plist as $prow) {
-                $this->data[$prow['id']] = array('id'=>'','name'=>'');
-            }    
-            $artemptable = $this->get_tt_sql_data();
-            $sql = "select * from tt_out";
-            $sth = DataManager::dm_query($sql);        
-            $arr_e = array();
-            while($row = $sth->fetch(PDO::FETCH_ASSOC)) {
-                $this->data['id'] = array('id'=>$row['id'],'name'=>$row['id']);
-                foreach($this->plist as $prow) {
-                    $rowname = Filter::rowname($prow['id']);
-                    if (array_key_exists('id_'.$rowname, $row)) {
-                        $this->data[$prow['id']] = array(
-                            'id'=>$row["id_$rowname"],
-                            'name'=>$row["name_$rowname"]);
-                        if ($prow['name_type'] === 'id') {
-                            if ($prow['valmdtypename'] !== 'Sets') {    
-                                if (($row["id_$rowname"])&&
-                                    ($row["id_$rowname"] != DCS_EMPTY_ENTITY)) {
-                                    if (!in_array($row["id_$rowname"],$arr_e)){
-                                        $arr_e[] = $row["id_$rowname"];
-                                    }
-                                }    
-                            }    
-                        }
-                    } elseif (array_key_exists($rowname, $row)) {
-                        $this->data[$prow['id']] = array('id'=>'','name'=>$row[$rowname]);
-                    } else {
-                        $this->data[$prow['id']] = array('id'=>'','name'=>'');
-                    }
-                }    
-            }
-            if (count($arr_e)) {
-                $this->fill_entname($this->data,$arr_e);
-            }
-            DataManager::droptemptable($artemptable);
-        } else {
-            $this->data['id'] = array('id'=>'','name'=>$data['id']);
-            foreach($this->plist as $prow) {
-                if (array_key_exists("name_".$prow['id'], $data)) {
-                    $this->data[$prow['id']] = array(
-                        'id'=>$data[$prow['id']],
-                        'name'=>$data["name_".$prow['id']]);
-                } elseif (array_key_exists($prow['id'], $data)) {
-                    $this->data[$prow['id']] = array('id'=>'','name'=>$data[$prow['id']]);
-                } else {
-                    $this->data[$prow['id']] = array('id'=>'','name'=>'');
-                }
-            }    
-        }
-        $this->version = time();
-        $this->head = $this->get_head();
-        $this->setnamesynonym();
-        $this->check_right();
-        return $this->data;
-    }            
     public function update_dependent_properties($data)
     {
         $res = array('status'=>'', 'id'=>$this->id, 'objs'=>array());
@@ -168,7 +37,7 @@ trait T_Item
                     continue;
                 }
                 if ($dep_prop['isdepend']) {
-                    $dep_mdentity = new Mdentity($dep_prop['valmdid']);
+                    $dep_mdentity = new Mdentity($dep_prop['id_valmdid']);
                     //получим текущее значение зависимого реквизита
                     $curval = $this->data[$dep_pid]['id'];
                     if (($curval != DCS_EMPTY_ENTITY)&&($curval != '')) {
@@ -257,17 +126,17 @@ trait T_Item
                     $n_name = $p_ent->getname();
                     $n_id = $propval['nvalid'];
                     //заполним пересекающиеся реквизиты ссылочного типа
-                    $tpropid = $prow['propid'];
+                    $tpropid = $prow['id_propid'];
                     foreach($this->plist as $prop) {
                         if ($prop['name_type'] != 'id') {
                             continue;
                         }    
-                        $ctpropid = $prop['propid'];
+                        $ctpropid = $prop['id_propid'];
                         if ($ctpropid == $tpropid) {
                             continue;
                         }    
                         foreach($p_ent->plist as $e_prop) {
-                            if ($e_prop['propid'] != $ctpropid) {
+                            if ($e_prop['id_propid'] != $ctpropid) {
                                 continue;
                             }    
                             $vals[$prop['id']] = array('id' => $p_ent->getattrid($e_prop['id']), 'name' => $p_ent->getattr($e_prop['id']));
@@ -330,13 +199,6 @@ trait T_Item
             $params['value'] = $t_val;
             $params['id'] = $row['id'];
 	    $res = DataManager::dm_query($sql,$params);
-	    if(!$res) {
-                throw new DcsException(array(
-                    'status'=>'ERROR',
-                    'msg'=>"Невозможно добавить в таблицу PropValue_$type "
-                            . "запись ".$sql
-                ));
-	    }
             $cnt++;
             $upd[$propid] = array('value'=>$t_val,'type'=>$type, 'name'=>$vals[$propid]['name']);
 	}

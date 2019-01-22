@@ -23,14 +23,10 @@ class Entity extends Sheet implements I_Sheet, I_Item
     public function getplist()
     {
         $sql = $this->txtsql_properties("mdid");
-        $properties = array();
         $params = array('mdid'=> $this->mdid);
         $res = DataManager::dm_query($sql,$params);
-        while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
-            $properties[] = $row;
-        }  
-        $this->plist = $properties;
-        return $properties;
+        $this->plist = $res->fetchAll(PDO::FETCH_ASSOC);
+        return $this->plist;
     }        
     public function setnamesynonym()
     {
@@ -73,6 +69,10 @@ class Entity extends Sheet implements I_Sheet, I_Item
     {
         return NULL;
     }        
+    public function loadProperties()
+    {
+        return array();
+    }        
     public function getdate(){
 	$res=$this->edate;
         $key = array_search(TRUE, array_column($this->plist,'isedate','id'),TRUE);
@@ -89,61 +89,8 @@ class Entity extends Sheet implements I_Sheet, I_Item
         }
 	return $res;
     }
-    public function getsetid($propid) 
-    {
-        
-    }        
-    public function getsets() 
-    {
-        if (!count($this->plist)) {
-            $this->plist = $this->getplist();
-        }
-        $psets = array_filter($this->plist,function($item){
-                            return $item['valmdtypename'] === 'Sets';
-                        });
-        if (!count($psets)) {
-            return array();
-        }
-        $propid = '';
-        $context = DcsContext::getcontext();
-        $propid = $context->data_getattr('dcs_propid')['id'];
-        if ($propid == '') {
-            $propid = $context->data_getattr('dcs_setid')['id'];
-        }   
-        $setid = '';
-        $sets = array();
-        foreach ($psets as $prop) {
-            $mdset = new Mdentity($prop['valmdid']);
-            $props = $mdset->get_items();
-            $items = array_filter($props,function($item){
-                            return $item['valmdtypename'] === 'Items';
-                        });
-            $sets[$prop['id']] = array();
-            if (!count($items)) {
-                continue;
-            }
-            foreach ($items as $item) {
-                $mditem = new Mdentity($item['valmdid']);
-                $sets[$prop['id']] = array_filter($mditem->get_items(),
-                            function($item) {
-                                return $item['ranktoset'] > 0;
-                            });
-            }
-            if ($propid == $prop['id']) {
-                $context->setattr('SETID',$this->get_valid($propid));
-                $context->setattr('PROPID',$propid);
-            } elseif (count($psets) == 1) { 
-                $context->setattr('SETID',$this->get_valid($prop['id']));
-                $context->setattr('PROPID',$prop['id']);
-                break;
-            }  
-        }  
-        return $sets;
-    }
-
     function delete() 
     {
-	$res = DataManager::dm_query("BEGIN");
         $id = $this->id;
         $propid = array_search('activity', array_column($this->properties,'name','id'));
         if ($propid!==false)
@@ -154,10 +101,6 @@ class Entity extends Sheet implements I_Sheet, I_Item
             $params['propid']=$propid;
 	    $sql = "INSERT INTO \"IDTable\" (userid, entityid, propid) VALUES (:userid, :id, :propid) RETURNING \"id\"";
 	    $res = DataManager::dm_query($sql,$params);
-	    if(!$res) {
-		$res = DataManager::dm_query("ROLLBACK");
- 		return array('status'=>'ERROR','msg'=>"Невозможно добавить в таблицу IDTable запись ".$sql);
-	    }
 	    $row = $res->fetch(PDO::FETCH_ASSOC);
 	    $sql = "INSERT INTO \"PropValue_bool\" (id, value) VALUES ( :id, :value)";
             $params = array();
@@ -168,148 +111,142 @@ class Entity extends Sheet implements I_Sheet, I_Item
             }    
             $params['id']=$row['id'];
 	    $res = DataManager::dm_query($sql,$params);
-	    if(!$res) {
-                $res = DataManager::dm_query("ROLLBACK");
-                return array('status'=>'ERROR','msg'=>"Невозможно добавить в таблицу PropValue_bool запись ".$sql);
-	    }
-            $res = DataManager::dm_query("COMMIT");	
             return array('status'=>'OK', 'id'=>$this->id);
         }    
         else
         {
-            $res = DataManager::dm_query("ROLLBACK");
             return array('status'=>'NONE','msg'=>"Нет измененных записей ");
         }    
     }    
-    public function save_new_()
-    {
-	if ($this->id!=''){
-            return array('status'=>'ERROR','msg'=>'this in not new object');
-        }    
-        if ($this->getname()==''){
-            $this->setname('new object');
-        }    
-        $edate = $this->edate;
-        $enumber = $this->enumber;
-        if ($this->head->getmdtypename()=='Docs')
-        {
-            if ($edate=='') {
-                return array('status'=>'ERROR','msg'=>'date is empty');
-            }
-        }    
-	$res = DataManager::dm_query("BEGIN");
-        $mdid = $this->head->getid();
-        $sql = "INSERT INTO \"ETable\" (mdid) VALUES (:mdid) RETURNING \"id\"";
-        $res=DataManager::dm_query($sql,array('mdid'=>$mdid));
-        if(!$res) {
-            return array('status'=>'ERROR','msg'=>'Невозможно добавить в таблицу запись '.$sql);
-        }    
-        $row = $res->fetch(PDO::FETCH_ASSOC);
-        $this->id = $row['id'];
-        $id = $this->id;
-        foreach($this->properties as $prop)
-        {
-            $propid = $prop['id'];
-            if ($propid=='id') continue;
-            $type = $prop['name_type'];
-            $valname = $this->data[$propid]['name'];
-            $valid  = $this->data[$propid]['id'];
-            if ($prop['isenumber'])
-            {
-                if ($valname=='')
-                {
-                    $valname = DataManager::getNumber($prop['id'])+1;
-                }    
-            }
-            if ($type=='id')
-            {
-                if (($valid!=DCS_EMPTY_ENTITY)&&($valid!=''))  
-                {
-                    $curmd=self::getEntityDetails($valid);
-                    if (($curmd['mdtypename']=='Sets') || ($curmd['mdtypename']=='Items'))
-                    {
-                        if ($this->id!='')
-                        {
-                            $tablename = "PropValue_id";
-                            $filter = "value=:valid";
-                            $params = array('value'=>$valid);
-                            $res = DataManager::FindRecord($tablename,$filter,$params);
-                            if (count($res))
-                            {
-                                continue;
-                            }
-                        }
-                    }
-                    $valname = $valid;
-                }
-                else 
-                {
-                    continue;
-                }
-            }
-            elseif (($type == 'cid') || ($type == 'mdid')) {
-                if (($valid != DCS_EMPTY_ENTITY) && ($valid != '')) {
-                    $valname = $valid;
-                } else {
-                    continue;
-                }
-            } else {
-                if ($type == 'bool') {
-                    if ($valname == '') {
-                        if (strtolower($prop['name_propid']) == 'activity') {
-                            $valname='true';
-                        }    
-                    }    
-                    if ($valname == 't') {
-                         $valname = 'true';
-                    }
-                    if ($valname != 'true') {
-                         $valname = 'false';
-                    }
-                 }
-                elseif (($type == 'int') || ($type == 'float')) {
-                    if ($valname == '') {
-                        continue;
-                    }    
-                }
-                
-                if (!isset($valname)) {
-                    continue;
-                }    
-            }
-            $sql = "INSERT INTO \"IDTable\" (userid, entityid, propid) VALUES (:userid, :id, :propid) RETURNING \"id\"";
-            $params = array();
-            $params['userid']=$_SESSION['user_id'];
-            $params['id']=$id;
-            $params['propid']=$propid;
-            $res = DataManager::dm_query($sql,$params);
-            if(!$res) {
-                $res = DataManager::dm_query("ROLLBACK");
-                return array('status'=>'ERROR','msg'=>"Невозможно добавить в таблицу IDTable запись ".$sql);
-            }
-            $row = $res->fetch(PDO::FETCH_ASSOC);
-            $sql = "INSERT INTO \"PropValue_$type\" (id, value) VALUES ( :id, :value)";
-            $params = array();
-            $params['id']=$row['id'];
-            $params['value']=$valname;
-            $res = DataManager::dm_query($sql,$params);
-            if(!$res) {
-                $res = DataManager::dm_query("ROLLBACK");
-                return array('status'=>'ERROR','msg'=>"Невозможно добавить в таблицу PropValue_$type запись ".$sql);
-            }
-	}
-	$res = DataManager::dm_query("COMMIT");
-        
-        return array('status'=>'OK', 'id'=>$this->id);
-    }
-    public function createtemptable_allprop($entities)
-    {
-	$artemptable=array();
-        $artemptable[] = $this->get_EntitiesFromList($entities,'tt_et');   
-        $this->createtemptable_all('tt_et',$artemptable);
-        
-        return $artemptable;    
-    }
+//    public function save_new_()
+//    {
+//	if ($this->id!=''){
+//            return array('status'=>'ERROR','msg'=>'this in not new object');
+//        }    
+//        if ($this->getname()==''){
+//            $this->setname('new object');
+//        }    
+//        $edate = $this->edate;
+//        $enumber = $this->enumber;
+//        if ($this->head->getmdtypename()=='Docs')
+//        {
+//            if ($edate=='') {
+//                return array('status'=>'ERROR','msg'=>'date is empty');
+//            }
+//        }    
+//	$res = DataManager::dm_query("BEGIN");
+//        $mdid = $this->head->getid();
+//        $sql = "INSERT INTO \"ETable\" (mdid) VALUES (:mdid) RETURNING \"id\"";
+//        $res=DataManager::dm_query($sql,array('mdid'=>$mdid));
+//        if(!$res) {
+//            return array('status'=>'ERROR','msg'=>'Невозможно добавить в таблицу запись '.$sql);
+//        }    
+//        $row = $res->fetch(PDO::FETCH_ASSOC);
+//        $this->id = $row['id'];
+//        $id = $this->id;
+//        foreach($this->properties as $prop)
+//        {
+//            $propid = $prop['id'];
+//            if ($propid=='id') continue;
+//            $type = $prop['name_type'];
+//            $valname = $this->data[$propid]['name'];
+//            $valid  = $this->data[$propid]['id'];
+//            if ($prop['isenumber'])
+//            {
+//                if ($valname=='')
+//                {
+//                    $valname = DataManager::getNumber($prop['id'])+1;
+//                }    
+//            }
+//            if ($type=='id')
+//            {
+//                if (($valid!=DCS_EMPTY_ENTITY)&&($valid!=''))  
+//                {
+//                    $curmd=self::getEntityDetails($valid);
+//                    if (($curmd['mdtypename']=='Sets') || ($curmd['mdtypename']=='Items'))
+//                    {
+//                        if ($this->id!='')
+//                        {
+//                            $tablename = "PropValue_id";
+//                            $filter = "value=:valid";
+//                            $params = array('value'=>$valid);
+//                            $res = DataManager::FindRecord($tablename,$filter,$params);
+//                            if (count($res))
+//                            {
+//                                continue;
+//                            }
+//                        }
+//                    }
+//                    $valname = $valid;
+//                }
+//                else 
+//                {
+//                    continue;
+//                }
+//            }
+//            elseif (($type == 'cid') || ($type == 'mdid')) {
+//                if (($valid != DCS_EMPTY_ENTITY) && ($valid != '')) {
+//                    $valname = $valid;
+//                } else {
+//                    continue;
+//                }
+//            } else {
+//                if ($type == 'bool') {
+//                    if ($valname == '') {
+//                        if (strtolower($prop['name_propid']) == 'activity') {
+//                            $valname='true';
+//                        }    
+//                    }    
+//                    if ($valname == 't') {
+//                         $valname = 'true';
+//                    }
+//                    if ($valname != 'true') {
+//                         $valname = 'false';
+//                    }
+//                 }
+//                elseif (($type == 'int') || ($type == 'float')) {
+//                    if ($valname == '') {
+//                        continue;
+//                    }    
+//                }
+//                
+//                if (!isset($valname)) {
+//                    continue;
+//                }    
+//            }
+//            $sql = "INSERT INTO \"IDTable\" (userid, entityid, propid) VALUES (:userid, :id, :propid) RETURNING \"id\"";
+//            $params = array();
+//            $params['userid']=$_SESSION['user_id'];
+//            $params['id']=$id;
+//            $params['propid']=$propid;
+//            $res = DataManager::dm_query($sql,$params);
+//            if(!$res) {
+//                $res = DataManager::dm_query("ROLLBACK");
+//                return array('status'=>'ERROR','msg'=>"Невозможно добавить в таблицу IDTable запись ".$sql);
+//            }
+//            $row = $res->fetch(PDO::FETCH_ASSOC);
+//            $sql = "INSERT INTO \"PropValue_$type\" (id, value) VALUES ( :id, :value)";
+//            $params = array();
+//            $params['id']=$row['id'];
+//            $params['value']=$valname;
+//            $res = DataManager::dm_query($sql,$params);
+//            if(!$res) {
+//                $res = DataManager::dm_query("ROLLBACK");
+//                return array('status'=>'ERROR','msg'=>"Невозможно добавить в таблицу PropValue_$type запись ".$sql);
+//            }
+//	}
+//	$res = DataManager::dm_query("COMMIT");
+//        
+//        return array('status'=>'OK', 'id'=>$this->id);
+//    }
+//    public function createtemptable_allprop($entities)
+//    {
+//	$artemptable=array();
+//        $artemptable[] = $this->get_EntitiesFromList($entities,'tt_et');   
+//        $this->createtemptable_all('tt_et',$artemptable);
+//        
+//        return $artemptable;    
+//    }
     public static function CopyEntity($id,$user)
     {
         $arEntity = self::getEntityDetails($id);
@@ -345,43 +282,19 @@ class Entity extends Sheet implements I_Sheet, I_Item
             }
 
     }	
-    public function create_object($name,$synonym='') 
+    public function params_to_create($data='')
     {
-        if (!$this->mdid) {
-            throw new DcsException("Class ".get_called_class().
-                " create_object: mdid is empty",DCS_ERROR_WRONG_PARAMETER);
-        }
-        if (!$this->id) {
-            throw new DcsException("Class ".get_called_class().
-                " create_object: id is empty",DCS_ERROR_WRONG_PARAMETER);
-        }
-        if (!$synonym) {
-            if (!$name) {
-                throw new DcsException("Class ".get_called_class().
-                    " create_object: name is empty",DCS_ERROR_WRONG_PARAMETER);
-            }
-        } else {
-            $name = $synonym;
-        }
-        $sql = "INSERT INTO \"ETable\" (id, mdid, name) "
-                    . "VALUES (:id, :mdid, :name) RETURNING \"id\"";
-        $params = array();
-        $params['id']= $this->id;
-        $params['mdid']= $this->mdid;
-        $params['name']= $name;
-      	DataManager::dm_beginTransaction();
-        $res = DataManager::dm_query($sql,$params); 
-        if ($res) {
-            $rowid = $res->fetch(PDO::FETCH_ASSOC);
-            DataManager::dm_commit();
-            return $rowid['id'];
-        }
-        DataManager::dm_rollback();
-        throw new DcsException("Class ".get_called_class().
-            " create_object: unable to create new record",DCS_ERROR_WRONG_PARAMETER);
-    }
-
-    public function createItem($name,$prefix='')
+        $name = $this->name;
+        if ($data) {
+            $name = $data['name']['name'];
+        }    
+        return array(
+                'name' => $name, 
+                'mdid'=> $this->mdid,
+                'id'=> $this->id
+                );
+    }        
+   public function createItem($name,$prefix='')
     {
         $arSetItemProp = self::getMDSetItem($this->mdentity->getid());
         $mdid = $arSetItemProp['valmdid'];
@@ -449,27 +362,31 @@ class Entity extends Sheet implements I_Sheet, I_Item
             }    
         }    
     }        
-    public function getItems($filter=array()) 
+    public function get_items($filter=array()) 
     {
-        $context = DcsContext::getcontext();
-        $propid = $context->getattr('PROPID');
-        $setid = $context->getattr('SETID');
-        if ($setid === '') {
-            $setid = $context->data_getattr('dcs_setid')['id'];
-            if ($setid == '') {
-                if ($propid == '') {
-                    return array();
-                }
-                $setid = $this->get_valid($propid);
-                $context->setattr('SETID',$setid);
-            }    
-        }
-        if ((!$setid)||($setid === DCS_EMPTY_ENTITY)) {
-            return array($propid => array());
-        }    
-        $set = new Sets($setid,$this);
-        return array($propid => $set->getItems($filter));
+        return NULL;
     }
+//    public function getItems($filter=array()) 
+//    {
+//        $context = DcsContext::getcontext();
+//        $propid = $context->getattr('PROPID');
+//        $setid = $context->getattr('SETID');
+//        if ($setid === '') {
+//            $setid = $context->data_getattr('dcs_setid')['id'];
+//            if ($setid == '') {
+//                if ($propid == '') {
+//                    return array();
+//                }
+//                $setid = $this->get_valid($propid);
+//                $context->setattr('SETID',$setid);
+//            }    
+//        }
+//        if ((!$setid)||($setid === DCS_EMPTY_ENTITY)) {
+//            return array($propid => array());
+//        }    
+//        $set = new Sets($setid,$this);
+//        return array($propid => $set->getItems($filter));
+//    }
     public function get_navlist()
     {
         $navlist = array();
@@ -526,4 +443,57 @@ class Entity extends Sheet implements I_Sheet, I_Item
             'nval'=>$nval
                 ));
     }    
+    public function getNameFromData($data='')
+    {
+        if (!count($this->plist)) {
+            $this->plist = $this->getplist();
+        }
+        if (!$data) {
+            if (!count($this->data)) {
+                $this->load_data();
+            }
+            $data = $this->data;
+        }
+        $artoStr = array();
+        $isDocs = $this->mdtypename === 'Docs';
+        foreach($this->plist as $prop)
+        {
+            if (!array_key_exists($prop['id'],$data)) {
+                continue;
+            }
+            if ($prop['ranktostring'] > 0) 
+            {
+              $artoStr[$prop['id']] = $prop['ranktostring'];
+            }
+        }
+        if (!count($artoStr)) {
+            return array('name' => '',
+                     'synonym' => '');
+        }    
+        asort($artoStr);
+        $res = '';
+        foreach($artoStr as $pr => $rank) {
+            $pkey = array_search($pr, array_column($this->plist,'id'));
+            if ($isDocs && ($this->plist[$pkey]['isenumber'] ||
+                            $this->plist[$pkey]['isedate'])) {
+                continue;
+            }    
+            if (!array_key_exists($pr,$data)) {
+                continue;
+            }
+            $name = $data[$pr]['name'];
+            if ($this->plist[$pkey]['name_type'] == 'date') {
+                $name = substr($name,0,10);
+            }
+            $res .= ' '.$name;
+        }
+        if ($isDocs) {
+            $datetime = new DateTime($this->edate);
+            $res = $this->head->getsynonym()." №".$this->enumber." от ".$datetime->format('d-m-y').$res;
+        } elseif ($res != '') {
+                $res = substr($res, 1);
+        }    
+        return array('name' => $res,
+                     'synonym' => $res);
+    }
 }

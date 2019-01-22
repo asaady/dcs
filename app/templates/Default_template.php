@@ -288,11 +288,11 @@ class Default_Template extends Template implements I_Template
         }    
         if (($type == 'id')||($type == 'cid')||($type == 'mdid')) {
             $result .= "<input type=\"hidden\" class=\"form-control ajax\" "
-                    . "id=\"$t[id]\" name=\"$t[id]\" it=\"$t[valmdid]\" "
+                    . "id=\"$t[id]\" name=\"$t[id]\" it=\"$t[id_valmdid]\" "
                     . "vt=\"$type\" value=\"\" autocomplete=\"newvalue\">\n";
             $result .= "<input type=\"$itype\" class=\"form-control ajax\" "
                     . "st=\"active\" id=\"name_$t[id]\" "
-                    . "name=\"name_$t[id]\" it=\"$t[valmdid]\" "
+                    . "name=\"name_$t[id]\" it=\"$t[id_valmdid]\" "
                     . "vt=\"$type\" value=\"\"$readonly autocomplete=\"newvalue\">\n";
             if (($itype != 'hidden')||($readonly == '')) {
                 $result .= "<ul class=\"types_list\">\n"
@@ -373,7 +373,7 @@ class Default_Template extends Template implements I_Template
                     for($i=0, $props = $data['PLIST'], $size = count($props); $i<$size; $i++)
                     {
                         $t=$props[$i];
-                        if ($t['valmdtypename'] !== 'Sets') {
+                        if ($t['name_valmditem'] !== 'Sets') {
                             continue;
                         }  
                         $dop='';
@@ -391,7 +391,7 @@ class Default_Template extends Template implements I_Template
             $result .= "<form class=\"form-inline\" role=\"form\" autocomplete=\"off\">\n";
             for($i=0, $props=$data['PLIST'], $size=count($props); $i<$size; $i++) {
                 $t=$props[$i];
-                if ($t['valmdtypename'] === 'Sets') {
+                if ($t['name_valmditem'] === 'Sets') {
                     continue;
                 }    
                 if ($t['rank'] == 0) {
@@ -448,7 +448,7 @@ class Default_Template extends Template implements I_Template
             if ($context->getattr('ACTION') !== 'CREATE') {    
                 for($i=0, $props = $data['PLIST'], $size = count($props); $i<$size; $i++) {
                     $t = $props[$i];
-                    if ($t['valmdtypename'] !== 'Sets') {
+                    if ($t['name_valmditem'] !== 'Sets') {
                         continue;
                     }    
                     $dop='';
@@ -564,7 +564,7 @@ class Default_Template extends Template implements I_Template
                 if($t['rank']==0) {
                     continue;
                 }
-                if ($t['valmdtypename'] === 'Sets') {
+                if ($t['name_valmditem'] === 'Sets') {
                     continue;
                 }    
                 if ($type == 'text')

@@ -5,12 +5,14 @@ interface I_Sheet
 {
     public function after_choice();
     public function before_save($data='');
-    public function create_object($name,$synonym='');
-    public function create();
+    public function params_to_create($data='');
+    public function create_object($params);
+    public function after_create();
     public function get_data();
-    public function get_select_properties($strwhere);
+//    public function get_select_properties($strwhere);
     public function getArrayNew($newobj);    
     public function dbtablename();
+    public function get_items();
     public function getItems($filter=array());
     public function getItemsByFilter();
     public function getItemsByName($name);

@@ -27,7 +27,7 @@ trait T_Collection
                 . " mp.type as type, mp.type as name_type, mp.length, mp.prec,"
                 . " mp.mdid, mp.rank, mp.ranktoset, mp.ranktostring, mp.valmdid,"
                 . " valmd.name AS name_valmdid,valmd.synonym AS valmdsynonym,"
-                . " mi.name as valmdtypename, valmd.mditem as valmditem,"
+                . " mi.name as name_valmditem, valmd.mditem as valmditem,"
                 . " 1 as field, 'active' as class"
                 . " FROM \"CProperties\" AS mp"
                 . " LEFT JOIN \"MDTable\" as valmd"
@@ -46,51 +46,4 @@ trait T_Collection
     {
         return $this->get_select_properties(" WHERE mp.mdid = :$parname ");    
     }        
-    public function getCProperties()
-    {
-        $sql = $this->txtsql_properties('mdid');
-        if ($sql === '')
-        {
-            return 0;
-        }    
-        $params = array('mdid'=> $this->mdid);
-        $res = DataManager::dm_query($sql,$params);
-        $properties = array();
-        $properties['name'] = array(
-            'id'=>'name', 
-            'name'=>'name',
-            'synonym'=>'NAME',
-            'rank'=>1,
-            'ranktostring'=>0,
-            'ranktoset'=>2,
-            'valmdid'=>DCS_EMPTY_ENTITY,
-            'name_valmdid'=>'',
-            'valmdtypename'=>'',
-            'length'=>100, 
-            'prec'=>0,
-            'type'=>'str',
-            'name_type'=>'str',
-            'class'=>'active',
-            'field'=>0);
-        $properties['synonym'] = array(
-            'id'=>'synonym',
-            'name'=>'synonym',
-            'synonym'=>'SYNONYM',
-            'rank'=>3,
-            'ranktostring'=>1,
-            'ranktoset'=>3,
-            'valmdid'=>DCS_EMPTY_ENTITY,
-            'name_valmdid'=>'',
-            'valmdtypename'=>'',
-            'length'=>100, 
-            'prec'=>0,
-            'type'=>'str',
-            'name_type'=>'str',
-            'class'=>'active',
-            'field'=>0);
-        while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
-            $properties[$row['id']] = $row;
-        }    
-        return $properties;
-    }    
 }

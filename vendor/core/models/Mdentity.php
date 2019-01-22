@@ -10,6 +10,23 @@ class Mdentity extends Sheet implements I_Sheet
     use T_Sheet;
     use T_Mdentity;
     
+    public function getplist() 
+    {
+        return array(
+            '0'=>array('id'=>'id','name'=>'id','synonym'=>'ID',
+                        'rank'=>0,'ranktoset'=>1,'ranktostring'=>0,
+                        'name_type'=>'str','name_valmdid'=>'','valmdid'=>'',
+                        'name_valmditem'=>'','class'=>'readonly','field'=>1),
+            '1'=>array('id'=>'name','name'=>'name','synonym'=>'NAME',
+                        'rank'=>1,'ranktoset'=>2,'ranktostring'=>1,
+                        'name_type'=>'str','name_valmdid'=>'','valmdid'=>'',
+                        'name_valmditem'=>'','class'=>'active','field'=>1),
+            '2'=>array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM',
+                        'rank'=>2,'ranktoset'=>3,'ranktostring'=>0,
+                        'name_type'=>'str','name_valmdid'=>'','valmdid'=>'',
+                        'name_valmditem'=>'','class'=>'active','field'=>1),
+             );
+    }
     public function dbtablename()
     {
         return 'MDTable';
@@ -71,16 +88,16 @@ class Mdentity extends Sheet implements I_Sheet
     {
         return 'EProperty';
     }        
-    public function fill_entname(&$data,$arr_e) {
-        $arr_entities = $this->getAllEntitiesToStr($arr_e);
-        foreach($arr_entities as $rid=>$prow) {
-            foreach($data as $id=>$row) {
-                if ($row['id'] == $rid) {
-                    $data[$id]['name'] = $prow['name'];
-                }        
-            }
-        }    
-    }
+//    public function fill_entname(&$data,$arr_e) {
+//        $arr_entities = $this->getAllEntitiesToStr($arr_e);
+//        foreach($arr_entities as $rid=>$prow) {
+//            foreach($data as $id=>$row) {
+//                if ($row['id'] == $rid) {
+//                    $data[$id]['name'] = $prow['name'];
+//                }        
+//            }
+//        }    
+//    }
 //    function update($data) 
 //    {
 //        $sql = '';
@@ -143,74 +160,57 @@ class Mdentity extends Sheet implements I_Sheet
         }    
 	return $objs;
     }
-    public function create_object($name,$synonym='') 
+    public function params_to_create($data='')
     {
-        if (!$this->mdid) {
-            throw new DcsException("Class ".get_called_class().
-                " create_object: mdid is empty",DCS_ERROR_WRONG_PARAMETER);
-        }
-        if (!$this->id) {
-            throw new DcsException("Class ".get_called_class().
-                " create_object: id is empty",DCS_ERROR_WRONG_PARAMETER);
-        }
-        if (!$name) {
-            throw new DcsException("Class ".get_called_class().
-                " create_object: name is empty",DCS_ERROR_WRONG_PARAMETER);
-        }
-        if (!$synonym) {
-            $synonym = $name;
-        }
-        $sql = "INSERT INTO \"MDTable\" (id, mditem, name, synonym) "
-                    . "VALUES (:id, :mditem, :name, :synonym) RETURNING \"id\"";
-        $params = array();
-        $params['id']= $this->id;
-        $params['mditem']= $this->mditem;
-        $params['name']= $name;
-        $params['synonym']= $synonym;
-      	DataManager::dm_beginTransaction();
-        $res = DataManager::dm_query($sql,$params); 
-        if ($res) {
-            $rowid = $res->fetch(PDO::FETCH_ASSOC);
-            DataManager::dm_commit();
-            return $rowid['id'];
-        }
-        DataManager::dm_rollback();
-        throw new DcsException("Class ".get_called_class().
-            " create_object: unable to create new record",DCS_ERROR_WRONG_PARAMETER);
-    }
-    public function getNameFromData($data='')
-    {
-        if (!$data) {
-            return array('name' => $this->name, 'synonym' => $this->synonym);
-        } else {
-            return array('name' => $data['name']['name'],
-                         'synonym' => $data['synonym']['name']);
+        $name = $this->name;
+        $synonym = $this->synonym;
+        if ($data) {
+            $name = $data['name']['name'];
+            $synonym = $data['synonym']['name'];
         }    
+        return array(
+                'name' => $name, 
+                'synonym'=>$synonym,
+                'mditem'=> $this->mditem,
+                'id'=> $this->id
+                );
     }        
+//    public function getNameFromData($data='')
+//    {
+//        if (!$data) {
+//            return array('name' => $this->name, 'synonym' => $this->synonym);
+//        } else {
+//            return array('name' => $data['name']['name'],
+//                         'synonym' => $data['synonym']['name']);
+//        }    
+//    }        
     public function loadProperties() 
     {
-        return array(
+        $properties = array(
             'id'=>array('id'=>'id','name'=>'id','synonym'=>'ID',
                         'rank'=>0,'ranktoset'=>1,'ranktostring'=>0,
                         'name_type'=>'str','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'readonly','field'=>1),
-            'name'=>array('id'=>'name','name'=>'name','synonym'=>'NAME',
+            'name'=>array('id'=>'name','name'=>'name','synonym'=>'Имя',
                         'rank'=>1,'ranktoset'=>2,'ranktostring'=>1,
                         'name_type'=>'str','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'active','field'=>1),
-            'synonym'=>array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM',
+            'synonym'=>array('id'=>'synonym','name'=>'synonym','synonym'=>'Синоним',
                         'rank'=>3,'ranktoset'=>3,'ranktostring'=>0,
                         'name_type'=>'str','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'active','field'=>1),
-            'propid'=>array('id'=>'propid','name'=>'propid','synonym'=>'PROPID',
-                        'rank'=>4,'ranktoset'=>0,'ranktostring'=>0,
-                        'name_type'=>'str','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'readonly','field'=>0),
-            'name_propid'=>array('id'=>'name_propid','name'=>'name_propid','synonym'=>'NAME_PROPID',
-                        'rank'=>5,'ranktoset'=>0,'ranktostring'=>0,
-                        'name_type'=>'str','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'readonly','field'=>0),
-            'name_type'=>array('id'=>'name_type','name'=>'name_type','synonym'=>'TYPE',
-                        'rank'=>6,'ranktoset'=>5,'ranktostring'=>0,
-                        'name_type'=>'str','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'readonly','field'=>0),
-            'type'=>array('id'=>'type','name'=>'type','synonym'=>'TYPEID',
-                        'rank'=>7,'ranktoset'=>0,'ranktostring'=>0,
-                        'name_type'=>'str','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'readonly','field'=>0),
+            'mdid'=>array('id'=>'mdid','name'=>'mdid','synonym'=>'Метаданные',
+                        'rank'=>12,'ranktoset'=>0,'ranktostring'=>0,
+                        'name_type'=>'mdid','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'active','field'=>1),
+//            'name_propid'=>array('id'=>'name_propid','name'=>'name_propid','synonym'=>'NAME_PROPID',
+//                        'rank'=>5,'ranktoset'=>0,'ranktostring'=>0,
+//                        'name_type'=>'str','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'readonly','field'=>0),
+            'propid'=>array('id'=>'propid','name'=>'propid','synonym'=>'Шаблон',
+                        'rank'=>4,'ranktoset'=>5,'ranktostring'=>0,
+                        'name_type'=>'cid','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'readonly','field'=>1),
+//            'name_type'=>array('id'=>'name_type','name'=>'name_type','synonym'=>'TYPE',
+//                        'rank'=>6,'ranktoset'=>0,'ranktostring'=>0,
+//                        'name_type'=>'str','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'readonly','field'=>0),
+            'type'=>array('id'=>'type','name'=>'type','synonym'=>'Тип',
+                        'rank'=>7,'ranktoset'=>6,'ranktostring'=>0,
+                        'name_type'=>'cid','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'readonly','field'=>0),
             'rank'=>array('id'=>'rank','name'=>'rank','synonym'=>'RANK',
                         'rank'=>8,'ranktoset'=>0,'ranktostring'=>0,
                         'name_type'=>'int','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'active','field'=>1),
@@ -223,25 +223,33 @@ class Mdentity extends Sheet implements I_Sheet
             'valmdid' => array('id'=>'valmdid','name'=>'VALMDID','synonym'=>'VALMDID',
                         'rank'=>19,'ranktoset'=>8,'ranktostring'=>0,
                         'name_type'=>'mdid','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'readonly','field'=>0),
-            'name_valmdid' => array('id'=>'name_valmdid','name'=>'NAME_VALMDID','synonym'=>'NAME_VALMDID',
-                        'rank'=>20,'ranktoset'=>0,'ranktostring'=>0,
-                        'name_type'=>'str','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'active','field'=>0),
-            'valmdtypename' => array('id'=>'valmdtypename','name'=>'VALMDTYPENAME','synonym'=>'VALMDTYPENAME',
+//            'name_valmdid' => array('id'=>'name_valmdid','name'=>'NAME_VALMDID','synonym'=>'NAME_VALMDID',
+//                        'rank'=>20,'ranktoset'=>0,'ranktostring'=>0,
+//                        'name_type'=>'str','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'active','field'=>0),
+            'valmditem' => array('id'=>'valmditem','name'=>'VALMDITEM','synonym'=>'VALMDITEM',
                         'rank'=>21,'ranktoset'=>9,'ranktostring'=>0,
-                        'name_type'=>'str','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'readonly','field'=>0),
+                        'name_type'=>'cid','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'readonly','field'=>0),
+//            'valmdtypename' => array('id'=>'valmdtypename','name'=>'VALMDTYPENAME','synonym'=>'VALMDTYPENAME',
+//                        'rank'=>21,'ranktoset'=>9,'ranktostring'=>0,
+//                        'name_type'=>'str','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'readonly','field'=>0),
             'field' => array('id'=>'field','name'=>'field','synonym'=>'FIELD',
                         'rank'=>25,'ranktoset'=>0,'ranktostring'=>0,
                         'name_type'=>'int','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'hidden','field'=>0),
              );
+        $this->properties = $properties;
+        return $properties;
     }        
     public function get_items() 
     {
-        $sql = "SELECT mp.id, mp.propid, pr.name as name_propid, mp.name, mp.synonym, 
-            pst.value as type, pt.name as name_type, mp.length, mp.prec, mp.mdid, 
-            mp.rank, mp.ranktostring, mp.ranktoset, mp.isedate, mp.isenumber, 
-            mp.isdepend, pmd.value as valmdid, valmd.name AS name_valmdid, 
-            valmd.synonym AS valmdsynonym, valmd.mditem as valmditem, 
-            mi.name as valmdtypename, 1 as field,'active' as class FROM \"MDProperties\" AS mp
+        $sql = "SELECT mp.id, mp.name, mp.synonym, 
+            pst.value as id_type, pt.name as name_type, 'type' as propid_type,
+            mp.propid as id_propid, pr.name as name_propid, 'propid' as propid_propid, 
+            mp.mdid as id_mdid, md.name as name_mdid, 'mdid' as propid_mdid,
+            mp.length, mp.prec, mp.rank, mp.ranktostring, mp.ranktoset, 
+            mp.isedate, mp.isenumber, mp.isdepend, 
+            pmd.value as id_valmdid, valmd.name AS name_valmdid, 'valmdid' as propid_valmdid, valmd.synonym AS valmdsynonym,
+            valmd.mditem as id_valmditem, mi.name as name_valmditem, 'valmditem' as propid_valmditem, 
+            1 as field,'active' as class FROM \"MDProperties\" AS mp
 		  LEFT JOIN \"CTable\" as pr
 		    LEFT JOIN \"CPropValue_mdid\" as pmd
         		INNER JOIN \"MDTable\" as valmd
@@ -257,14 +265,11 @@ class Mdentity extends Sheet implements I_Sheet
                         ON pst.value = pt.id
 		    ON pr.id = pst.id
 		  ON mp.propid = pr.id
+                INNER JOIN \"MDTable\" as md
+                ON mp.mdid = md.id
 		WHERE mp.mdid = :mdid
 		ORDER BY rank";
-        $sth = DataManager::dm_query($sql,array('mdid'=>$this->id));        
-        $objs = array();
-        while($row = $sth->fetch(PDO::FETCH_ASSOC)) {
-            $objs[$row['id']] = $row;
-        }
-        return $objs;
+        return DataManager::dm_query($sql,array('mdid'=>$this->id));        
     }
     public function update_dependent_properties($data)
     {
@@ -298,16 +303,21 @@ class Mdentity extends Sheet implements I_Sheet
             $sql = substr($sql,1);
             $sql = "UPDATE \"MDTable\" SET$sql WHERE id=:id";
             $params['id'] = $this->id;
-            DataManager::dm_beginTransaction();
             $res = DataManager::dm_query($sql,$params);
-            if(!$res) 
-            {
-                $status='ERROR';
-                DataManager::dm_rollback();            
-            } else {
-                DataManager::dm_commit();            
-            }
         }
         return array('status'=>$status, 'id'=>$this->id, 'objs'=>array());
     }        
+    public function after_create()
+    {
+        DataManager::createMustBeProperty($this->mditem, $this->id);
+    }
+    //ret: array temp table names 
+    public function get_tt_sql_data()
+    {
+        $artemptable = array();
+        $sql = "SELECT mdt.id, mdt.name, mdt.synonym FROM \"MDTable\" AS mdt "
+                    . "WHERE mdt.id= :id";
+        $artemptable[] = DataManager::createtemptable($sql,'tt_out',array('id'=>$this->id));   
+        return $artemptable;
+    }    
 }

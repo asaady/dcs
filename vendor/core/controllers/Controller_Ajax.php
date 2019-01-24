@@ -22,9 +22,10 @@ class Controller_Ajax extends Controller
     {
         $context = DcsContext::getcontext();
         $id = $context->getattr('ITEMID');
-        if (($context->getattr('COMMAND') == 'FIND')||
-            ($context->getattr('COMMAND') == 'LIST')) {
+        if ($context->getattr('COMMAND') == 'FIND') {
             $id = $context->data_getattr('dcs_param_id')['id'];
+        } elseif ($context->getattr('COMMAND') == 'LIST') {
+            $id = $context->data_getattr('dcs_param_propid')['id'];
         } elseif ($context->getattr('COMMAND') == 'FIELD_SAVE') {
             $id = $context->data_getattr('dcs_curid')['id'];
         }
@@ -56,7 +57,7 @@ class Controller_Ajax extends Controller
             }
         }
         $this->model = new $modelname($id);
-   }
+    }
     function action_view()
     {
         echo json_encode($this->model->getItemsByFilter());
@@ -147,7 +148,10 @@ class Controller_Ajax extends Controller
     {
         //$filter = new Filter($propid,
         //                         $context->data_getattr('dcs_param_val')['name']);
-        echo json_encode($this->model->getListItemsByFilter());
+        $this->model->load_data();
+        $valmdid = $this->model->getattrid('valmdid');
+        $entset = new EntitySet($valmdid);
+        echo json_encode($entset->getListItemsByFilter());
     }
     function action_print()
     {

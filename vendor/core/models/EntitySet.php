@@ -94,7 +94,7 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
         //надо найти Объекты у которых есть ТЧ к которой относятся запрошенные строки ТЧ
         $ar_obj = DataManager::get_parentmd_by_item($mdid);
         if (count($ar_obj) == 0) {
-            return tt_et;
+            return $tt_et;
         }
         $ent_obj = new Entity($curid); // получим объект хозяин 
         $ent_plist = $ent_obj->getplist();

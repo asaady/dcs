@@ -83,6 +83,7 @@ abstract class Sheet extends Model implements I_Sheet
             $this->isnew = true;
         }    
         $this->plist = array();
+        $this->properties = array();
         $this->data = array();
         $this->version = time();
         
@@ -194,5 +195,14 @@ abstract class Sheet extends Model implements I_Sheet
 //                        'name_type'=>'int','name_valmdid'=>'','valmdid'=>'','valmdtypename'=>'','class'=>'hidden','field'=>0),
 //             );
     }        
+    public function getNameFromData($data='')
+    {
+        if (!$data) {
+            return array('name' => $this->name, 'synonym' => $this->synonym);
+        } else {
+            return array('name' => $data['name']['name'],
+                         'synonym' => $data['synonym']['name']);
+        }    
+    }      
 }
 

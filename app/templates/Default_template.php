@@ -509,13 +509,15 @@ class Default_Template extends Template implements I_Template
         if (($type=='id')||($type=='cid')||($type=='mdid')) {
             $result .= "<input type=\"hidden\" class=\"form-control\""
                     . "id=\"$t[id]\" name=\"$t[id]\" it=\"$type\" "
-                    . "vt=\"$t[valmdid]\" value=\"\">\n";
+                    . "vt=\"$t[id_valmdid]\" value=\"\">\n";
             $result .= "<input type=\"text\" class=\"form-control\" "
                     . "st=\"active\" id=\"name_$t[id]\" "
                     . "name=\"name_$t[id]\" it=\"$type\" "
-                    . "vt=\"$t[valmdid]\" value=\"\" readonly>\n";
+                    . "vt=\"$t[id_valmdid]\" value=\"\" readonly>\n";
         } else {
-            $result .= "<input type=\"text\" class=\"form-control\" st=\"active\" id=\"$t[id]\" name=\"$t[id]\" valid=\"\" vt=\"\" value=\"\" readonly>\n";                    
+            $result .= "<input type=\"text\" class=\"form-control\" st=\"active\" "
+                    . "id=\"$t[id]\" name=\"$t[id]\" valid=\"\" vt=\"\" "
+                    . "value=\"\" readonly>\n";                    
         }
         $result .= "</div>\n";
         $result .= "</div>\n";

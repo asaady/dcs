@@ -141,14 +141,14 @@ class DcsContext
             if (isset($this->context['DATA']['dcs_setid'])) {
                 //setid from get-parameters is valid
                 $setid = $this->context['DATA']['dcs_setid']['name'];
-                if ($setid !== '') {
+                if (Common_data::check_uuid($setid)) {
                     $this->setattr('SETID', $setid);
                 }
             } 
             if (isset($this->context['DATA']['dcs_propid'])) {
                 //propid from get-parameters is valid
                 $propid = $this->context['DATA']['dcs_propid']['name'];
-                if ($propid !== '') {
+                if (Common_data::check_uuid($propid)) {
                     $this->setattr('PROPID', $propid);
                 }
             }

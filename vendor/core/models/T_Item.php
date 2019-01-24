@@ -13,7 +13,7 @@ trait T_Item
     public function update_dependent_properties($data)
     {
         $res = array('status'=>'', 'id'=>$this->id, 'objs'=>array());
-        $ar_propid = array_column($this->plist, 'propid','id');
+        $ar_propid = array_column($this->plist, 'id_propid','id');
         foreach ($data as $pid => $val) {
             $p_arr = array_filter($this->plist,function($item) use ($pid){
                             return $item['id'] === $pid;
@@ -22,10 +22,10 @@ trait T_Item
             if (!$prop) {
                 continue;
             }
-            $ar_rel = DataManager::get_related_fields($prop['propid']);
+            $ar_rel = DataManager::get_related_fields($prop['id_propid']);
             foreach ($ar_rel as $rel) {
                 $dep_pid = array_search($rel['depend'], $ar_propid);
-                if ($dep_pid===FALSE) {
+                if ($dep_pid === FALSE) {
                     continue;
                 }        
                 //проверим найденный реквизит на свойство isdepend - зависимый
@@ -53,8 +53,8 @@ trait T_Item
                                 break;
                             }
                         } else {
-                            $arr_dep_ent_propid = array_column($dep_ent->getplist(),'propid','id');
-                            $dep_ent_pid = array_search($prop['propid'],$arr_dep_ent_propid);
+                            $arr_dep_ent_propid = array_column($dep_ent->getplist(),'id_propid','id');
+                            $dep_ent_pid = array_search($prop['id_propid'],$arr_dep_ent_propid);
                             if ($dep_ent_pid === FALSE) {
                                 //среди реквизитов зависимого объекта нет шаблона реквизита текущего объекта
                                 continue;
@@ -121,7 +121,8 @@ trait T_Item
             if ($type == 'id') {
                 $n_name = '';
                 $n_id = DCS_EMPTY_ENTITY;
-                if (($propval['nvalid'] != DCS_EMPTY_ENTITY)&&($propval['nvalid'] != '')) {
+                if (($propval['nvalid'] != DCS_EMPTY_ENTITY)&&
+                    ($propval['nvalid'] != '')) {
                     $p_ent = new Entity($propval['nvalid']);
                     $n_name = $p_ent->getname();
                     $n_id = $propval['nvalid'];
@@ -139,23 +140,27 @@ trait T_Item
                             if ($e_prop['id_propid'] != $ctpropid) {
                                 continue;
                             }    
-                            $vals[$prop['id']] = array('id' => $p_ent->getattrid($e_prop['id']), 'name' => $p_ent->getattr($e_prop['id']));
+                            $vals[$prop['id']] = array(
+                                'id' => $p_ent->getattrid($e_prop['id']),
+                                'name' => $p_ent->getattr($e_prop['id']));
                             break;
                         }    
                     }    
                 }
-                $vals[$propid]=array('id'=>$n_id,'name'=>$n_name);
+                $vals[$propid] = array('id' => $n_id,'name' => $n_name);
             }    
-            elseif ($type=='cid')
+            elseif ($type == 'cid')
             {
                 $p_ent = new CollectionItem($propval['nvalid']);
-                $vals[$propid]=array('id'=>$propval['nvalid'],'name'=>$p_ent->getname());
+                $vals[$propid] = array('id' => $propval['nvalid'],
+                                       'name' => $p_ent->getname());
             }    
             else
             {
-                $vals[$propid]=array('id'=>'','name'=>$propval['nval']);
+                $vals[$propid] = array('id' => '', 'name' => $propval['nval']);
             }    
 	}
+
         $objs = $this->before_save($vals);
         $upd = array();
         $cnt = 0;
@@ -177,10 +182,12 @@ trait T_Item
             $params['userid'] = $_SESSION['user_id'];
             $params['id'] = $id;
             $params['propid'] = $propid;
-	    $sql = "INSERT INTO \"IDTable\" (userid, entityid, propid) VALUES (:userid, :id, :propid) RETURNING \"id\"";
+	    $sql = "INSERT INTO \"IDTable\" (userid, entityid, propid) "
+                    . "VALUES (:userid, :id, :propid) RETURNING \"id\"";
 	    $res = DataManager::dm_query($sql,$params);
 	    if(!$res) {
-                throw new DcsException(array('status'=>'ERROR','msg'=>"Невозможно добавить в таблицу IDTable запись "));
+                throw new DcsException(array('status'=>'ERROR',
+                    'msg'=>"Невозможно добавить в таблицу IDTable запись "));
 	    }
 	    $row = $res->fetch(PDO::FETCH_ASSOC);
             $t_val = $propval['nval'];
@@ -190,18 +197,22 @@ trait T_Item
                     $t_val = DCS_EMPTY_ENTITY;
                 }    
             }    
-	    $sql = "INSERT INTO \"PropValue_$type\" (id, value) VALUES ( :id, :value)";
+	    $sql = "INSERT INTO \"PropValue_$type\" (id, value) "
+                    . "VALUES ( :id, :value)";
             $params = array();
             if ($type=='file')
             {
-                $t_val = str_replace(" ","_",trim($this->name))."_".$prow['name'].strrchr($t_val,'.');
+                $t_val = str_replace(" ","_",trim($this->name)).
+                        "_".$prow['name'].strrchr($t_val,'.');
             }    
             $params['value'] = $t_val;
             $params['id'] = $row['id'];
 	    $res = DataManager::dm_query($sql,$params);
             $cnt++;
-            $upd[$propid] = array('value'=>$t_val,'type'=>$type, 'name'=>$vals[$propid]['name']);
+            $upd[$propid] = array('value'=>$t_val,'type'=>$type, 
+                                  'name'=>$vals[$propid]['name']);
 	}
+        
         if ($cnt > 0)
         {    
             $status = 'OK';

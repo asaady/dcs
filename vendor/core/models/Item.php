@@ -148,6 +148,11 @@ class Item extends Sheet implements I_Sheet
     {
         return NULL;
     }        
+    public function loadProperties()
+    {
+        $this->properties = array();
+        return $this->properties;
+    }        
 //    public function getNameFromData($context,$data='') 
 //    {
 //        if (!count($this->data)) {

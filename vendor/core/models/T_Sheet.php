@@ -19,7 +19,10 @@ trait T_Sheet {
           'version'=>$this->version
         );
         $objs['PLIST'] = $this->getplist();
-        $objs['SETS'] = $this->getsets();
+        $sets = $this->getsets();
+        if(count($sets)) {
+            $objs['SETS'] = $sets;
+        }
         $objs['PSET'] = $this->getItemsProp();
         return $objs;
     }
@@ -51,10 +54,12 @@ trait T_Sheet {
             }
             foreach ($items as $item) {
                 $mditem = new Mdentity($item['id_valmdid']);
-                $sets[$prop['id']] = array_filter($mditem->get_arritems(),
+                foreach (array_filter($mditem->get_arritems(),
                             function($item) {
                                 return $item['ranktoset'] > 0;
-                            });
+                            }) as $itemprop) {
+                    $sets[$prop['id']][$itemprop['id']] = $itemprop;
+                }
             }
             if ($propid == $prop['id']) {
                 $context->setattr('SETID',$this->get_valid($propid));
@@ -261,29 +266,40 @@ trait T_Sheet {
     public function getItemsByFilter() 
     {
         $context = DcsContext::getcontext();
-        $prefix = $context->getattr('PREFIX');
-        $action = $context->getattr('ACTION');
-        $propid = $context->getattr('PROPID');
     	$objs = array();
         $objs['PLIST'] = $this->getplist();
         $objs['LDATA'] = array();
         $objs['LDATA'][$this->id] = $this->load_data();
         $classname = $context->getattr('CLASSNAME');
         $setid = '';
-        if ($propid) {
+        $propid = $context->getattr('PROPID');
+        if (($propid)&&($classname == 'Entity')) {
             $setid = $this->get_valid($propid);
             $classname = 'Sets';
-        }
-        if (!$setid) {
+            if ($setid) {
+                $set = new Sets($setid,$this);
+                $objs['SETS'] = array($propid => $set->getItemsProp());
+                $objs['SDATA'] = array($propid => $set->getItems(DcsContext::getfilters()));
+            } else {
+                $prop = new EProperty($propid);
+                $prop->load_data();
+                $valmdid = $prop->getattrid('valmdid');
+                $entset = new EntitySet($valmdid);
+                $objs['SETS'] = array($propid => $entset->getItemsProp());
+                $objs['SDATA'] = array($propid => array());
+            }  
+            $objs['SETID'] = $setid;
+            $objs['PSET'] = array();
+        } else {
             $objs['PSET'] = $this->getItemsProp();
             $objs['SDATA'] = $this->getItems(DcsContext::getfilters());
-        } else {
-            $set = new Sets($setid,$this);
-            $objs['PSET'] = $set->getItemsProp();
-            $objs['SDATA'] = array($propid => $set->getItems(DcsContext::getfilters()));
-        }   
-        $objs['SETID'] = $setid;
-        $objs['SETS'] = $this->getsets();
+            $sets = $this->getsets();
+            if (count($sets)) {
+                $objs['SETS'] = $sets;
+            }
+        }
+        $prefix = $context->getattr('PREFIX');
+        $action = $context->getattr('ACTION');
         $objs['actionlist'] = DataManager::getActionsbyItem($classname,$prefix,$action);
         $objs['navlist'] = $this->get_navlist();
 	return $objs;
@@ -291,8 +307,8 @@ trait T_Sheet {
     public function getListItemsByFilter($filter=array()) 
     {
     	$objs = array();
-        $objs['PSET'] = $this->head->getItemsProp();
-        $objs['SDATA'] = $this->head->getListItems($filter);
+        $objs['PSET'] = $this->getItemsProp();
+        $objs['SDATA'] = $this->getListItems($filter);
 	return $objs;
     }
     public function getaccessright_id()
@@ -588,15 +604,6 @@ trait T_Sheet {
     {
         return $this->getProperties(TRUE,'toset');
     }
-    public function getNameFromData($data='')
-    {
-        if (!$data) {
-            return array('name' => $this->name, 'synonym' => $this->synonym);
-        } else {
-            return array('name' => $data['name']['name'],
-                         'synonym' => $data['synonym']['name']);
-        }    
-    }      
     public function get_arritems()
     {
         return $this->get_items()->fetchAll(PDO::FETCH_ASSOC);
@@ -756,6 +763,9 @@ trait T_Sheet {
     }
     public function loadProperties()
     {
+        if (count($this->properties)) {
+            return $this->properties;
+        }
         $properties = array();
         $sql = $this->txtsql_properties("mdid");
         if (!$sql) {
@@ -828,7 +838,7 @@ trait T_Sheet {
             }    
             $artemptable = $this->get_tt_sql_data();
             $sql = "select * from tt_out";
-            $sth = DataManager::dm_query($sql);        
+            $sth = DataManager::dm_query($sql);    
             $arr_e = array();
             while($row = $sth->fetch(PDO::FETCH_ASSOC)) {
                 $this->data['id'] = array('id'=>$row['id'],'name'=>$row['id']);
@@ -876,7 +886,7 @@ trait T_Sheet {
             }    
         }
         $this->version = time();
-        $this->head = $this->get_head();
+//        $this->head = $this->get_head();
         $this->setnamesynonym();
         $this->check_right();
         return $this->data;

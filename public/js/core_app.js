@@ -204,12 +204,15 @@ function onLoadValID(data)
             $elist = $("tbody.entitylist");
             sdata = data.SDATA;
             pset = data.PSET;
+            loadset($elist,sdata,pset);
         } else {
-            $elist = $("tbody.entitylist",$("div#"+propid));
-            sdata = data.SDATA[propid];
-            pset = data.SETS[propid];
+            if ('SETS' in data) {   
+                $elist = $("tbody.entitylist",$("div#"+propid));
+                sdata = data.SDATA[propid];
+                pset = data.SETS[propid];
+                loadset($elist,sdata,pset);
+            }    
         }    
-        loadset($elist,sdata,pset);
     }    
     actionlist(data['actionlist']);
     navlist(data['navlist']);
@@ -316,10 +319,10 @@ function tr_dblclick($e)
         return;
     } 
     var dop = '';
-    var setid = $("input[name='dcs_setid']").val();
+    var propid = $("input[name='dcs_propid']").val();
     var docid = $("input[name='dcs_itemid']").val();
-    if (setid !== '') {
-        dop = '?dcs_docid='+docid+'&dcs_propid='+setid;
+    if (propid !== '') {
+        dop = '?dcs_docid='+docid+'&dcs_propid='+propid;
     } 
     location.href=getprefix()+'/'+itemid+dop;
 }
@@ -716,6 +719,7 @@ $('a[data-toggle="tab"]').on('shown.bs.tab', function(e){
     $x.hide();
     var activeid = $(e.target).attr('href').substring(1);
     var itemid = $("input[name='dcs_itemid']").val();    
+    $("input[name='dcs_setid']").val(''); 
     $("input[name='dcs_propid']").val(activeid); 
     $("input[name='dcs_command']").val('load'); 
     var $data = $('.ajax').serializeArray();

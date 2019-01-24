@@ -92,7 +92,7 @@ class Route {
             return;
         } else {
             try {
-                $controller = new $controllername($context);
+                $controller = new $controllername();
             } catch (DcsException $ex) {
                 $this->error_route($ex);
                 return;

@@ -84,6 +84,77 @@ trait T_Entity {
         $artemptable[] = DataManager::createtemptable($sql,'tt_out',array('id'=>$this->id));   
         return $artemptable;
     }    
+    public function get_valid($propid)
+    {
+        $sql = "SELECT it.entityid, it.propid, pv.value from \"IDTable\" as it "
+                . "inner join (SELECT it.entityid, it.propid, "
+                . "max(it.dateupdate) as dateupdate "
+                . "from \"IDTable\" as it "
+                . "where it.entityid = :id and it.propid = :propid "
+                . "group by it.entityid, it.propid) as slc "
+                . "on it.entityid = slc.entityid "
+                . "and it.propid = slc.propid "
+                . "and it.dateupdate = slc.dateupdate "
+                . "inner join \"PropValue_id\" as pv on it.id=pv.id";
+        $res = DataManager::dm_query($sql,array('id'=>$this->id, 'propid'=>$propid));
+        while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
+            return $row['value'];
+        }  
+        return '';
+    }
+    public function getNameFromData($data='')
+    {
+        if (!count($this->plist)) {
+            $this->plist = $this->getplist();
+        }
+        if (!$data) {
+            if (!count($this->data)) {
+                $this->load_data();
+            }
+            $data = $this->data;
+        }
+        $artoStr = array();
+        $isDocs = $this->mdtypename === 'Docs';
+        foreach($this->plist as $prop)
+        {
+            if (!array_key_exists($prop['id'],$data)) {
+                continue;
+            }
+            if ($prop['ranktostring'] > 0) 
+            {
+              $artoStr[$prop['id']] = $prop['ranktostring'];
+            }
+        }
+        if (!count($artoStr)) {
+            return array('name' => '',
+                     'synonym' => '');
+        }    
+        asort($artoStr);
+        $res = '';
+        foreach($artoStr as $pr => $rank) {
+            $pkey = array_search($pr, array_column($this->plist,'id'));
+            if ($isDocs && ($this->plist[$pkey]['isenumber'] ||
+                            $this->plist[$pkey]['isedate'])) {
+                continue;
+            }    
+            if (!array_key_exists($pr,$data)) {
+                continue;
+            }
+            $name = $data[$pr]['name'];
+            if ($this->plist[$pkey]['name_type'] == 'date') {
+                $name = substr($name,0,10);
+            }
+            $res .= ' '.$name;
+        }
+        if ($isDocs) {
+            $datetime = new DateTime($this->edate);
+            $res = $this->head->getsynonym()." №".$this->enumber." от ".$datetime->format('d-m-y').$res;
+        } elseif ($res != '') {
+                $res = substr($res, 1);
+        }    
+        return array('name' => $res,
+                     'synonym' => $res);
+    }
 //    public function getItemsProp($context) 
 //    {
 //        $plist = array(

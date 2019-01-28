@@ -24,6 +24,8 @@ class Controller_Ajax extends Controller
         $id = $context->getattr('ITEMID');
         if ($context->getattr('COMMAND') == 'FIND') {
             $id = $context->data_getattr('dcs_param_id')['id'];
+        } elseif ($context->getattr('COMMAND') == 'CHOICE') {
+            $id = $context->data_getattr('dcs_curid')['id'];
         } elseif ($context->getattr('COMMAND') == 'LIST') {
             $id = $context->data_getattr('dcs_param_propid')['id'];
         } elseif ($context->getattr('COMMAND') == 'FIELD_SAVE') {
@@ -101,44 +103,17 @@ class Controller_Ajax extends Controller
         $data = array();
         $context = DcsContext::getcontext();
         $propid = $context->data_getattr('dcs_param_propid')['id'];
-        $valtype = $context->data_getattr('dcs_param_type')['name'];
         $valid = $context->data_getattr('dcs_param_id')['id'];
         $valname = $context->data_getattr('dcs_param_val')['name'];
-        $setid = $context->getattr('SETID');
         $data[$propid] = array('name'=>$valname,'id'=>$valid);
-        $id = $context->getattr('ITEMID');
-        $res = array();
-        if ($setid) {
-            $modelname = "\\Dcs\\Vendor\\Core\\Models\\Item";
-            $id = $context->data_getattr('dcs_curid')['id'];
-        } else {
-            $modelname = "\\Dcs\\Vendor\\Core\\Models\\".$context->getattr('CLASSNAME');
-        }
-        $res['id'] = $id;
-        $ent = new $modelname($id);
-        $res = $ent->update($data);
+        $res = $this->model->update($data);
         echo json_encode($res);
         
     }
     function action_choice()
     {
-        $context = DcsContext::getcontext();
-        $id = $context->data_getattr('dcs_curid')['id'];
-        $type = $context->data_getattr('dcs_param_type')['name'];
-        if ($type == 'id') {
-            $modelname = "\\Dcs\\Vendor\\Core\\Models\\Entity";
-        } elseif ($type == 'cid') {
-            $modelname = "\\Dcs\\Vendor\\Core\\Models\\CollectionItem";
-        } elseif ($type == 'mdid') {
-            $modelname = "\\Dcs\\Vendor\\Core\\Models\\Mdentity";
-        } else {
-            echo json_encode(array('id'=>$context->data_getattr('dcs_param_val')['id'],
-                'name'=>$id));
-            return;
-        }
-        $ent = new $modelname($id);
-        echo json_encode(array('id'=>$id,
-                'name'=>$ent->getNameFromData()['synonym']));
+        echo json_encode(array('id'=>$this->model->getid(),
+                'name'=>$this->model->getNameFromData()['synonym']));
     }
     function action_after_choice()
     {

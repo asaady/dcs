@@ -3,6 +3,7 @@ namespace Dcs\Vendor\Core\Models;
 
 use PDO;
 use DateTime;
+use DateTimeZone;
 use Dcs\Vendor\Core\Models\DcsException;
 
 class CollectionItem extends Sheet implements I_Sheet, I_Item
@@ -93,6 +94,14 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
             {
                 $join .= " LEFT JOIN \"CPropValue_$rowtype\" as pv_$rowname INNER JOIN \"MDTable\" as ct_$rowname ON pv_$rowname.value = ct_$rowname.id ON ct.id=pv_$rowname.id AND pv_$rowname.pid = :pv_$rowname";
                 $sql .= ", pv_$rowname.value as id_$rowname, ct_$rowname.synonym as name_$rowname";
+            }    
+            elseif ($rowtype=='date')
+            {
+                $join .= " LEFT JOIN \"CPropValue_$rowtype\" as pv_$rowname ON ct.id=pv_$rowname.id AND pv_$rowname.pid = :pv_$rowname";
+                $sql .= ", pv_$rowname.value as id_$rowname, "
+                        . "to_char(pv_$rowname.value::timestamptz at time zone '"
+                            .DataManager::getUserTimeZone()."',"
+                        . "'DD.MM.YYYY HH24:MM') as name_$rowname";
             }    
             else 
             {
@@ -316,9 +325,16 @@ class CollectionItem extends Sheet implements I_Sheet, I_Item
                             continue;
                         }    
                     }
-                }    
-                else
-                {
+                } elseif ($row['name_type'] == 'date') {
+                    if ($dataid === $valid)
+                    {
+                        continue;
+                    }    
+                    $date = (new DateTime('@' . $valid))->setTimezone(
+                            new DateTimeZone(DataManager::getUserTimeZone()));
+                    $val = $date->format('c');
+                    
+                } else {
                     if (isset($dataname))
                     {
                         if ($dataname===$valname)

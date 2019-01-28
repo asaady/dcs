@@ -18,4 +18,21 @@ trait T_Mdentity {
 //                      'mditem'=>array('id'=>$data['mditem'], 'name'=>$data['mditem'])
 //            );
 //    }            
+    //ret: array temp table names 
+    public function get_tt_sql_data()
+    {
+        $artemptable = array();
+        $sql = "SELECT mdt.id, mdt.name, mdt.synonym FROM \"MDTable\" AS mdt "
+                    . "WHERE mdt.id= :id";
+        $artemptable[] = DataManager::createtemptable($sql,'tt_out',array('id'=>$this->id));   
+        return $artemptable;
+    }    
+    public function txtsql_property($parname)
+    {
+        return DataManager::get_select_properties(" WHERE mp.id = :$parname ");    
+    }        
+    public function txtsql_properties($parname)
+    {
+        return DataManager::get_select_properties(" WHERE mp.mdid = :$parname ");    
+    }        
 }

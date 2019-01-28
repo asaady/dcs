@@ -52,6 +52,7 @@ abstract class Sheet extends Model implements I_Sheet
         $this->id = $id;
         $this->isnew = false;
         $arData = $this->getDetails($id);
+
         if (!$arData) {
             throw new DcsException("Class ".get_called_class().
                 " constructor: id is wrong",DCS_ERROR_WRONG_PARAMETER);
@@ -86,7 +87,6 @@ abstract class Sheet extends Model implements I_Sheet
         $this->properties = array();
         $this->data = array();
         $this->version = time();
-        
     }
    function get_mdid()
     {

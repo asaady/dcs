@@ -41,16 +41,16 @@ trait T_View {
         $skelet = str_replace("<!--body_modal_form-->", $this->body_modalform_view(), $skelet);
         $skelet = str_replace("<!--body_loader_form-->", $this->body_loader_view(), $skelet);
         $skelet = str_replace("<!--body_footer-->", $this->body_footer_view(), $skelet);
-        $skelet = str_replace("<!--body_script-->", $this->body_script_view(), $skelet);
+        $skelet = str_replace("<!--body_script-->", $this->body_script_view($data), $skelet);
         echo $skelet;
     }
     public function item_view($data)
     {
         return $this->template->get_body_content($data);
     }        
-    public function body_script_view()
+    public function body_script_view($data)
     {
-        return $this->template->get_body_script();
+        return $this->template->get_body_script($data);
     }   
     public function body_header_view($data)
     {

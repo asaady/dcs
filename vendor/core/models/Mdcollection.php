@@ -7,7 +7,7 @@ use PDO;
 class Mdcollection extends Sheet implements I_Sheet, I_Set, I_Property
 {
     use T_Sheet;
-    use T_Mdentity;
+//    use T_Mdentity;
     use T_Collection;
     
     public function getplist() 
@@ -199,4 +199,13 @@ class Mdcollection extends Sheet implements I_Sheet, I_Set, I_Property
         $this->properties = $properties;
         return $properties;
     }        
+    //ret: array temp table names 
+    public function get_tt_sql_data()
+    {
+        $artemptable = array();
+        $sql = "SELECT mdt.id, mdt.name, mdt.synonym FROM \"MDTable\" AS mdt "
+                    . "WHERE mdt.id= :id";
+        $artemptable[] = DataManager::createtemptable($sql,'tt_out',array('id'=>$this->id));   
+        return $artemptable;
+    }    
 }

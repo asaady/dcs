@@ -311,13 +311,4 @@ class Mdentity extends Sheet implements I_Sheet
     {
         DataManager::createMustBeProperty($this->mditem, $this->id);
     }
-    //ret: array temp table names 
-    public function get_tt_sql_data()
-    {
-        $artemptable = array();
-        $sql = "SELECT mdt.id, mdt.name, mdt.synonym FROM \"MDTable\" AS mdt "
-                    . "WHERE mdt.id= :id";
-        $artemptable[] = DataManager::createtemptable($sql,'tt_out',array('id'=>$this->id));   
-        return $artemptable;
-    }    
 }

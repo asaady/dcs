@@ -1,5 +1,5 @@
 <?php
-date_default_timezone_set('Europe/Moscow');
+date_default_timezone_set('UTC');
 define("DCS_DBHOST","127.0.0.1");
 define("DCS_DBNAME","sm24");
 define("DCS_DBUSER","postgres");

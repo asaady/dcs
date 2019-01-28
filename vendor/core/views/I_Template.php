@@ -14,7 +14,7 @@ interface I_Template {
     public function get_body_modal_form();
     public function get_body_loader_form();
     public function get_body_footer();
-    public function get_body_script();
+    public function get_body_script($data);
     public function get_body_script_toprint();
     public function auth_view();
     public function error_view($data);

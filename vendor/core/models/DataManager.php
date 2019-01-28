@@ -666,7 +666,10 @@ class DataManager {
     }
 
     public static function getSettings() {
-        $sql = "select ct.id, pv_set.value as id_settings, ct_set.name as name_settings, pv_prop.value as propid, pv_val.value as value, ct_type.name as type from \"CTable\" as ct "
+        $sql = "select ct.id, pv_set.value as id_settings, "
+                . "ct_set.name as name_settings, pv_prop.value as propid, "
+                . "pv_val.value as value, ct_type.name as type "
+                . "FROM \"CTable\" as ct "
                 . "inner join \"MDTable\" as md "
                 . "on ct.mdid=md.id "
                 . "inner join \"CPropValue_cid\" as pv_usr "
@@ -680,7 +683,7 @@ class DataManager {
                 . "and cp_set.name = 'settings' "
                 . "inner join \"CTable\" as ct_set "
                 . "on pv_set.value = ct_set.id "
-                . "inner join \"CPropValue_cid\" as pv_prop "
+                . "left join \"CPropValue_cid\" as pv_prop "
                 . "inner join \"CProperties\" as cp_prop "
                 . "on pv_prop.pid = cp_prop.id "
                 . "and cp_prop.name = 'propstemplate' "
@@ -698,12 +701,26 @@ class DataManager {
                 . "on pv_val.pid = cp_val.id "
                 . "and cp_val.name = 'value' "
                 . "on ct.id=pv_val.id "
-                . "where md.name='user_settings' and pv_usr.value = :userid";
+                . "where md.name='user_settings' "
+                . "and pv_usr.value = :userid";
 
         $params = array();
         $params['userid'] = $_SESSION['user_id'];
         $res = self::dm_query($sql, $params);
         return $res->fetchAll(PDO::FETCH_ASSOC);
+    }
+    public static function getDbTimeZone() {
+        $sql = "SELECT current_setting('TIMEZONE')";
+        $res = self::dm_query($sql);
+        return $res->fetch(PDO::FETCH_ASSOC)['current_setting'];
+    }
+    public static function getUserTimeZone() {
+        $settings = self::getSettings();
+        $key = array_search('timezone', array_column($settings,'name_settings'));
+        if ($key === FALSE) {
+            return self::getDbTimeZone();
+        }
+        return $settings[$key]['value'];
     }
 
     public static function getDefaultValue($plist) {

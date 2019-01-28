@@ -4,6 +4,7 @@ namespace Dcs\App\Templates;
 use Dcs\Vendor\Core\Models\DcsContext;
 use Dcs\Vendor\Core\Views\Template;
 use Dcs\Vendor\Core\Views\I_Template;
+use Dcs\Vendor\Core\Models\Filter;
 
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING) . "/app/dcs_const.php");
 
@@ -23,9 +24,10 @@ class Default_Template extends Template implements I_Template
         . "<link href=\"/public/css/normalize.css\" rel=\"stylesheet\" type=\"text/css\">\n"
         . "<link href=\"/public/css/bootstrap.min.css\" rel=\"stylesheet\" type=\"text/css\">"
         . "<link href=\"/public/css/bootstrap-select.min.css\" rel=\"stylesheet\" type=\"text/css\">\n"
-        . "<link href=\"/public/css/default.css\" id=\"theme_base\" rel=\"stylesheet\">\n"
-        . "<link href=\"/public/css/default.date.css\" id=\"theme_date\" rel=\"stylesheet\">\n"
-        . "<link href=\"/public/css/default.time.css\" id=\"theme_time\" rel=\"stylesheet\">\n"
+        . "<link href=\"/public/css/bootstrap-datetimepicker.min.css\" rel=\"stylesheet\" type=\"text/css\">\n"
+//        . "<link href=\"/public/css/default.css\" id=\"theme_base\" rel=\"stylesheet\">\n"
+//        . "<link href=\"/public/css/default.date.css\" id=\"theme_date\" rel=\"stylesheet\">\n"
+//        . "<link href=\"/public/css/default.time.css\" id=\"theme_time\" rel=\"stylesheet\">\n"
         . "<link href=\"/public/css/style.css\" rel=\"stylesheet\" type=\"text/css\">\n"
         . "<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->\n"
         . "<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->\n"
@@ -107,6 +109,8 @@ class Default_Template extends Template implements I_Template
                 . " value=\"".$context->getattr('MODE')."\">\n"
                 . "<input class=\"form-control\" name=\"dcs_itemid\" type=\"hidden\""
                 . " value=\"".$context->getattr('ITEMID')."\">\n"
+                . "<input class=\"form-control\" name=\"dcs_usertimezone\" type=\"hidden\""
+                . " value=\"".$context->getattr('USERTIMEZONE')."\">\n"
                 . "<input class=\"form-control ajax\" name=\"dcs_setid\" type=\"hidden\""
                 . " value=\"".$context->getattr('SETID')."\">\n"
                 . "<input class=\"form-control ajax\" name=\"dcs_curid\" type=\"hidden\""
@@ -208,19 +212,36 @@ class Default_Template extends Template implements I_Template
                 . "<script src=\"/public/js/moment.js\"></script>\n"
                 . "<script src=\"/public/js/core_print.js\"></script>\n";
     }        
-    public function get_body_script()
+    public function get_body_script($data)
     {
         $context = DcsContext::getcontext();
         //echo "<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->";
         $result = "<script type=\"text/javascript\" src=\"/public/js/jquery-3.2.1.js\"></script>\n"
                 . "<script type=\"text/javascript\" src=\"/public/js/bootstrap.min.js\"></script>\n"
                 . "<script type=\"text/javascript\" src=\"/public/js/moment.js\"></script>\n"
+                . "<script type=\"text/javascript\" src=\"/public/js/moment-with-locales.js\"></script>\n"
+                . "<script type=\"text/javascript\" src=\"/public/js/bootstrap-datetimepicker.min.js\"></script>\n"
                 . "<script type=\"text/javascript\" src=\"/public/js/core_app.js\"></script>\n";
         if (($context->getattr('ACTION') == 'EDIT')||
             ($context->getattr('ACTION') == 'CREATE')) {
-            $result .= "<script src=\"/public/js/picker.js\"></script>\n"
-                     . "<script src=\"/public/js/picker.date.js\"></script>\n"
-                     . "<script src=\"/public/js/picker.time.js\"></script>";
+            for($i=0, $props=$data['PLIST'], $size=count($props); $i<$size; $i++) {
+                $t=$props[$i];
+                $type = $t['name_type'];
+                if ($type == 'date') {
+                    $dp_id = Filter::rowname($t['id']);
+                    $result .= "<script type=\"text/javascript\">\n"
+                            . "\$(function () {"
+                            . " \$('#$dp_id').datetimepicker({"
+                            . " locale:'ru'"
+                            . "}).on(\"dp.change\", function (e) {"
+                            . "if( !e.oldDate || !e.date.isSame(e.oldDate, 'minute')){"
+                            . " \$('#$dp_id').trigger('dcs_date_onchange',"
+                            . " e.date._d);"
+                            . "$('#$dp_id').data('DateTimePicker').hide();}"
+                            . "});});\n"
+                            . "</script>\n";
+                }    
+            }    
         }
         return $result;
     }        
@@ -289,11 +310,14 @@ class Default_Template extends Template implements I_Template
         if (($type == 'id')||($type == 'cid')||($type == 'mdid')) {
             $result .= "<input type=\"hidden\" class=\"form-control ajax\" "
                     . "id=\"$t[id]\" name=\"$t[id]\" it=\"$t[id_valmdid]\" "
-                    . "vt=\"$type\" value=\"\" autocomplete=\"newvalue\">\n";
+                    . "vt=\"$type\" value=\"\" autocomplete=\"newvalue\""
+                    . ">\n";
             $result .= "<input type=\"$itype\" class=\"form-control ajax\" "
                     . "st=\"active\" id=\"name_$t[id]\" "
                     . "name=\"name_$t[id]\" it=\"$t[id_valmdid]\" "
-                    . "vt=\"$type\" value=\"\"$readonly autocomplete=\"newvalue\">\n";
+                    . "vt=\"$type\" value=\"\"$readonly autocomplete=\"newvalue\""
+//                    . " onchange=\"$(this).trigger('dcs_onchange')\""
+                    . ">\n";
             if (($itype != 'hidden')||($readonly == '')) {
                 $result .= "<ul class=\"types_list\">\n"
                          . "<li id=\"\"></li>\n"
@@ -302,15 +326,31 @@ class Default_Template extends Template implements I_Template
         } else {
             if (($itype != 'hidden')||($readonly == '')) {
                 if ($type == 'date') {
-                    $result .= "<input type=\"$itype\" class=\"form-control datepicker ajax\""
-                            . " st=\"active\" id=\"$t[id]\" name=\"$t[id]\""
+                    $result .= "<input type=\"hidden\" class=\"form-control ajax\" "
+                            . "id=\"$t[id]\" name=\"$t[id]\" it=\"\" "
+                            . "vt=\"$type\" value=\"\" autocomplete=\"newvalue\">\n";
+                    $result .= "<div class='input-group date' id='".Filter::rowname($t['id'])."'"
+                            . " name=\"$t[id]\">\n"
+                            . "<input type='text' class=\"form-control ajax\""
+                            . " st=\"active\" id=\"name_$t[id]\" name=\"name_$t[id]\""
                             . " it=\"\" valid=\"\" vt=\"$type\" value=\"\"$readonly"
-                            . " autocomplete=\"newvalue\">\n";
+//                            . " onchange=\"$(this).trigger('dcs_onchange')\""
+                            . ">\n"
+                            . "<span class=\"input-group-addon\">\n"
+                            . "<span class=\"glyphicon glyphicon-calendar\"></span>\n"
+                            . "</span>\n"
+                            . "</div>\n";
+                
+
+
+                    
                 } else {
                     $result .= "<input type=\"$itype\" class=\"form-control ajax\""
                             . " st=\"active\" id=\"$t[id]\" name=\"$t[id]\""
                             . " it=\"\" valid=\"\" vt=\"$type\" value=\"\"$readonly"
-                            . " autocomplete=\"newvalue\">\n";
+                            . " autocomplete=\"newvalue\""
+  //                          . " onchange=\"$(this).trigger('dcs_onchange')\""
+                            . ">\n";
                 }    
                 if ($type == 'bool') {    
                     $result .= "<ul class=\"types_list\">\n"
@@ -322,7 +362,9 @@ class Default_Template extends Template implements I_Template
                 $result .= "<input type=\"$itype\" class=\"form-control ajax\" "
                         . "st=\"active\" id=\"$t[id]\" name=\"$t[id]\" valid=\"\""
                         . " vt=\"$type\" value=\"\"$readonly"
-                        . " autocomplete=\"newvalue\">\n";
+                        . " autocomplete=\"newvalue\""
+//                        . " onchange=\"$(this).trigger('dcs_onchange')\""
+                        . ">\n";
             }
         }
         $result .= "</div>\n"

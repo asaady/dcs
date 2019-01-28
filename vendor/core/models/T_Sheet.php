@@ -517,8 +517,7 @@ trait T_Sheet {
                     continue;
                 }
             } elseif ($prop['name_type'] == 'date') {
-                if (substr($pval,0,19) == substr($nval,0,19)) 
-                {
+                if ($pvalid == $nvalid) {
                     continue;
                 }    
             } 

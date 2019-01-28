@@ -177,7 +177,7 @@ function onLoadValID(data)
                         $("textarea.form-control[id="+cid+"]").val(dname);
                     } else {    
                         if ('name_valmditem' in pval) {
-                            if (pval.valmdtypename == 'Sets') {
+                            if (pval.name_valmditem == 'Sets') {
                                 $("div.tab-pane[id="+cid+"]").attr('it',did);
                             }
                         }
@@ -457,7 +457,7 @@ function submitModalForm(e)
       success: setvals
     });
 }
-function show_ivalue($e, it)
+function show_ivalue($e, curvalid)
 {
     var action = $("input[name='dcs_action']").val();
     var arr_type = ['id','cid','mdid','propid'];
@@ -484,9 +484,9 @@ function show_ivalue($e, it)
     }
     s_html = '';
     if (arr_type.indexOf(vt) >= 0) {
-        ov = it;
-        s_html = "<input type=\""+itype+"\" class=\"form-control ajax\" \n\
-                        vt=\""+vt+"\" it=\""+it+"\" ov=\""+ov+"\" \n\
+        ov = curvalid; //remember last value
+        s_html = "<input type=\""+itype+"\" class=\"form-control\" \n\
+                        vt=\""+vt+"\" it=\""+curvalid+"\" ov=\""+ov+"\" \n\
                         value=\""+dname+"\"><span class=\"input-group-btn\" \n\
                         style=\"width:0;\">\n\
                         <button id=\"list\" class=\"form-value\">\n\
@@ -498,7 +498,7 @@ function show_ivalue($e, it)
         bwidth += 90; 
     } else if (vt == 'file') {
         if (action === 'VIEW') {
-            s_html = "<a href=\""+it+"\" download=\""+dname+"\">"+dname+"</a>";
+            s_html = "<a href=\""+curvalid+"\" download=\""+dname+"\">"+dname+"</a>";
         } else {    
             if (dname === '') {    
                 s_html = "<input id=\"dcsFileInput\" type=\"file\" \n\
@@ -511,7 +511,7 @@ function show_ivalue($e, it)
                               <i class=\"material-icons\">done</i>\n\
                            </button></span>";
             } else {
-                s_html = "<a href=\""+it+"\" download=\""+dname+"\">"+dname+"</a>\n\
+                s_html = "<a href=\""+curvalid+"\" download=\""+dname+"\">"+dname+"</a>\n\
                          <span class=\"input-group-btn\" style=\"width:0;\">\n\
                          <button id=\"delete_ivalue\" class=\"form-value\">\n\
                            <i class=\"material-icons\">delete</i>\n\
@@ -520,7 +520,7 @@ function show_ivalue($e, it)
             }
         }    
     } else {
-        s_html = "<input type=\""+itype+"\" class=\"form-control ajax\" \n\
+        s_html = "<input type=\""+itype+"\" class=\"form-control\" \n\
                            vt=\""+vt+"\" it=\"\" ov=\""+ov+"\" value=\""+dname+"\">\n\
                           <span class=\"input-group-btn\" style=\"width:0;\">\n\
                           <button id=\"done\" class=\"form-value\">\n\
@@ -547,8 +547,8 @@ $('body').on('dblclick','#entityhead input',function ()
 {
     var action = $("input[name='dcs_action']").val();
     var $etd = $(this);
-    var it = $etd.attr('it');
-    var vt = $etd.attr('vt');
+    var curvalid = get_input_fieldid($etd); //current value 
+    var vt = $etd.attr('vt'); //name type property value
     var dname = $(this).html();
     if (action === 'VIEW') {
         if (vt !== 'file') {
@@ -560,10 +560,7 @@ $('body').on('dblclick','#entityhead input',function ()
     } else if (action !== 'EDIT') {
         return;
     }
-    it = get_input_fieldid($etd);
-    if (it) {
-        show_ivalue($etd, it);
-    }    
+    show_ivalue($etd, curvalid);
 });
 $('body').on('dblclick','#dcs-items tr',function () 
 {
@@ -583,8 +580,8 @@ $('body').on('dblclick','#dcs-items td',function ()
         return;
     }
     var $etd = $(this);
-    var it = $etd.attr('it');
     var vt = $etd.attr('vt');
+    var curvalid = $etd.attr('it');
     var dname = $(this).html();
     if (action === 'VIEW') {
         if (vt !== 'file') {
@@ -596,7 +593,7 @@ $('body').on('dblclick','#dcs-items td',function ()
     } else if (action !== 'EDIT') {
         return;
     }
-    show_ivalue($etd, it);
+    show_ivalue($etd, curvalid);
 });   
 
 $('body').on('click','button.form-value#list', function(e)
@@ -1135,6 +1132,19 @@ function activate_pickadate()
  //                 });
     }              
 };
+$( 'body' ).on( "dcs_date_onchange", function( e , dp_date) {
+    var curname = $(e.target).attr('name');
+    var tz = $("input[name='dcs_usertimezone']").val();
+    var $curinp = $("input#"+curname);
+    console.log(dp_date);
+    console.log(dp_date.getTimezoneOffset());
+    console.log(dp_date.getTime());
+    $curinp.val(Math.round((dp_date.getTime() 
+            - dp_date.getTimezoneOffset()*60*1000 
+            - tz*60*60*1000)/ 1000));
+});
+
+
 $(document).ready(function() 
 { 
     var itemid = $("input[name='dcs_itemid']").val(); 

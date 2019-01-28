@@ -3,6 +3,7 @@ namespace Dcs\Vendor\Core\Models;
 
 use PDO;
 use DateTime;
+use DateTimeZone;
 
 trait T_Item 
 {
@@ -155,6 +156,11 @@ trait T_Item
                 $vals[$propid] = array('id' => $propval['nvalid'],
                                        'name' => $p_ent->getname());
             }    
+            elseif ($type == 'date')
+            {
+                $vals[$propid] = array('id' => $propval['nvalid'],
+                                       'name' => $propval['nval']);
+            }    
             else
             {
                 $vals[$propid] = array('id' => '', 'name' => $propval['nval']);
@@ -196,7 +202,10 @@ trait T_Item
                 if ($t_val == '') {
                     $t_val = DCS_EMPTY_ENTITY;
                 }    
-            }    
+            } elseif ($type=='date') {
+                $date = new DateTime('@' . $propval['nvalid']);
+                $t_val = $date->format("Y-m-d H:i:s");
+            }
 	    $sql = "INSERT INTO \"PropValue_$type\" (id, value) "
                     . "VALUES ( :id, :value)";
             $params = array();
@@ -209,8 +218,13 @@ trait T_Item
             $params['id'] = $row['id'];
 	    $res = DataManager::dm_query($sql,$params);
             $cnt++;
-            $upd[$propid] = array('value'=>$t_val,'type'=>$type, 
-                                  'name'=>$vals[$propid]['name']);
+            $name = $vals[$propid]['name'];
+            if ($type == 'id') {
+                $ent = new Entity($t_val);
+                $name = $ent->getNameFromData()['synonym'];
+            }
+            $upd[$propid] = array('id'=>$t_val,'type'=>$type, 
+                                  'name'=>$name);
 	}
         
         if ($cnt > 0)

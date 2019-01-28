@@ -286,6 +286,7 @@ class Entity extends Sheet implements I_Sheet, I_Item
     {
         $name = $this->name;
         if ($data) {
+            die(var_dump($data));
             $name = $data['name']['name'];
         }    
         return array(

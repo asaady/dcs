@@ -8,8 +8,7 @@ use Dcs\Vendor\Core\Models\DcsException;
 class EntitySet extends Sheet implements I_Sheet, I_Set
 {
     use T_Sheet;
-    use T_Set;
-    use T_Entity;
+    use T_Mdentity;
     
     public function dbtablename()
     {
@@ -57,10 +56,6 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
     {
         return 'Entity';
     }        
-    public function load_data($data='')
-    {
-        return array();
-    }    
     public static function add_filter_val($ent_obj,$mdid,&$ent_filter)
     {
         $ent_plist = $ent_obj->properties();
@@ -171,7 +166,9 @@ class EntitySet extends Sheet implements I_Sheet, I_Set
                 if ($row['isedate']) {
                     $orderstr = ' order by name_'.$rowname.' DESC';
                 }    
-                $str0_t = ", tv_$rowname.propid as propid_$rowname, date_trunc('second', COALESCE(pv_$rowname.value,'epoch'::timestamp)) as name_$rowname, '' as id_$rowname";
+                $str0_t = ", tv_$rowname.propid as propid_$rowname, "
+                        . "to_char(pv_$rowname.value::timestamptz at time zone '".DataManager::getUserTimeZone()."','YYYY.MM.DD') as name_$rowname, "
+                        . "DATE_PART('epoch',pv_$rowname.value) as id_$rowname";
                 $str_t = " LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
             }
             if ($activity_id !== FALSE)

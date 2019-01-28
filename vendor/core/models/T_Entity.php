@@ -72,7 +72,7 @@ trait T_Entity {
                 $str0_t = ", tv_$rowname.propid as propid_$rowname, ct_$rowname.synonym as name_$rowname, pv_$rowname.value as id_$rowname";
                 $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname INNER JOIN \"MDTable\" as ct_$rowname ON pv_$rowname.value=ct_$rowname.id ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
             } elseif ($rowtype=='date') {
-                $str0_t = ", tv_$rowname.propid as propid_$rowname, to_char(pv_$rowname.value,'DD.MM.YYYY') as name_$rowname, '' as id_$rowname";
+                $str0_t = ", tv_$rowname.propid as propid_$rowname, to_char(pv_$rowname.value::timestamptz at time zone '".DataManager::getUserTimeZone()."','DD.MM.YYYY HH24:MM') as name_$rowname, DATE_PART('epoch',pv_$rowname.value) as id_$rowname";
                 $str_t =" LEFT JOIN tt_tv as tv_$rowname LEFT JOIN \"PropValue_$rowtype\" as pv_$rowname ON tv_$rowname.tid = pv_$rowname.id ON et.id=tv_$rowname.entityid AND tv_$rowname.propid='$rid'";
             }
             $str0_req .= $str0_t;
@@ -80,7 +80,8 @@ trait T_Entity {
         }
         $str0_req .=" FROM \"ETable\" as et";
         $sql = $str0_req.$str_req." WHERE et.id=:id";
-        //die($sql.' id ='.$this->id);
+//        die($sql.' id ='.$this->id);
+        
         $artemptable[] = DataManager::createtemptable($sql,'tt_out',array('id'=>$this->id));   
         return $artemptable;
     }    

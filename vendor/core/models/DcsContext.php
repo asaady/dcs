@@ -3,6 +3,9 @@ namespace Dcs\Vendor\Core\Models;
 
 use PDO;
 use Dcs\Vendor\Core\Models\Filter;
+use Dcs\Vendor\Core\Models\DataManager;
+use DateTime;
+use DateTimeZone;
 
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 
@@ -39,6 +42,7 @@ class DcsContext
         $this->context['LIMIT'] = DCS_COUNT_REC_BY_PAGE;
         $this->context['MENU'] = array();
         $this->context['USERNAME'] = 'Anonymous';
+        $this->context['USERTIMEZONE'] = '0';
         $this->context['DATA'] = array();
     }
 
@@ -92,6 +96,8 @@ class DcsContext
         if (User::isAuthorized())
         {
             $this->setattr('USERNAME',User::getUserName($_SESSION['user_id']));
+            $dateCurrent = new DateTime(null, new DateTimeZone(DataManager::getUserTimeZone()));
+            $this->setattr('USERTIMEZONE', $dateCurrent->getOffset()/60/60);
         }
         $this->context['TITLE'] = DCS_COMPANY_SHORTNAME.' '.$this->context['USERNAME'];
         $indx = 1;

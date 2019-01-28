@@ -5,7 +5,7 @@ interface I_View
 {
     public function generate($data = null);
     public function body_content_view($data);
-    public function body_script_view();
+    public function body_script_view($data);
     public function body_header_view($data);
     public function body_footer_view();
     public function body_loader_view();

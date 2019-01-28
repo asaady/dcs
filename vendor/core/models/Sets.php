@@ -211,7 +211,7 @@ class Sets extends Entity implements I_Sheet
             $params=array('rankid'=>$rank_id);
         } else {
             $sql = "SELECT et.id FROM tt_et AS et"; 
-            $params='';
+            $params = array();
         }
         $res = DataManager::dm_query($sql, $params);
         $sobjs=array();

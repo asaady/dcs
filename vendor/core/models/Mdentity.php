@@ -12,7 +12,7 @@ class Mdentity extends Sheet implements I_Sheet
     
     public function getplist() 
     {
-        return array(
+        $plist = array(
             '0'=>array('id'=>'id','name'=>'id','synonym'=>'ID',
                         'rank'=>0,'ranktoset'=>1,'ranktostring'=>0,
                         'name_type'=>'str','name_valmdid'=>'','valmdid'=>'',
@@ -26,6 +26,8 @@ class Mdentity extends Sheet implements I_Sheet
                         'name_type'=>'str','name_valmdid'=>'','valmdid'=>'',
                         'name_valmditem'=>'','class'=>'active','field'=>1),
              );
+        $this->plist = $plist;
+        return $plist;
     }
     public function dbtablename()
     {

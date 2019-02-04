@@ -103,13 +103,13 @@ class Default_Template extends Template implements I_Template
     {
         $context = DcsContext::getcontext();
         $result = "<div class=\"dcs-context\">\n"
-                . "<input class=\"form-control\" name=\"dcs_prefix\" type=\"hidden\""
+                . "<input class=\"form-control ajax\" name=\"dcs_prefix\" type=\"hidden\""
                 . " value=\"".$context->getattr('PREFIX')."\">\n"
-                . "<input class=\"form-control\" name=\"dcs_mode\" type=\"hidden\""
+                . "<input class=\"form-control ajax\" name=\"dcs_mode\" type=\"hidden\""
                 . " value=\"".$context->getattr('MODE')."\">\n"
-                . "<input class=\"form-control\" name=\"dcs_itemid\" type=\"hidden\""
+                . "<input class=\"form-control ajax\" name=\"dcs_itemid\" type=\"hidden\""
                 . " value=\"".$context->getattr('ITEMID')."\">\n"
-                . "<input class=\"form-control\" name=\"dcs_usertimezone\" type=\"hidden\""
+                . "<input class=\"form-control ajax\" name=\"dcs_usertimezone\" type=\"hidden\""
                 . " value=\"".$context->getattr('USERTIMEZONE')."\">\n"
                 . "<input class=\"form-control ajax\" name=\"dcs_setid\" type=\"hidden\""
                 . " value=\"".$context->getattr('SETID')."\">\n"

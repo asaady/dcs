@@ -1,66 +1,177 @@
 <?php
-namespace dcs\app\components\utils\uploadobject;
+namespace Dcs\App\Components\Utils\Uploadobject;
 
 use PDO;
 use PDOStatement;
-use dcs\vendor\core\Entity;
-use dcs\vendor\core\EntitySet;
-use dcs\vendor\core\PropsTemplate;
-use dcs\vendor\core\Model;
-use dcs\vendor\core\CollectionItem;
-use dcs\vendor\core\DataManager;
-use dcs\vendor\core\Mdproperty;
-use dcs\vendor\core\Common_data;
+use Dcs\Vendor\Core\Models\Entity;
+use Dcs\Vendor\Core\Models\EntitySet;
+use Dcs\Vendor\Core\Models\Sheet;
+use Dcs\Vendor\Core\Models\CollectionItem;
+use Dcs\Vendor\Core\Models\DataManager;
+use Dcs\Vendor\Core\Models\Common_data;
+use Dcs\Vendor\Core\Models\DcsException;
+use Dcs\Vendor\Core\Models\DcsContext;
 
 require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
 
-class UploadObject extends Model 
+class UploadObject 
 {
+    protected $id;
+    protected $head;     
     protected $entity;
     protected $target_mdid;
     protected $filename;
 
-    public function __construct($id) 
+    public function __construct() 
     {
-        
-        if ($id=='')
+        $context = DcsContext::getcontext();
+        $id = $context->getattr('ITEMID');
+        if (!$id)
         {
-            die("class.UploadObject constructor: id is empty");
+            throw new DcsException("class.UploadObject constructor: id is empty");
         }
         $this->entity = new CollectionItem($id);
-        
-        if ($this->entity->getname()!='UploadObject')
+        if ($this->entity->getname() !== 'Uploadobject')
         {
-            die("class.UploadObject constructor: bad id");
+            die('id = '.$id.' name = '.var_dump($this->entity->getname()));
+            throw new DcsException("class.Uploadobject constructor: bad id");
         }    
         $this->id = $id;
-        $this->name = $this->entity->getsynonym();
-        $this->version = time();        
+        $this->head = $this->entity->head();
     }
-    public function get_data($data)
+    public function head() 
     {
-        $sdata = array();
-        $plist = array(
-                array('id'=>'target_mdid','name'=>'target_mdid','synonym'=>'Тип объекта','rank'=>1,'type'=>'mdid','valmdid'=>'','valmdtypename'=>'','class'=>'active'),
-                array('id'=>'filename','name'=>'filename','synonym'=>'Файл импорта','rank'=>5,'type'=>'text','valmdid'=>'','valmdtypename'=>'','class'=>'active')
-        );
-        $pset=array();
-
-        return array(
+        return $this->entity->head();
+    }
+    public function dbtablename()
+    {
+        return "";
+    }
+    public function getid() 
+    {
+        return $this->id;
+    }
+    public function item() 
+    {
+        return NULL;
+    }
+    public function item_classname()
+    {
+        return "";
+    }        
+    public function getprop_classname()
+    {
+        return NULL;
+    }
+    public function get_data()
+    {
+        $objs = array(
           'id'=>$this->id,
-          'name'=>$this->name,
-          'version'=>$this->version,
-          'PLIST' => $plist,   
-          'PSET' => $pset,   
-          'SDATA' => $sdata,   
-          'LDATA' => array(),   
-          'navlist' => array(
-              $this->entity->getcollectionset()->getmditem()->getid()=>$this->entity->getcollectionset()->getmditem()->getsynonym(),
-              $this->entity->getcollectionset()->getid()=>$this->entity->getcollectionset()->getsynonym(),
-              $this->id=>$this->name
-            )
-          );
-    }   
+          'name'=>$this->entity->getname(),
+          'synonym'=>$this->entity->getsynonym(),
+          'version'=>$this->entity->getversion()
+        );
+        $objs['PLIST'] = $this->getplist();
+        $objs['PSET'] = array();
+        return $objs;
+    }
+    public function getplist()
+    {        
+        $plist = array(
+            '0'=>array('id'=>'id','name'=>'id','synonym'=>'ID',
+                        'rank'=>0,'ranktoset'=>1,'ranktostring'=>0,
+                        'name_type'=>'str','name_valmdid'=>'','id_valmdid'=>'',
+                        'name_valmditem'=>'','class'=>'readonly','field'=>1),
+            '1'=>array('id'=>'name','name'=>'name','synonym'=>'NAME',
+                        'rank'=>1,'ranktoset'=>2,'ranktostring'=>1,
+                        'name_type'=>'str','name_valmdid'=>'','id_valmdid'=>'',
+                        'name_valmditem'=>'','class'=>'readonly','field'=>1),
+            '2'=>array('id'=>'synonym','name'=>'synonym','synonym'=>'SYNONYM',
+                        'rank'=>2,'ranktoset'=>3,'ranktostring'=>0,
+                        'name_type'=>'str','name_valmdid'=>'','id_valmdid'=>'',
+                        'name_valmditem'=>'','class'=>'readonly','field'=>1),
+            '3'=>array('id'=>'target_mdid','name'=>'target_mdid','synonym'=>'Тип объекта',
+                        'rank'=>3,'ranktoset'=>4,'ranktostring'=>0,
+                        'name_type'=>'mdid','name_valmdid'=>'','id_valmdid'=>'',
+                        'name_valmditem'=>'','class'=>'active','field'=>1),
+            '4'=>array('id'=>'filename','name'=>'filename','synonym'=>'Файл импорта',
+                        'rank'=>5,'ranktoset'=>5,'ranktostring'=>0,
+                        'name_type'=>'file','name_valmdid'=>'','id_valmdid'=>'',
+                        'name_valmditem'=>'','class'=>'active','field'=>1),
+             );
+        $this->plist = $plist;
+        return $plist;
+    }
+    public function txtsql_forDetails() 
+    {
+        return "";
+    }
+    public function txtsql_property($parname)
+    {
+        return NULL;
+    }        
+    public function txtsql_properties($parname)
+    {
+        return NULL;
+    }        
+    public function add_navlist(&$navlist) 
+    {
+        if ($this->head) {
+            $phead = $this->head;
+            $phead->add_navlist($navlist); 
+            $strval = $phead->getNameFromData()['synonym'];
+            $navlist[] = array('id'=>$this->head->getid(),'name'=>sprintf("%s",$strval));
+        }
+    }
+    public function get_navlist()
+    {
+        $navlist = array();
+        $strkey = $this->id;
+        $strval = $this->entity->getsynonym();
+        $this->add_navlist($navlist);
+        $navlist[] = array('id' => $strkey,'name' => sprintf("%s",$strval));
+        return $navlist;
+    }        
+    public function load_data($data='')
+    {
+        $data = array();
+        $data['id'] = array('id'=>'','name'=>$this->id);
+        $data['name'] = array('id'=>'','name'=>$this->entity->getname());
+        $data['synonym'] = array('id'=>'','name'=>$this->entity->getsynonym());
+        return $data;
+    }            
+    public function getItemsByName($name) 
+    {
+        $sql = "select md.id, md.name, md.synonym from \"MDTable\" as md "
+                . "where md.name ilike :name or md.synonym ilike :name";
+        $params = array();
+        $params['name'] = '%'.$name.'%';
+        $res = DataManager::dm_query($sql, $params);
+        $objs = array();
+        while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
+            $objs[$row['id']] = array('id'=>$row['id'],'name'=>$row['synonym']);
+        }
+        return $objs;
+    }        
+//        return array(
+//          'id'=>$this->id,
+//          'name'=>$this->name,
+//          'version'=>$this->version,
+//          'PLIST' => $plist,   
+//          'PSET' => $pset,   
+//          'SDATA' => $sdata,   
+//          'LDATA' => array(),   
+//          'navlist' => array(
+//              $this->entity->getcollectionset()->getmditem()->getid()=>$this->entity->getcollectionset()->getmditem()->getsynonym(),
+//              $this->entity->getcollectionset()->getid()=>$this->entity->getcollectionset()->getsynonym(),
+//              $this->id=>$this->name
+//            )
+//          );
+//    }   
+    public function exec()
+    {
+        return array('status'=>'ok');
+    }        
     
     public function create_entity($curname, $plist, $arr)
     {        
@@ -70,7 +181,7 @@ class UploadObject extends Model
         try 
         {
             $res = DataManager::dm_query($sql, array('name'=>$curname,'mdid'=> $this->target_mdid));	
-        } catch (Exception $ex) {
+        } catch (DcsException $ex) {
             Common_data::import_log('sql = '.$sql." ERROR: ".$ex->getMessage());
             DataManager::dm_rollback();
             return;
@@ -286,5 +397,5 @@ class UploadObject extends Model
         {
             self::_import();
         }
-    }  
+    }
 }    

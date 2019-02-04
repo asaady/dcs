@@ -1001,22 +1001,39 @@ $('body').on('click', '#submit', function (e)
         }
     });    
 });
-
-$('body').on('click', '#print', function (e) 
+$('body').on('click', '#submit', function (e)
 {
-    var itemid = $("input[name='dcs_itemid']").val();
-    var setid = $("input[name='dcs_setid']").val();
-    var href = '';
-    e.preventDefault();
-    var dop = '';
-    if (setid !== '') {
-        dop = '?dcs_propid='+setid;
+    var itemid = $("input[name='dcs_itemid']").val(); 
+    var prefix = $("input[name='dcs_prefix']").val();  
+    var act = $("input[name='act']").val();  
+    var $data;
+    var curl = '/';
+    $data = $('.ajax').serializeArray();
+    if (prefix === 'AUTH') {
+        curl = '/auth/'+act;
+    } else {
+        curl = getprefix()+'/ajax/'+itemid;
     }
-    href = getprefix()+'/'+itemid+'/print'+dop;
-    var otherWindow = window.open(href,"_blank");
-    otherWindow.opener = null;
+    $.ajax({
+      url: curl,
+      type: 'get',
+      dataType: 'json',
+      data: $data,
+        success: function(result) {
+            location.href=result['redirect'];
+        }
+    });    
 });
 
+$('body').on('click', '#exec', function (e) 
+{
+    var itemid = $("input[name='dcs_itemid']").val(); 
+    location.href=getprefix()+'/'+itemid+'/exec';
+});
+function exec_error(result) 
+{
+    console.log(result);
+}   
 function before_save() 
 {
     var itemid = $("input[name='dcs_itemid']").val(); 

@@ -41,14 +41,20 @@ class Controller_Ajax extends Controller
         $cont = Route::getContentByID($id,$prefix);
         if ($cont) {
             $modelname = "\\Dcs\\Vendor\\Core\\Models\\".$cont['classname'];
-            if ($context->getattr('COMMAND') == 'FIND') {
-                if ($cont['classname'] == 'Mdcollection') {
-                    $modelname = "\\Dcs\\Vendor\\Core\\Models\\CollectionSet";
+            if ($context->getattr('ACTION') == 'EXEC') {
+                $ent = new CollectionItem($id);
+                $modelname = "\\Dcs\\App\\Components\\Utils\\"
+                        .$ent->getname().'\\'.$ent->getname();
+            } else {    
+                if ($context->getattr('COMMAND') == 'FIND') {
+                    if ($cont['classname'] == 'Mdcollection') {
+                        $modelname = "\\Dcs\\Vendor\\Core\\Models\\CollectionSet";
+                    }
+                } elseif (($context->getattr('COMMAND') == 'CREATE')&&
+                      ($context->data_getattr('dcs_setid')['id'])) {
+                    $modelname = "\\Dcs\\Vendor\\Core\\Models\\Sets";
                 }
-            } elseif (($context->getattr('COMMAND') == 'CREATE')&&
-                  ($context->data_getattr('dcs_setid')['id'])) {
-                $modelname = "\\Dcs\\Vendor\\Core\\Models\\Sets";
-            }
+            }    
         } else {
             $newobj = DataManager::getNewObjectById($id);
             if (!$newobj) {
@@ -137,5 +143,15 @@ class Controller_Ajax extends Controller
         $context = DcsContext::getcontext();
         $mdprop = $this->model->property($context->data_getattr('dcs_propid')['id'],$this->model->head());
         echo json_encode($mdprop->get_history_data($context->getattr('ITEMID')));
+    }
+    function action_exec() {
+        echo json_encode($this->model->exec());
+//        if ($context->getattr('CLASSNAME') == 'CollectionItem') {
+//            if ($context->getattr('CLASSTYPE') == 'Utils') {
+//                $ent = new CollectionItem($context->getattr('ITEMID'));
+//                $this->controller_path = "/app/utils/".strtolower($ent->getname());
+//                return 'Controller_'.$ent->getname();
+//            }
+//        }
     }
 }    

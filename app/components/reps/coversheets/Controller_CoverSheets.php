@@ -1,4 +1,6 @@
 <?php
+namespace Dcs\App\Components\Reps\CoverSheets;
+
 use dcs\vendor\core\Controller;
 use dcs\vendor\core\View;
 use dcs\app\components\reps\coversheets\CoverSheets;

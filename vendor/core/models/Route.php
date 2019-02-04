@@ -3,6 +3,10 @@ namespace Dcs\Vendor\Core\Models;
 
 use PDO;
 use Dcs\Vendor\Core\Controllers\Controller_Error;
+use Dcs\Vendor\Core\Models\Common_data;
+
+require_once(filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', FILTER_SANITIZE_STRING)."/app/dcs_const.php");
+
 
 class Route {
     protected $routes;
@@ -15,6 +19,13 @@ class Route {
     {
 //        $prefix = array('ENTERPRISE','AUTH','API','CONFIG');
 //        $modes = array('FORM','DOWNLOAD','AJAX');
+        $allHeaders = self::dcs_getallheaders();
+        if (array_key_exists('Content-Type',$allHeaders)) {
+            $contentType = $allHeaders['Content-Type'];
+            if (strpos($contentType,'multipart/form-data') !== FALSE) {
+                $this->upload();
+            }
+        }
         $url = filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_SANITIZE_STRING);
         $pos = strpos($url,'?');
         $routes = $url;
@@ -24,7 +35,6 @@ class Route {
             $data = substr($url, $pos);
         }
         $routes = explode('/', $routes);
-
         $context = DcsContext::getcontext();
         $context->setcontext($routes);
         if (!User::isAuthorized()) {
@@ -41,20 +51,23 @@ class Route {
                 $context->setattr('ITEMID',$ritem['id']);
             }
         }
-        if ($context->getattr('ITEMID')) {
-            $item = self::getContentByID($context->getattr('ITEMID'),
-                                         $context->getattr('PREFIX'));
-            $classname =  $item['classname'];
-            if (!$item) {
-                $newobj = DataManager::getNewObjectById($context->getattr('ITEMID'));
-                if (!$newobj) {
-                    $this->seterrorcontext();
-                } else {
-                    $classname = $newobj['classname'];
-                }
+        if (!$context->getattr('ITEMID')) {
+            return;
+        }    
+        $item = self::getContentByID($context->getattr('ITEMID'),
+                                     $context->getattr('PREFIX'));
+        if (!$item) {
+            $newobj = DataManager::getNewObjectById($context->getattr('ITEMID'));
+            if (!$newobj) {
+                $this->seterrorcontext();
+            } else {
+                $classname = $newobj['classname'];
             }
-            $context->setattr('CLASSNAME',$classname);
+        } else {
+            $classname =  $item['classname'];
+            $context->setattr('CLASSTYPE',$item['typename']);
         }
+        $context->setattr('CLASSNAME',$classname);
     }
     public function error_route($ex='',$message = '')
     {
@@ -87,6 +100,7 @@ class Route {
         if ($context->getattr('MODE') === 'AJAX') {
             $this->action_name = 'action_'.strtolower($context->getattr('COMMAND'));
         }
+        $controller = 0;
         if (!class_exists($controllername)) {
             $this->error_route('','controller '.$controllername.': not exist');
             return;
@@ -129,23 +143,73 @@ class Route {
     }
     public static function getContentByID($itemid, $prefix='') 
     {
-        $sql = "SELECT 'EntitySet' as classname, md.name, md.id, md.synonym, ct.name as typename FROM \"MDTable\" as md inner join \"CTable\" as ct inner join \"MDTable\" as mditem on ct.mdid=mditem.id on md.mditem=ct.id and mditem.name='MDitems' WHERE md.id=:itemid and :prefix <> 'CONFIG' and NOT ct.name in ('Cols','Comps','Regs')
-                UNION SELECT 'CollectionSet', md.name, md.id, md.synonym, ct.name FROM \"MDTable\" as md  inner join \"CTable\" as ct inner join \"MDTable\" as mditem on ct.mdid=mditem.id on md.mditem=ct.id and mditem.name='MDitems' WHERE md.id=:itemid and :prefix <> 'CONFIG' and ct.name in ('Cols','Comps')
-                UNION SELECT 'Register', md.name, md.id, md.synonym, ct.name FROM \"MDTable\" as md  inner join \"CTable\" as ct inner join \"MDTable\" as mditem on ct.mdid=mditem.id on md.mditem=ct.id and mditem.name='MDitems' WHERE md.id=:itemid and :prefix <> 'CONFIG' and ct.name = 'Regs'
-                UNION SELECT 'Mdentity', md.name, md.id, md.synonym, ct.name FROM \"MDTable\" as md  inner join \"CTable\" as ct inner join \"MDTable\" as mditem on ct.mdid=mditem.id on md.mditem=ct.id and mditem.name='MDitems' WHERE md.id=:itemid and :prefix = 'CONFIG' and NOT ct.name in ('Cols','Comps','Regs')
-                UNION SELECT 'Mdcollection', md.name, md.id, md.synonym, ct.name FROM \"MDTable\" as md  inner join \"CTable\" as ct inner join \"MDTable\" as mditem on ct.mdid=mditem.id on md.mditem=ct.id and mditem.name='MDitems' WHERE md.id=:itemid and :prefix = 'CONFIG' and ct.name in ('Cols','Comps')
-                UNION SELECT 'Mdregister', md.name, md.id, md.synonym, ct.name FROM \"MDTable\" as md  inner join \"CTable\" as ct inner join \"MDTable\" as mditem on ct.mdid=mditem.id on md.mditem=ct.id and mditem.name='MDitems' WHERE md.id=:itemid and :prefix = 'CONFIG' and ct.name = 'Regs'
-                UNION SELECT 'MdentitySet', ct.name, ct.id, ct.synonym, md.name FROM \"CTable\" as ct INNER JOIN \"MDTable\" as md ON ct.mdid=md.id AND md.name='MDitems' WHERE ct.id=:itemid
-                UNION SELECT 'Entity', et.name, et.id, et.name, md.name FROM \"ETable\" as et 
-                    INNER JOIN \"MDTable\" as md  
+        $sql = "SELECT 'EntitySet' as classname, md.name, md.id, md.synonym, 
+                        ct.name as typename FROM \"MDTable\" as md 
                         inner join \"CTable\" as ct 
                             inner join \"MDTable\" as mditem 
                             on ct.mdid=mditem.id 
                         on md.mditem=ct.id 
                         and mditem.name='MDitems' 
-                    ON et.mdid = md.id 
-                    WHERE et.id=:itemid  and NOT ct.name = 'Items'
-                UNION SELECT 'Item', et.name, et.id, et.name, md.name FROM \"ETable\" as et 
+                        WHERE md.id=:itemid and :prefix <> 'CONFIG' 
+                                and NOT ct.name in ('Cols','Comps','Regs')
+                UNION SELECT 'CollectionSet', md.name, md.id, md.synonym, 
+                        ct.name FROM \"MDTable\" as md  
+                        inner join \"CTable\" as ct 
+                            inner join \"MDTable\" as mditem 
+                            on ct.mdid=mditem.id 
+                        on md.mditem=ct.id 
+                        and mditem.name='MDitems' 
+                        WHERE md.id=:itemid and :prefix <> 'CONFIG' 
+                        and ct.name in ('Cols','Comps')
+                UNION SELECT 'Register', md.name, md.id, md.synonym, ct.name 
+                        FROM \"MDTable\" as md  
+                        inner join \"CTable\" as ct 
+                            inner join \"MDTable\" as mditem 
+                            on ct.mdid=mditem.id 
+                        on md.mditem=ct.id and mditem.name='MDitems' 
+                        WHERE md.id=:itemid and :prefix <> 'CONFIG' 
+                        and ct.name = 'Regs'
+                UNION SELECT 'Mdentity', md.name, md.id, md.synonym, ct.name 
+                        FROM \"MDTable\" as md  
+                        inner join \"CTable\" as ct 
+                           inner join \"MDTable\" as mditem 
+                           on ct.mdid=mditem.id 
+                        on md.mditem=ct.id and mditem.name='MDitems' 
+                        WHERE md.id=:itemid and :prefix = 'CONFIG' 
+                        and NOT ct.name in ('Cols','Comps','Regs')
+                UNION SELECT 'Mdcollection', md.name, md.id, md.synonym, ct.name 
+                        FROM \"MDTable\" as md  
+                        inner join \"CTable\" as ct 
+                            inner join \"MDTable\" as mditem 
+                            on ct.mdid=mditem.id 
+                        on md.mditem=ct.id and mditem.name='MDitems' 
+                        WHERE md.id=:itemid and :prefix = 'CONFIG' 
+                        and ct.name in ('Cols','Comps')
+                UNION SELECT 'Mdregister', md.name, md.id, md.synonym, ct.name 
+                        FROM \"MDTable\" as md  
+                        inner join \"CTable\" as ct 
+                            inner join \"MDTable\" as mditem 
+                            on ct.mdid=mditem.id 
+                        on md.mditem=ct.id and mditem.name='MDitems' 
+                        WHERE md.id=:itemid and :prefix = 'CONFIG' 
+                        and ct.name = 'Regs'
+                UNION SELECT 'MdentitySet', ct.name, ct.id, ct.synonym, md.name 
+                        FROM \"CTable\" as ct 
+                        INNER JOIN \"MDTable\" as md 
+                        ON ct.mdid=md.id AND md.name='MDitems' 
+                        WHERE ct.id=:itemid
+                UNION SELECT 'Entity', et.name, et.id, et.name, md.name 
+                        FROM \"ETable\" as et 
+                        INNER JOIN \"MDTable\" as md  
+                            inner join \"CTable\" as ct 
+                                inner join \"MDTable\" as mditem 
+                                on ct.mdid=mditem.id 
+                            on md.mditem=ct.id 
+                            and mditem.name='MDitems' 
+                        ON et.mdid = md.id 
+                        WHERE et.id=:itemid  and NOT ct.name = 'Items'
+                UNION SELECT 'Item', et.name, et.id, et.name, md.name 
+                    FROM \"ETable\" as et 
                     INNER JOIN \"MDTable\" as md  
                         inner join \"CTable\" as ct 
                             inner join \"MDTable\" as mditem 
@@ -154,7 +218,8 @@ class Route {
                         and mditem.name='MDitems' 
                     ON et.mdid = md.id 
                     WHERE et.id=:itemid  and ct.name = 'Items'
-                UNION SELECT 'Sets', et.name, et.id, et.name, md.name FROM \"ETable\" as et 
+                UNION SELECT 'Sets', et.name, et.id, et.name, md.name 
+                    FROM \"ETable\" as et 
                     INNER JOIN \"MDTable\" as md  
                         inner join \"CTable\" as ct 
                             inner join \"MDTable\" as mditem 
@@ -163,29 +228,60 @@ class Route {
                         and mditem.name='MDitems' 
                     ON et.mdid = md.id 
                     WHERE et.id=:itemid  and ct.name = 'Sets'
-                UNION SELECT 'CollectionItem', ct.name, ct.id, ct.synonym, md.name FROM \"CTable\" as ct INNER JOIN \"MDTable\" as md ON ct.mdid=md.id AND md.name<>'MDitems' WHERE ct.id=:itemid
-                UNION SELECT 'EProperty', mp.name, mp.id, mp.synonym, md.name  FROM \"MDProperties\" as mp INNER JOIN \"MDTable\" as md ON mp.mdid=md.id WHERE mp.id=:itemid
-                UNION SELECT 'Cproperty', cp.name, cp.id, cp.synonym, md.name FROM \"CProperties\" as cp INNER JOIN \"MDTable\" as md ON cp.mdid=md.id WHERE cp.id=:itemid 
-                UNION SELECT 'RProperty', mp.name, mp.id, mp.synonym, md.name  FROM \"RegProperties\" as mp INNER JOIN \"MDTable\" as md ON mp.mdid=md.id WHERE mp.id=:itemid";
+                UNION SELECT 'CollectionItem', ct.name, ct.id, ct.synonym, md.name 
+                    FROM \"CTable\" as ct 
+                    INNER JOIN \"MDTable\" as md 
+                    ON ct.mdid=md.id AND md.name<>'MDitems' 
+                    WHERE ct.id=:itemid
+                UNION SELECT 'EProperty', mp.name, mp.id, mp.synonym, md.name  
+                    FROM \"MDProperties\" as mp 
+                    INNER JOIN \"MDTable\" as md 
+                    ON mp.mdid=md.id 
+                    WHERE mp.id=:itemid
+                UNION SELECT 'Cproperty', cp.name, cp.id, cp.synonym, md.name 
+                    FROM \"CProperties\" as cp 
+                    INNER JOIN \"MDTable\" as md 
+                    ON cp.mdid=md.id 
+                    WHERE cp.id=:itemid 
+                UNION SELECT 'RProperty', mp.name, mp.id, mp.synonym, md.name  
+                    FROM \"RegProperties\" as mp 
+                    INNER JOIN \"MDTable\" as md 
+                    ON mp.mdid=md.id 
+                    WHERE mp.id=:itemid";
 
         $artt = array();
         $sth = DataManager::dm_query($sql,array('itemid' => $itemid, 'prefix' => $prefix));
         return $sth->fetch(PDO::FETCH_ASSOC);
     }
-    public static function getActionList($id, $mode, $edit_mode = '') {
-        $toset = false;
-        $item = self::getContentByID($id);
-        $classname = $item['classname'];
-        if ($item['typename'] == 'Comps') {
-            $classname = 'Component';
-        }
-        return DataManager::getActionsbyItem($classname, $mode, $edit_mode);
-    }
+//    public static function getActionList($id, $mode, $edit_mode = '') {
+//        $toset = false;
+//        $item = self::getContentByID($id);
+//        $classname = $item['classname'];
+//        if ($item['typename'] == 'Comps') {
+//            $classname = 'Component';
+//        }
+//        return DataManager::getActionsbyItem($classname, $mode, $edit_mode);
+//    }
     public function setcontrollername()
     {
         $context = DcsContext::getcontext();
         if ($context->getattr('PREFIX') == 'ERROR') {
             return 'Controller_Error';
+        }
+        if ($context->getattr('PREFIX') == 'AUTH') {
+            return 'Controller_Auth';
+        }
+        if ($context->getattr('PREFIX') == 'API') {
+            return 'Controller_Api';
+        }
+        if ($context->getattr('PREFIX') == 'CONFIG') {
+            return 'Controller_Sheet';
+        }
+        if ((strtoupper($context->getattr('ACTION')) == 'EXEC')&&
+            ($context->getattr('CLASSTYPE') == 'Utils')) {
+                $ent = new CollectionItem($context->getattr('ITEMID'));
+                $this->controller_path = "/app/components/utils/".strtolower($ent->getname());
+                return 'Controller_'.$ent->getname();
         }
         if ($context->getattr('MODE') == 'AJAX') {
             return 'Controller_Ajax';
@@ -193,16 +289,79 @@ class Route {
         if ($context->getattr('MODE') == 'DOWNLOAD') {
             return 'Controller_Download';
         }
-        if ($context->getattr('PREFIX') == 'API') {
-            return 'Controller_Api';
-        }
-        if ($context->getattr('PREFIX') == 'AUTH') {
-            return 'Controller_Auth';
-        }
-        if (($context->getattr('PREFIX') == 'CONFIG')||
-            ($context->getattr('PREFIX') == 'ENTERPRISE')) {
+        if ($context->getattr('PREFIX') == 'ENTERPRISE') {
             return 'Controller_Sheet';
         }
         return 'Controller_Error';
+    }        
+    public static function dcs_getallheaders() 
+    { 
+       $headers = array (); 
+       foreach ($_SERVER as $name => $value) 
+       { 
+           if (substr($name, 0, 5) == 'HTTP_') 
+           { 
+               $headers[str_replace(' ', '-', ucwords(strtolower(
+                       str_replace('_', ' ', substr($name, 5)))))] = $value; 
+           } 
+       } 
+       return $headers; 
+    }
+    public function upload()
+    {
+        $csv = $_FILES['csv'];
+        $destPath = filter_input(INPUT_SERVER, 'DOCUMENT_ROOT', 
+                FILTER_SANITIZE_STRING). DCS_UPLOAD_IMPORT_DIR;
+        Common_data::import_log(
+    "--------------------------------------\r\n".'start import to: '.$destPath);
+
+        // Валидация
+        $validationErrors = Common_data::validateFiles(array(
+            'files' => $csv,
+            'maxSize' => 2 * 1024 * 1024,
+            'types' => array('text/csv', 'text/txt')
+        ));
+
+        if (count($validationErrors) > 0) {
+            // Возвращаем список ошибок клиенту
+            echo json_encode($validationErrors);
+            exit;
+        }
+
+        $res=array();
+        // Копирование файлов в нужную папку
+
+        $id = filter_input(INPUT_POST, 'id', FILTER_SANITIZE_SPECIAL_CHARS);
+        Common_data::import_log('import in id: '.$id);
+        if (!Common_data::check_uuid($id)) {
+            exit;
+        }
+
+        Common_data::import_log('OK validate id=: '.$id);
+        $ent = new EntitySet($id);
+        $curm = date("Ym");
+        Common_data::import_log('import to: '.$destPath ."/". $curm);
+        if (!file_exists($destPath ."/". $curm))
+        {
+            mkdir($destPath ."/". $curm,0777);
+            Common_data::import_log('created folder : '.$destPath ."/". $curm);
+        }        
+        foreach ($csv['name'] as $key => $name) 
+        {
+            $tempName = $csv['tmp_name'][$key];
+            $ext = strrchr($name,'.');
+            $destName = $destPath ."/". $curm."/".$id.$ext;
+            Common_data::import_log('import to file :'.$destName.' : tempName = '.$tempName);
+            if (move_uploaded_file($tempName, $destName)!==FALSE)
+            {
+                $res[]=array('code'=>'success','destName'=>$destName);
+                Common_data::import_log('success import : '.$destName);
+            }
+            else 
+            {
+                $res[]=array('code'=>'error','destName'=>$destName);
+                Common_data::import_log('error import : '.$destName);
+            }
+        }
     }        
 }

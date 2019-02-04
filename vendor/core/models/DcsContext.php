@@ -137,6 +137,27 @@ class DcsContext
         $this->setitems($data, $curval, $validation, $indx, $indd);
         $this->get_context_data();
         if (($this->context['PREFIX'] !== 'AUTH')&&($this->context['PREFIX'] !== 'ERROR')) {
+            if (isset($this->context['DATA']['dcs_itemid'])) {
+                //itemid from get-parameters is valid
+                $itemid = $this->context['DATA']['dcs_itemid']['name'];
+                if ($itemid !== '') {
+                    $this->setattr('ITEMID', $itemid);
+                }
+            }
+            if (isset($this->context['DATA']['dcs_prefix'])) {
+                //prefix from get-parameters is valid
+                $prefix = $this->context['DATA']['dcs_prefix']['name'];
+                if ($prefix !== '') {
+                    $this->setattr('PREFIX', strtoupper($prefix));
+                }
+            }
+//            if (isset($this->context['DATA']['dcs_mode'])) {
+//                //mode from get-parameters is valid
+//                $mode = $this->context['DATA']['dcs_mode']['name'];
+//                if ($mode !== '') {
+//                    $this->setattr('MODE', strtoupper($mode));
+//                }
+//            }
             if (isset($this->context['DATA']['dcs_action'])) {
                 //action from get-parameters is valid
                 $action = $this->context['DATA']['dcs_action']['name'];

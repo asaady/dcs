@@ -297,6 +297,11 @@ trait T_Sheet {
             if (count($sets)) {
                 $objs['SETS'] = $sets;
             }
+            if ($classname == 'CollectionItem') {
+                if ($context->getattr('CLASSTYPE') == 'Utils') {
+                    $classname = 'Component';
+                }
+            }
         }
         $prefix = $context->getattr('PREFIX');
         $action = $context->getattr('ACTION');

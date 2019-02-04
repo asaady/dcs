@@ -21,6 +21,9 @@
             "Dcs\\Vendor\\Core\\Views\\": [
                 "vendor/core/views/"
             ],
+            "Dcs\\App\\Templates\\": [
+                "app/templates/"
+            ],
             "Dcs\\App\\Components\\Reps\\": [
                 "app/components/reps/"
             ],

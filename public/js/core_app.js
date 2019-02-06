@@ -1,21 +1,19 @@
-function get_input_fieldid($curinp)
+function input_fieldid($curinp)
 {
     var curname = $curinp.attr('name');
     if ((curname.indexOf('name_') + 1) > 0) {
-        return $('div.form-group').find('input#'+curname.substring(5)).val();
+        return $('div.form-group').find('input#'+curname.substring(5));
     }
-    return '';
+    return $curinp;
+}
+
+function get_input_fieldid($curinp)
+{
+    return input_fieldid($curinp).val();
 }
 function set_input_fieldid($curinp, curvalue)
 {
-    var curname = $curinp.attr('name');
-    var $curdiv = $curinp.parent('div');
-    var inpid = curname;
-    var $curinpid = $curinp;
-    if ((curname.indexOf('name_') + 1) > 0) {
-        inpid = curname.substring(5);
-        $curinpid = $curdiv.find('input#'+inpid);
-    }
+    var $curinpid = input_fieldid($curinp);
     $curinpid.val(curvalue);
     return $curinpid.attr('id');
 }
@@ -276,11 +274,10 @@ $('input.form-control').keyup(function(eventObject) {
         if (arr_type.indexOf(itype)>=0) {
             $("#"+curid+"~.types_list").slideUp('fast'); 
             if (name.length>1) {
+                var $curinpid = input_fieldid($curinp);
                 $("input[name='dcs_command']").val('find');
-                if (itype == 'propid') {    
-                    $("input[name='dcs_command']").val('prop_find');
-                }
                 $("input[name='dcs_curid']").val(curid);
+                $("input[name='dcs_param_propid']").val($curinpid.attr('id'));
                 $("input[name='dcs_param_id']").val(it);
                 $("input[name='dcs_param_val']").val(name);
                 $("input[name='dcs_param_type']").val(itype);

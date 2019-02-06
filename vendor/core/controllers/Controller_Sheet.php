@@ -39,7 +39,7 @@ class Controller_Sheet extends Controller
         }
         $this->view->generate($data);
     }
-    function action_set_view()
+    function action_load()
     {
         $this->action_index();
     }

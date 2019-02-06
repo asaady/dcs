@@ -85,7 +85,8 @@ class DataManager {
         } else {
             $sql = str_replace('#prefix', 'AND NOT pv_mode.value', $sql);
         }
-        if (($action === 'EDIT') || ($action === 'SET_EDIT') || ($action === 'CREATE') || ($action === 'CREATE_PROPERTY')) {
+        //if (($action === 'EDIT') || ($action === 'SET_EDIT') || ($action === 'CREATE') || ($action === 'CREATE_PROPERTY')) {
+        if ($action === 'EDIT') {
             $sql = str_replace('#action', '', $sql);
         } else {
             $sql = str_replace('#action', 'AND NOT pv_edit.value', $sql);

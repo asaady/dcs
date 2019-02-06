@@ -8,6 +8,25 @@ class MdentitySet extends Sheet implements I_Sheet
 {
     use T_Sheet;
     
+    public function __construct($id='',$hd='')
+    {
+        $this->id = $id;
+        $this->isnew = false;
+        if ($id) {
+            $arData = $this->getDetails($id);
+
+            if (!$arData) {
+                throw new DcsException("Class ".get_called_class().
+                    " constructor: id is wrong",DCS_ERROR_WRONG_PARAMETER);
+            }
+            $this->name = $arData['name']; 
+            $this->synonym = $arData['synonym']; 
+        }
+        $this->plist = array();
+        $this->properties = array();
+        $this->data = array();
+        $this->version = time();
+    }
     public function dbtablename()
     {
         return 'CTable';
@@ -52,13 +71,18 @@ class MdentitySet extends Sheet implements I_Sheet
     }
     public function get_items() 
     {
+        $params = array();
 	$sql = "SELECT md.id, md.name, md.synonym, "
                 . "md.mditem as id_mditem, ct.name as name_mditem, 'mditem' as propid_mditem "
                 . "FROM \"MDTable\" AS md "
                 . "INNER JOIN \"CTable\" as ct "
                 . "ON md.mditem = ct.id "
                 . "WHERE md.mditem= :mditem";
-        $params = array('mditem'=>$this->id);
+        if ($this->id) {
+            $params['mditem'] = $this->id;
+        } else {
+            $sql = str_replace('WHERE md.mditem= :mditem', '', $sql);
+        }
         $dop = DataManager::get_md_access_text();
         if ($dop != '')
         {    
@@ -67,6 +91,33 @@ class MdentitySet extends Sheet implements I_Sheet
         }    
         return DataManager::dm_query($sql,$params);        
     }        
+    public function getItemsByName($name) 
+    {
+        $params = array();
+	$sql = "SELECT md.id, md.name, md.synonym, "
+                . "md.mditem as id_mditem, ct.name as name_mditem, 'mditem' as propid_mditem "
+                . "FROM \"MDTable\" AS md "
+                . "INNER JOIN \"CTable\" as ct "
+                . "ON md.mditem = ct.id "
+                . "WHERE (md.name ILIKE :name OR md.synonym ILIKE :name) "
+                . "AND md.mditem= :mditem";
+        if ((!$this->id)||($this->id == DCS_EMPTY_ENTITY)) {
+            $sql = str_replace('AND md.mditem= :mditem', '', $sql);
+        } else {
+            $params['mditem'] = $this->id;
+        }
+        $dop = DataManager::get_md_access_text();
+        if ($dop != '')
+        {    
+            $params['userid'] = $_SESSION['user_id'];
+            $sql .= " AND ".$dop;
+        }    
+        $sql .= " LIMIT 5";
+        $params['name'] = "%$name%";
+	$res = DataManager::dm_query($sql,$params);
+	$rows = $res->fetchAll(PDO::FETCH_ASSOC);
+        return $rows;
+    }
 //    public function getItems($filter=array()) 
 //    {
 //	$sql = "SELECT md.id, md.name, md.synonym, md.mditem FROM \"MDTable\" AS md WHERE md.mditem= :mditem";

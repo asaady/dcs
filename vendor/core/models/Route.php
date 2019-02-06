@@ -274,9 +274,6 @@ class Route {
         if ($context->getattr('PREFIX') == 'API') {
             return 'Controller_Api';
         }
-        if ($context->getattr('PREFIX') == 'CONFIG') {
-            return 'Controller_Sheet';
-        }
         if ((strtoupper($context->getattr('ACTION')) == 'EXEC')&&
             ($context->getattr('CLASSTYPE') == 'Utils')) {
                 $ent = new CollectionItem($context->getattr('ITEMID'));
@@ -288,6 +285,9 @@ class Route {
         }
         if ($context->getattr('MODE') == 'DOWNLOAD') {
             return 'Controller_Download';
+        }
+        if ($context->getattr('PREFIX') == 'CONFIG') {
+            return 'Controller_Sheet';
         }
         if ($context->getattr('PREFIX') == 'ENTERPRISE') {
             return 'Controller_Sheet';

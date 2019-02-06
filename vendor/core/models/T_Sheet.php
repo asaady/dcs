@@ -19,6 +19,9 @@ trait T_Sheet {
           'version'=>$this->version
         );
         $objs['PLIST'] = $this->getplist();
+        if ($this->isnew) {
+            return $objs;
+        }
         $sets = $this->getsets();
         if(count($sets)) {
             $objs['SETS'] = $sets;
@@ -271,6 +274,18 @@ trait T_Sheet {
         $objs['LDATA'] = array();
         $objs['LDATA'][$this->id] = $this->load_data();
         $classname = $context->getattr('CLASSNAME');
+        if ($classname == 'CollectionItem') {
+            if ($context->getattr('CLASSTYPE') == 'Utils') {
+                $classname = 'Component';
+            }
+        }
+        $prefix = $context->getattr('PREFIX');
+        $action = $context->getattr('ACTION');
+        $objs['navlist'] = $this->get_navlist();
+        $objs['actionlist'] = DataManager::getActionsbyItem($classname,$prefix,$action);
+        if ($this->isnew) {
+            return $objs;
+        }
         $setid = '';
         $propid = $context->getattr('PROPID');
         if (($propid)&&($classname == 'Entity')) {
@@ -297,16 +312,7 @@ trait T_Sheet {
             if (count($sets)) {
                 $objs['SETS'] = $sets;
             }
-            if ($classname == 'CollectionItem') {
-                if ($context->getattr('CLASSTYPE') == 'Utils') {
-                    $classname = 'Component';
-                }
-            }
         }
-        $prefix = $context->getattr('PREFIX');
-        $action = $context->getattr('ACTION');
-        $objs['actionlist'] = DataManager::getActionsbyItem($classname,$prefix,$action);
-        $objs['navlist'] = $this->get_navlist();
 	return $objs;
     }
     public function getListItemsByFilter($filter=array()) 

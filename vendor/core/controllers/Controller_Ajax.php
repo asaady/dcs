@@ -32,6 +32,18 @@ class Controller_Ajax extends Controller
             $id = $context->data_getattr('dcs_curid')['id'];
         }
         
+        $modelname = $this->getmodelname($id);
+        
+        $this->model = new $modelname($id);
+    }
+    public function getmodelname($id)
+    {        
+        $context = DcsContext::getcontext();
+        if ($context->getattr('COMMAND') == 'FIND') {
+            if ($context->data_getattr('dcs_param_type')['name'] == 'mdid') {
+                return "\\Dcs\\Vendor\\Core\\Models\\MdentitySet";
+            }    
+        }
         $validation = Common_data::check_uuid($id);
         if (!$validation) {
             throw new DcsException("Class ".get_called_class().
@@ -64,7 +76,7 @@ class Controller_Ajax extends Controller
                 $modelname = "\\Dcs\\Vendor\\Core\\Models\\".$newobj['classname'];
             }
         }
-        $this->model = new $modelname($id);
+        return $modelname;
     }
     function action_view()
     {

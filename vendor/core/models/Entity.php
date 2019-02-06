@@ -258,36 +258,37 @@ class Entity extends Sheet implements I_Sheet, I_Item
         }
         return $arnewid['id'];
     }
-    public static function CopyEntityProp($id, $prop, $user) 
-    {
-            $propid = $prop['id'];
-            $type = $prop['name_type'];
-            $val = $prop[$type.'_value'];
-            $sql = "INSERT INTO \"IDTable\" (userid,entityid, propid) VALUES ('$user', '$id', '$propid) RETURNING \"id\"";
-            $res = pg_query(self::_getConnection(), $sql);
-            if(!$res) 
-            {
-              $sql_rb = "ROLLBACK";
-              $res = pg_query(self::_getConnection(), $sql_rb);
-              die("Невозможно добавить в таблицу IDTable запись ".$sql);
-            }
-            $row = pg_fetch_assoc($res);
-            $sql = "INSERT INTO \"PropValue_{$type}\" (id, value) VALUES ('{$row['id']}','$val')";
-            $res = pg_query(self::_getConnection(), $sql);
-            if(!$res) 
-            {
-              $sql_rb = "ROLLBACK";
-              $res = pg_query(self::_getConnection(), $sql_rb);
-              die("Невозможно добавить в таблицу PropValue_{$type} запись ".$sql);
-            }
-
-    }	
+//    public static function CopyEntityProp($id, $prop, $user) 
+//    {
+//            $propid = $prop['id'];
+//            $type = $prop['name_type'];
+//            $val = $prop[$type.'_value'];
+//            $sql = "INSERT INTO \"IDTable\" (userid,entityid, propid) VALUES ('$user', '$id', '$propid) RETURNING \"id\"";
+//            $res = pg_query(self::_getConnection(), $sql);
+//            if(!$res) 
+//            {
+//              $sql_rb = "ROLLBACK";
+//              $res = pg_query(self::_getConnection(), $sql_rb);
+//              die("Невозможно добавить в таблицу IDTable запись ".$sql);
+//            }
+//            $row = pg_fetch_assoc($res);
+//            $sql = "INSERT INTO \"PropValue_{$type}\" (id, value) VALUES ('{$row['id']}','$val')";
+//            $res = pg_query(self::_getConnection(), $sql);
+//            if(!$res) 
+//            {
+//              $sql_rb = "ROLLBACK";
+//              $res = pg_query(self::_getConnection(), $sql_rb);
+//              die("Невозможно добавить в таблицу PropValue_{$type} запись ".$sql);
+//            }
+//
+//    }	
     public function params_to_create($data='')
     {
         $name = $this->name;
         if ($data) {
-            die(var_dump($data));
-            $name = $data['name']['name'];
+            if (array_key_exists('name', $data)) {
+                $name = $data['name']['name'];
+            }
         }    
         return array(
                 'name' => $name, 

@@ -53,6 +53,87 @@ trait T_Property {
 //        }
 //        return $objs;
 //    }
+    public function update_properties($data,$n=0)   
+    {
+        $objs = array();
+        $objs['status']='OK';
+        $objs['objs']=array();
+        $objs['id']=$this->id;
+        $this->load_data();
+        $sql = '';
+        $params = array();
+        foreach($this->plist as $row)
+        {    
+            if (!$row['field']) {
+                continue;
+            }
+            $key = $row['name'];
+            $id = $row['id'];
+            if ($key=='id')
+            {
+                continue;
+            }    
+            if (!array_key_exists($id, $data))
+            {
+                continue;
+            }    
+            $dataname = $data[$id]['name'];
+            $valname = $this->data[$id]['name'];
+            $dataid = $data[$id]['id'];
+            $valid = $this->data[$id]['id'];
+            if (($row['name_type']=='id')||($row['name_type']=='cid')||($row['name_type']=='mdid')) 
+            {
+                if ($dataid!='')
+                {
+                    if ($dataid===$valid)
+                    {
+                        continue;
+                    }    
+                    $val = $dataid;
+                }
+                else 
+                {
+                    if ($valid!='')
+                    {
+                        $val = DCS_EMPTY_ENTITY;
+                    }
+                    else
+                    {
+                        continue;
+                    }    
+                }
+            }    
+            else
+            {
+                if (isset($dataname))
+                {
+                    if ($dataname===$valname)
+                    {
+                        continue;
+                    }    
+                    if (($dataname=='')&&($valname==''))
+                    {
+                        continue;
+                    }    
+                    $val = $dataname;
+                }
+                else
+                {
+                    continue;
+                }    
+            }    
+            $sql .= ", $key=:$key";
+            $params[$key] = $val;
+        }    
+        $sql = "UPDATE \"".$this->dbtablename()."\" SET ".substr($sql, 1)." WHERE id=:id";
+        $params['id'] = $this->id;
+        $res = DataManager::dm_query($sql,$params);
+        return $objs;
+    }        
+    public function update_dependent_properties($data)
+    {        
+        return array();
+    }        
     public function get_select_properties($strwhere)
     {
         return NULL;    

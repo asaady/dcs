@@ -123,6 +123,21 @@ class Cproperty extends Sheet implements I_Sheet
     {
         return NULL;
     }        
+    public function params_to_create($data='')
+    {
+        $name = $this->name;
+        $synonym = $this->synonym;
+        if ($data) {
+            $name = $data['name']['name'];
+            $synonym = $data['synonym']['name'];
+        }    
+        return array(
+                'name' => $name, 
+                'synonym'=>$synonym,
+                'mdid'=> $this->mdid,
+                'id'=> $this->id
+                );
+    }        
 //    public function getNameFromData($data='')
 //    {
 //        if (!$data) {
